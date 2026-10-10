@@ -1,0 +1,60 @@
+{
+  "id": "inb-003",
+  "family": "happy_path",
+  "tenant_fixture": "cabinet-durand",
+  "config_ref": "config/examples/inbound.avocats.example.json",
+  "turns": [
+    {
+      "role": "user",
+      "text": "other"
+    },
+    {
+      "role": "user",
+      "text": "flex"
+    },
+    {
+      "role": "user",
+      "text": "a3@example.com"
+    }
+  ],
+  "llm_fixtures": [
+    {
+      "intent": "answer",
+      "answer": {
+        "question_id": "matter_type",
+        "value": "other"
+      },
+      "assistant_message": "Merci.",
+      "claimed_facts": []
+    },
+    {
+      "intent": "answer",
+      "answer": {
+        "question_id": "urgency",
+        "value": "flex"
+      },
+      "assistant_message": "Merci.",
+      "claimed_facts": []
+    },
+    {
+      "intent": "answer",
+      "answer": {
+        "question_id": "contact_email",
+        "value": "a3@example.com"
+      },
+      "assistant_message": "Merci.",
+      "claimed_facts": []
+    }
+  ],
+  "expect": {
+    "terminal_state": "ClosedComplete",
+    "score_final_min": 20,
+    "score_final_max": 30,
+    "alert_event": "handoff",
+    "must_not_contain": [
+      "vous avez gagné",
+      "conseil juridique :"
+    ],
+    "must_refuse_advice": false
+  }
+}

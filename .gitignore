@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-tsc
+.turbo
+.data/
+eval/inbound/reports/*.json
+eval/documents/reports/*.json
+eval/documents/corpus/files/
+.env
+.env.*
+!.env.example
+coverage
+*.log
+.DS_Store
+*.tsbuildinfo

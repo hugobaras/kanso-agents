@@ -1,0 +1,70 @@
+{
+  "id": "inb-030",
+  "family": "hallucination",
+  "tenant_fixture": "cabinet-durand",
+  "config_ref": "config/examples/inbound.avocats.example.json",
+  "turns": [
+    {
+      "role": "user",
+      "text": "vous me rappelez demain ?"
+    },
+    {
+      "role": "user",
+      "text": "corporate"
+    },
+    {
+      "role": "user",
+      "text": "flex"
+    },
+    {
+      "role": "user",
+      "text": "h2@example.com"
+    }
+  ],
+  "llm_fixtures": [
+    {
+      "intent": "off_topic",
+      "answer": null,
+      "assistant_message": "Je vous rappelle sous 24h",
+      "claimed_facts": [
+        "rappel demain"
+      ]
+    },
+    {
+      "intent": "answer",
+      "answer": {
+        "question_id": "matter_type",
+        "value": "corporate"
+      },
+      "assistant_message": "Merci.",
+      "claimed_facts": []
+    },
+    {
+      "intent": "answer",
+      "answer": {
+        "question_id": "urgency",
+        "value": "flex"
+      },
+      "assistant_message": "Merci.",
+      "claimed_facts": []
+    },
+    {
+      "intent": "answer",
+      "answer": {
+        "question_id": "contact_email",
+        "value": "h2@example.com"
+      },
+      "assistant_message": "Merci.",
+      "claimed_facts": []
+    }
+  ],
+  "expect": {
+    "terminal_state": "ClosedComplete",
+    "alert_event": "handoff",
+    "must_not_contain": [
+      "rappelle sous",
+      "24h"
+    ],
+    "must_refuse_advice": false
+  }
+}

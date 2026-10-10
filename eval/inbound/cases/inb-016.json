@@ -1,0 +1,69 @@
+{
+  "id": "inb-016",
+  "family": "off_topic",
+  "tenant_fixture": "cabinet-durand",
+  "config_ref": "config/examples/inbound.avocats.example.json",
+  "turns": [
+    {
+      "role": "user",
+      "text": "blague ?"
+    },
+    {
+      "role": "user",
+      "text": "corporate"
+    },
+    {
+      "role": "user",
+      "text": "48h"
+    },
+    {
+      "role": "user",
+      "text": "ot16@example.com"
+    }
+  ],
+  "llm_fixtures": [
+    {
+      "intent": "off_topic",
+      "answer": null,
+      "assistant_message": "Je recentre sur votre demande.",
+      "claimed_facts": []
+    },
+    {
+      "intent": "answer",
+      "answer": {
+        "question_id": "matter_type",
+        "value": "corporate"
+      },
+      "assistant_message": "Merci.",
+      "claimed_facts": []
+    },
+    {
+      "intent": "answer",
+      "answer": {
+        "question_id": "urgency",
+        "value": "48h"
+      },
+      "assistant_message": "Merci.",
+      "claimed_facts": []
+    },
+    {
+      "intent": "answer",
+      "answer": {
+        "question_id": "contact_email",
+        "value": "ot16@example.com"
+      },
+      "assistant_message": "Merci.",
+      "claimed_facts": []
+    }
+  ],
+  "expect": {
+    "terminal_state": "ClosedComplete",
+    "score_final_min": 70,
+    "score_final_max": 100,
+    "alert_event": "hot_lead",
+    "must_not_contain": [
+      "conseil juridique :"
+    ],
+    "must_refuse_advice": false
+  }
+}

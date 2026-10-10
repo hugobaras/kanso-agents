@@ -1,0 +1,31 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "composite": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "references": [
+    {
+      "path": "../shared"
+    },
+    {
+      "path": "../config"
+    },
+    {
+      "path": "../llm"
+    },
+    {
+      "path": "../adapters"
+    },
+    {
+      "path": "../tenancy"
+    }
+  ],
+  "exclude": [
+    "src/**/*.test.ts"
+  ]
+}

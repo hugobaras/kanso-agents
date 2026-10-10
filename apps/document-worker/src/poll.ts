@@ -1,0 +1,48 @@
+import { claimNextJob } from "@kanso/document-pipeline";
+import { getPool } from "@kanso/tenancy";
+import { processClaimedJob } from "./process-job.js";
+
+export async function pollOnce(): Promise<boolean> {
+  const pool = getPool();
+  const job = await claimNextJob(pool);
+  if (!job) return false;
+  console.log(
+    JSON.stringify({
+      level: "info",
+      msg: "document-worker claimed",
+      job_id: job.id,
+      tenant_id: job.tenant_id,
+      attempt: job.attempt_count,
+    }),
+  );
+  await processClaimedJob(job);
+  return true;
+}
+
+export async function pollLoop(opts: {
+  intervalMs?: number;
+  maxIdleRounds?: number;
+}): Promise<void> {
+  const intervalMs = opts.intervalMs ?? Number(process.env.KANSO_POLL_MS ?? 2000);
+  const maxIdle = opts.maxIdleRounds ?? Number(process.env.KANSO_POLL_IDLE_EXIT ?? 0);
+  let idle = 0;
+  for (;;) {
+    const worked = await pollOnce();
+    if (worked) {
+      idle = 0;
+      continue;
+    }
+    idle += 1;
+    if (maxIdle > 0 && idle >= maxIdle) {
+      console.log(
+        JSON.stringify({
+          level: "info",
+          msg: "document-worker poll idle exit",
+          idle_rounds: idle,
+        }),
+      );
+      return;
+    }
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+}

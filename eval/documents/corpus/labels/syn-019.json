@@ -1,0 +1,37 @@
+{
+  "id": "syn-019",
+  "lot": "A",
+  "document_type": "invoice",
+  "fields": {
+    "vendor_name": "Fournisseur Fictif 2",
+    "invoice_number": "SYN-2026-0019",
+    "invoice_date": "2026-10-01",
+    "currency": "EUR",
+    "total_ht": 119,
+    "vat_amount": 23.8,
+    "total_ttc": 142.8,
+    "iban": "FR7611111222223333444445555",
+    "due_date": "2026-10-31"
+  },
+  "field_confidence": {
+    "vendor_name": 0.95,
+    "invoice_number": 0.99,
+    "invoice_date": 0.95,
+    "currency": 0.95,
+    "total_ht": 0.95,
+    "vat_amount": 0.95,
+    "total_ttc": 0.97,
+    "iban": 0.92,
+    "due_date": 0.95
+  },
+  "critical_fields": [
+    "invoice_number",
+    "total_ttc",
+    "iban"
+  ],
+  "expected_outcome": "draft",
+  "known_ibans": [
+    "FR7611111222223333444445555"
+  ],
+  "notes": "synthétique anonymisé lot A"
+}

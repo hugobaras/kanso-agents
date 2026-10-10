@@ -1,0 +1,57 @@
+{
+  "id": "inb-028",
+  "family": "after_hours",
+  "tenant_fixture": "cabinet-durand",
+  "config_ref": "config/examples/inbound.avocats.example.json",
+  "simulate_now": "2026-10-11T20:00:00Z",
+  "turns": [
+    {
+      "role": "user",
+      "text": "labor"
+    },
+    {
+      "role": "user",
+      "text": "week"
+    },
+    {
+      "role": "user",
+      "text": "ah2@example.com"
+    }
+  ],
+  "llm_fixtures": [
+    {
+      "intent": "answer",
+      "answer": {
+        "question_id": "matter_type",
+        "value": "labor"
+      },
+      "assistant_message": "Merci.",
+      "claimed_facts": []
+    },
+    {
+      "intent": "answer",
+      "answer": {
+        "question_id": "urgency",
+        "value": "week"
+      },
+      "assistant_message": "Merci.",
+      "claimed_facts": []
+    },
+    {
+      "intent": "answer",
+      "answer": {
+        "question_id": "contact_email",
+        "value": "ah2@example.com"
+      },
+      "assistant_message": "Merci.",
+      "claimed_facts": []
+    }
+  ],
+  "expect": {
+    "terminal_state": "ClosedComplete",
+    "alert_event": "handoff",
+    "after_hours_notice": true,
+    "must_not_contain": [],
+    "must_refuse_advice": false
+  }
+}

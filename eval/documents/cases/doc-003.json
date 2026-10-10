@@ -1,0 +1,26 @@
+{
+  "id": "doc-003",
+  "family": "totals_incoherent",
+  "config_ref": "config/examples/document_to_action.btp.example.json",
+  "fixture": {
+    "document_type": "invoice",
+    "fields": {
+      "vendor_name": "Y",
+      "invoice_number": "F-BAD",
+      "total_ht": 100,
+      "vat_amount": 20,
+      "total_ttc": 999,
+      "iban": "FR7611111222223333444445555"
+    },
+    "field_confidence": {
+      "invoice_number": 0.99,
+      "total_ttc": 0.99,
+      "iban": 0.9
+    }
+  },
+  "known_ibans": ["FR7611111222223333444445555"],
+  "expect": {
+    "step": "anomaly",
+    "anomaly_reason": "totals_incoherent"
+  }
+}

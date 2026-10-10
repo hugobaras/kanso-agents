@@ -1,0 +1,69 @@
+{
+  "uid": "kanso-mvp",
+  "title": "Kanso — santé / coûts (squelette)",
+  "tags": ["kanso", "mvp"],
+  "timezone": "Europe/Paris",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "API /health up",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "description": "Probe HTTP externe (Blackbox / synthetic) → métrique up{job=\"inbound-api\"}",
+      "targets": [{ "refId": "A", "expr": "up{job=\"inbound-api\"}" }]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Worker heartbeat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "description": "Compteur logs msg=document-worker OU métrique custom",
+      "targets": [{ "refId": "A", "expr": "kanso_worker_heartbeat_timestamp" }]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "€ estimé / tenant / jour",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "description": "Exporter SQL usage_ledger → Grafana Infinity / Postgres datasource",
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "select date_trunc('day', at) as time, tenant_id, sum(estimated_eur) as value from usage_ledger group by 1, 2 order by 1"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Sessions Inbound ouvertes",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "select now() as time, count(*)::float as value from inbound_sessions where closed_at is null"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "Soft cap breaches (7j)",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "select at, tenant_id, summary from audit_events where step='soft_cap' and at > now() - interval '7 days' order by at desc"
+        }
+      ]
+    }
+  ],
+  "annotations": {
+    "list": []
+  },
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" }
+}

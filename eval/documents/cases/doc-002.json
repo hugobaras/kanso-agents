@@ -1,0 +1,26 @@
+{
+  "id": "doc-002",
+  "family": "low_confidence",
+  "config_ref": "config/examples/document_to_action.btp.example.json",
+  "fixture": {
+    "document_type": "invoice",
+    "fields": {
+      "vendor_name": "X",
+      "invoice_number": "F-LOW",
+      "total_ht": 10,
+      "vat_amount": 2,
+      "total_ttc": 12,
+      "iban": "FR7611111222223333444445555"
+    },
+    "field_confidence": {
+      "invoice_number": 0.4,
+      "total_ttc": 0.95,
+      "iban": 0.9
+    }
+  },
+  "known_ibans": ["FR7611111222223333444445555"],
+  "expect": {
+    "step": "anomaly",
+    "anomaly_reason": "low_confidence"
+  }
+}

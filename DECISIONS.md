@@ -1,0 +1,350 @@
+# Journal des décisions — Kanso Solutions
+
+Format : date, décision, source, statut. Les hypothèses non validées sont listées séparément.
+
+---
+
+## 2026-10-10 — Phase 0 Cadrage
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-001 | Langage | TypeScript (Node.js) pour API, widget, workers et packages partagés | Phase 0 Q1 = 1 | Validée |
+| D-002 | Dépôts | Mono-dépôt (apps + packages partagés) | Phase 0 Q2 = 1 | Validée |
+| D-003 | Compute | OVHcloud, région UE | Phase 0 Q3 = 2 | Validée |
+| D-004 | Budget infra | &lt; 50 € / mois hors tokens LLM | Phase 0 Q4 = 1 | Validée |
+| D-005 | Socle outils | GitHub Actions, Docker/Compose, Postgres, Supabase | Phase 0 Q5 = A,B,C,F | Validée |
+| D-006 | Données | Postgres (+ storage si besoin) via Supabase région UE | Composition Phase 0 | Validée |
+| D-007 | Runtime | 1 instance OVH + Docker Compose (API + worker) | Composition Phase 0 | Validée |
+| D-008 | Jobs | File via Postgres + polling worker ; pas de Redis au MVP | Composition Phase 0 | Validée |
+| D-009 | IA | Abstraction provider ; aucun modèle figé dans l’archi | Contrainte produit | Validée |
+| D-010 | CI initiale | GitHub Actions : lint, typecheck, tests ; pas de CD complexe | Composition Phase 0 | Validée |
+
+### Hypothèses non validées
+
+| ID | Hypothèse | À vérifier |
+|----|-----------|------------|
+| H-001 | Tarif OVH (instance + IP + snapshots + bande passante) tient dans le reste de budget après Supabase | Grille OVH + devis réel |
+| H-002 | Projet Supabase en région UE avec DPA et backups localisés de façon acceptable pour Kanso / clients | Console Supabase + contrat |
+| H-003 | Free tier ou pro léger Supabase suffit pour les premiers tenants + documents | Limites quotas vs scénario pilote |
+| H-004 | Extraction multimodale via APIs cloud en TypeScript suffit (pas de Python ML local au démarrage) | Phase 5 / 8 évaluation |
+| H-005 | Au moins un fournisseur LLM avec engagement UE utilisable pour le pilote (ex. Mistral `api.eu.mistral.ai`) | DPA + `models.list` endpoint EU |
+
+### Vérifications modèles (snapshot 2026-10-10)
+
+Sources : docs publiques OpenAI, Anthropic, Mistral. Non contractuel ; revalider via API au moment du choix.
+
+- OpenAI : GPT-6 Astra, GPT-6.1 Sol, GPT-6 Luna, famille GPT-5.6 (entre autres)
+- Anthropic : mentions Opus 5, Opus/Sonnet 4.6, Haiku 4.5 (entre autres)
+- Mistral : endpoint EU `api.eu.mistral.ai` ; Large 4, Medium 3.5, Small 4, Ministral 3, OCR (entre autres)
+
+---
+
+## 2026-10-10 — Phase 1 Structure du dépôt
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-011 | Monorepo tooling | pnpm workspaces + Turborepo | Phase 1 Q1 = 1 | Validée |
+| D-012 | Configs client | Table Supabase + schémas/exemples dans le repo (pas de configs prod dans Git) | Phase 1 Q2 = 2 | Validée |
+| D-013 | Secrets tenant | Supabase Vault ou colonne chiffrée ; clés maîtres sur OVH | Phase 1 Q3 = 1 | Validée |
+| D-014 | Environnements | `local` + `prod` ; `staging` au premier client pilote | Phase 1 Q4 = 3 | Validée |
+| D-015 | CI MVP | GitHub Actions : lint + typecheck + unit tests sur chaque PR | Phase 1 Q5 = 1 | Validée |
+| D-016 | Arborescence | `apps/*` (inbound-api, inbound-widget, document-worker, admin-cli) + `packages/*` (config, tenancy, llm, adapters, inbound-engine, document-pipeline, shared) | Livrable phase 1 | Validée |
+| D-017 | Nommage packages | Scope npm `@kanso/<name>` ; `tenant_id` slug ; `KANSO_*` pour env | Livrable phase 1 | Validée |
+| D-018 | Clôture phase 1 | Livrable structure dépôt accepté | Validation orale « validé » 2026-10-10 | Validée |
+
+### Hypothèses non validées (ajout)
+
+| ID | Hypothèse | À vérifier |
+|----|-----------|------------|
+| H-006 | Supabase Vault disponible et suffisant sur le plan retenu ; sinon pgcrypto / chiffrement app équivalent | Docs + plan Supabase |
+| H-007 | Cache Turborepo local suffisant pour 4 associés sans remote cache payant | Usage réel |
+| H-008 | Un seul projet Supabase multi-tenant suffit jusqu’au premier pilote | Phase 6 isolation |
+| H-009 | Ajout de `staging` possible sans casser le budget &lt; 50 € / mois | Tarifs OVH + Supabase au moment du pilote |
+
+### Lien livrable
+
+- [docs/phase-1-structure-depot.md](docs/phase-1-structure-depot.md)
+
+---
+
+## 2026-10-10 — Phase 2 Configuration client
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-019 | Schéma canonique | Zod source de vérité ; JSON Schema exporté | Phase 2 Q1 = 1 | Validée |
+| D-020 | Granularité config | Un JSON versionné par produit (`inbound` \| `document_to_action`) | Phase 2 Q2 = 1 | Validée |
+| D-021 | Publication config | Associés Kanso via `admin-cli` uniquement (pas de back-office client MVP) | Phase 2 Q3 = 1 | Validée |
+| D-022 | Inbound MVP obligatoire | Identité/disclaimer, qualification+scoring, alertes, opérations (horaires/langues/escalade) | Phase 2 Q4 = A,B,E,F | Validée |
+| D-023 | Inbound optionnel typé | `integrations.calendar` et `integrations.crm` absents ou complets | Découlant Q4 | Validée |
+| D-024 | Document-to-Action MVP obligatoire | Sources, types+champs, règles validation, cible, alertes humaines | Phase 2 Q5 = A,B,C,D,E | Validée |
+| D-025 | Conservation hors config tenant | Durées de conservation = politique globale Kanso (phase 6), pas champ client v1 | Q5 sans F | Validée |
+| D-026 | Action par défaut | `action.mode = draft` ; `final` seulement via CLI avec confirmation | Livrable phase 2 | Validée |
+| D-027 | Secrets dans config | Uniquement `secret_ref`, jamais de secrets en clair dans JSON | Contrainte phase 1 | Validée |
+| D-028 | Clôture phase 2 | Livrable configuration client accepté | Validation orale « validé » 2026-10-10 | Validée |
+
+### Hypothèses non validées (ajout)
+
+| ID | Hypothèse | À vérifier |
+|----|-----------|------------|
+| H-010 | Instanciation grille standard &lt; 1 journée associée | Premier client pilote |
+| H-011 | Topics système `conseil_juridique` / `conseil_comptable` non retirables par le client | Phase 3 garde-fous |
+| H-012 | Sous-ensemble connecteurs MVP suffisant avec `email_inbox` + `upload_web` + 1–2 cibles | Phase 4 |
+
+### Lien livrable
+
+- [docs/phase-2-configuration-client.md](docs/phase-2-configuration-client.md)
+
+---
+
+## 2026-10-10 — Phase 3 Moteur Inbound
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-029 | Pilotage états | Hybride : code possède le funnel ; LLM = intention + reformulation dans l’état | Phase 3 Q1 = 3 | Validée |
+| D-030 | Session | Postgres `inbound_sessions` + `inbound_messages` ; TTL global | Phase 3 Q2 = 1 | Validée |
+| D-031 | Scoring runtime | Recalcul `score_current` à chaque réponse ; `score_final` figé à `ScoreReady` | Phase 3 Q3 = 3 | Validée |
+| D-032 | Politique conseil | Refus + capture contact ; escalation si insistance | Phase 3 Q4 = 3 | Validée |
+| D-033 | Garde-fous MVP | Sorties structurées validées ; question_id allowlist ; pas d’affirmations hors config | Phase 3 Q5 = A,B,C | Validée |
+| D-034 | RAG | Hors MVP ; prévu ultérieurement | Phase 3 Q5 complément | Validée |
+| D-035 | Tools externes | Déclenchés par le code sur transition ; pas d’appel libre LLM au MVP | Livrable phase 3 | Validée |
+| D-036 | Alertes hot | Basées sur `score_final` (pas sur `score_current` seul) | Livrable phase 3 | Validée |
+| D-037 | Clôture phase 3 | Livrable moteur Inbound accepté | Validation orale « validé » 2026-10-10 | Validée |
+
+### Hypothèses non validées (ajout)
+
+| ID | Hypothèse | À vérifier |
+|----|-----------|------------|
+| H-013 | Abandon avec contact partiel → alerte `new_lead` | Choix produit pilote |
+| H-014 | Truncation prompt aux N derniers tours suffisante sans résumé | Coût tokens phase 8 |
+| H-015 | TTL inactivité session = 30 minutes (global) | Phase 6 / usage réel |
+| H-016 | Ordre sync : alerte puis CRM/calendar best-effort | Phase 4 |
+
+### Lien livrable
+
+- [docs/phase-3-moteur-inbound.md](docs/phase-3-moteur-inbound.md)
+
+---
+
+## 2026-10-10 — Phase 4 Adaptateurs
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-038 | Contrats adaptateurs | Interfaces TS par catégorie + `AdapterResult` ok/retryable/fatal | Phase 4 Q1 = 1 | Validée |
+| D-039 | Retry | Max 3, backoff exponentiel + jitter ; puis dead letter / anomalie | Phase 4 Q2 = 1 | Validée |
+| D-040 | Priorité connecteurs | Grille TPE/PME FR | Phase 4 Q3 = 1 | Validée |
+| D-041 | Secrets adaptateurs | `AuthContext` injecté ; résolution `secret_ref` dans tenancy | Phase 4 Q4 = 1 | Validée |
+| D-042 | Rate limit | Par `(tenant_id, provider)` via Postgres | Phase 4 Q5 = 2 | Validée |
+| D-043 | Alertes rang 1–2 | `email` puis `slack` | Livrable phase 4 | Validée |
+| D-044 | CRM rang 1–2 | `hubspot` puis `sellsy` | Livrable phase 4 | Validée |
+| D-045 | Agenda rang 1–2 | `google_calendar` puis `calendly` | Livrable phase 4 | Validée |
+| D-046 | Sources docs rang 1–2 | `email_inbox` puis `upload_web` | Livrable phase 4 | Validée |
+| D-047 | Cibles écriture rang 1–2 | `pennylane` puis `sellsy` | Livrable phase 4 | Validée |
+| D-048 | Clôture phase 4 | Livrable adaptateurs accepté | Validation orale « validé » 2026-10-10 | Validée |
+
+### Hypothèses non validées (ajout)
+
+| ID | Hypothèse | À vérifier |
+|----|-----------|------------|
+| H-017 | Compteurs rate-limit en Postgres (fenêtre ~1 min) suffisants sans Redis | Charge pilote |
+| H-018 | Calendly mappe correctement listSlots/bookSlot | Docs API Calendly |
+| H-019 | Provider e-mail transactionnel UE tenable &lt; budget restant | Choix Brevo / SES eu / SMTP OVH |
+| H-020 | APIs d’écriture supportent une clé d’idempotence ou équivalent métier | Docs HubSpot, Pennylane, Sellsy |
+
+### Lien livrable
+
+- [docs/phase-4-adaptateurs.md](docs/phase-4-adaptateurs.md)
+
+---
+
+## 2026-10-10 — Phase 5 Pipeline Document-to-Action
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-049 | Granularité job | 1 job = 1 document ; étapes = statuts du même enregistrement | Phase 5 Q1 = 1 | Validée |
+| D-050 | Doublons | Clés métier configurables + SHA-256 fichier | Phase 5 Q2 = 1 | Validée |
+| D-051 | Confiance | Score par champ ; blocage si champ critique &lt; min_confidence | Phase 5 Q3 = 2 | Validée |
+| D-052 | Anomalies | Notif client ; résolution statut via admin-cli Kanso au MVP | Phase 5 Q4 = 1 | Validée |
+| D-053 | Audit | Une entrée par transition d’étape + summary ; pas de fichier/prompt en prod | Phase 5 Q5 = 1 | Validée |
+| D-054 | Écriture | Mode draft par défaut ; final sous garde-fou | Alignement phase 2 | Validée |
+| D-055 | Worker | Poll Postgres SKIP LOCKED ; un process sur OVH | Livrable phase 5 | Validée |
+| D-056 | Clôture phase 5 | Livrable pipeline Document-to-Action accepté | Validation orale « validé » 2026-10-10 | Validée |
+
+### Hypothèses non validées (ajout)
+
+| ID | Hypothèse | À vérifier |
+|----|-----------|------------|
+| H-021 | Défauts champs critiques (ex. invoice : total_ttc, invoice_number, iban si demandé) | Revue métier pilote |
+| H-022 | Champs non critiques sous seuil ne bloquent pas seuls | Phase 8 faux positifs/négatifs |
+| H-023 | FOR UPDATE SKIP LOCKED adapté au volume pré-pilote | Charge réelle |
+| H-024 | Fenêtre anti-doublon alignée sur conservation phase 6 | Phase 6 |
+
+### Lien livrable
+
+- [docs/phase-5-pipeline-document-to-action.md](docs/phase-5-pipeline-document-to-action.md)
+
+---
+
+## 2026-10-10 — Phase 6 Sécurité, RGPD et exploitation
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-057 | Isolation | DB partagée + `tenant_id` ; RLS si utile | Phase 6 Q1 = 1 | Validée |
+| D-058 | Conservation | Sessions 90 j ; fichiers 90 j ; audit 365 j ; logs appli 30 j | Phase 6 Q2 = 1 | Validée |
+| D-059 | Coûts LLM | `usage_ledger` tokens + € estimé / tenant | Phase 6 Q3 = 1 | Validée |
+| D-060 | Supervision | Grafana Cloud Free tant que gratuit/quotas OK ; sinon healthchecks + logs + alerte | Phase 6 Q4 = 2 si gratuit | Validée |
+| D-061 | Réponse incident | Best effort 7j/7 9h–18h Europe/Paris ; pas d’astreinte nuit | Phase 6 Q5 = 3 | Validée |
+| D-062 | Monitoring payant | Interdit au MVP s’il casse le budget infra &lt; 50 € | Livrable phase 6 | Validée |
+| D-063 | Fenêtre anti-doublon | Alignée sur conservation fichiers (90 j) au MVP | H-024 tranché | Validée |
+| D-064 | Clôture phase 6 | Livrable sécurité / RGPD / exploitation accepté | Validation orale « validé » 2026-10-10 | Validée |
+
+### Hypothèses non validées (ajout)
+
+| ID | Hypothèse | À vérifier |
+|----|-----------|------------|
+| H-025 | Durées 90/90/365/30 acceptables juridiquement pour Kanso sous-traitant | Conseil / DPO |
+| H-026 | Grafana Cloud Free : DPA + localisation télémétrie acceptables ; quotas suffisants pilote | Inscription + contrat Grafana |
+| H-027 | Soft caps €/tenant définis à l’activation du premier pilote | Décision associés |
+| H-028 | Chiffrement au repos défaut OVH + Supabase suffisant sans KMS dédié | Docs offres retenues |
+
+### Vérification monitoring (2026-10-10)
+
+- Grafana Cloud Free : offre à 0 $ documentée (grafana.com/pricing) ; rétention télémétrie free indiquée à 14 jours ; limites d’usage (ex. métriques / logs) à revalider à l’inscription.
+
+### Lien livrable
+
+- [docs/phase-6-securite-rgpd-exploitation.md](docs/phase-6-securite-rgpd-exploitation.md)
+
+---
+
+## 2026-10-10 — Phase 7 Squelette de code
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-065 | HTTP | Hono pour `inbound-api` | Phase 7 Q1 = 1 | Validée |
+| D-066 | Tests | Vitest | Phase 7 Q2 = 1 | Validée |
+| D-067 | E2E skeleton | Inbound + Document-to-Action avec mocks | Phase 7 Q3 = 1 | Validée |
+| D-068 | LLM tests | Mock par défaut ; live opt-in `KANSO_E2E_LIVE=1` | Phase 7 Q4 = 3 | Validée |
+| D-069 | SQL | Migrations Supabase fichiers locaux ; pas d’apply cloud en phase 7 | Phase 7 Q5 = 1 | Validée |
+| D-070 | Clôture phase 7 | Squelette code accepté (build/test locaux OK) | Validation orale « validé » 2026-10-10 | Validée |
+
+### Lien livrable
+
+- [docs/phase-7-squelette-code.md](docs/phase-7-squelette-code.md)
+
+---
+
+## 2026-10-10 — Phase 8 Évaluation
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-071 | Jeu Inbound | 30 conversations scriptées multi-familles | Phase 8 Q1 = 1 | Validée |
+| D-072 | Corpus D2A | ≥ 100 docs pour go/no-go ; cible 200 | Phase 8 Q2 = 1 | Validée |
+| D-073 | Source corpus | Mix ~70 % interne / ~30 % pilote | Phase 8 Q3 = 3 | Validée |
+| D-074 | Seuils D2A internes | critical_field_accuracy ≥ 85 % ; anomaly_rate ≤ 15 % ; coût ≤ soft cap | Phase 8 Q4 = 1 | Validée |
+| D-075 | Fréquence eval | Avant release LLM-facing + mensuel pilote ; CI = mocks | Phase 8 Q5 = 1 | Validée |
+| D-076 | Seuils non contractuels | Critères internes only ; contrats = moyens | Livrable phase 8 | Validée |
+| D-077 | Clôture phase 8 | Protocole d’évaluation accepté | Validation orale « validé » 2026-10-10 | Validée |
+
+### Hypothèses non validées (ajout)
+
+| ID | Hypothèse | À vérifier |
+|----|-----------|------------|
+| H-029 | 70 documents internes anonymisables disponibles sous 30 j | Collecte associés |
+| H-030 | anomaly_precision ≥ 80 % et duplicate_recall ≥ 90 % comme cibles secondaires | Première run gold |
+| H-031 | Soft caps €/conv et €/doc figés en phase 9 | Décision associés |
+
+### Lien livrable
+
+- [docs/phase-8-evaluation.md](docs/phase-8-evaluation.md)
+
+---
+
+## 2026-10-10 — Phase 9 Plan de livraison
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-078 | Priorité 90 j | Inbound d’abord ; D2A parallèle non bloquant | Phase 9 Q1 = 1 | Validée |
+| D-079 | Rôles | A moteurs · B adaptateurs/infra · C éval/données · D commercial/legal/ops | Phase 9 Q2 = 1 | Validée |
+| D-080 | Cible pilote | J+90 ≈ 2027-01-08 | Phase 9 Q3 = 2 | Validée |
+| D-081 | Connecteurs pilote Inbound | E-mail (+ Slack si prêt) ; CRM/agenda non requis | Phase 9 Q4 = 1 | Validée |
+| D-082 | Entrée pilote | Design partner sous DPA puis conversion devis | Phase 9 Q5 = 2 | Validée |
+| D-083 | Backlog P0 | Items P0-01…P0-16 bloquants pilote Inbound | Livrable phase 9 | Validée |
+| D-084 | Clôture cadrage | Phases 0–9 acceptées ; exécution backlog autorisée | Validation orale « validé » 2026-10-10 | Validée |
+
+### Hypothèses non validées (ajout)
+
+| ID | Hypothèse | À vérifier |
+|----|-----------|------------|
+| H-032 | Design partner identifiable avant 2026-12-12 | Pipeline commercial D |
+| H-033 | Mapping prénoms → rôles A/B/C/D sous 7 j | Réunion associés |
+
+### Lien livrable
+
+- [docs/phase-9-plan-livraison.md](docs/phase-9-plan-livraison.md)
+
+---
+
+## Suite
+
+Cadrage phases 0–9 **clos** (2026-10-10). Exécution P0 démarrée — voir [docs/p0-execution.md](docs/p0-execution.md).
+
+### 2026-10-10 — Exécution P0 (en cours)
+
+| ID | Item | Statut |
+|----|------|--------|
+| P0-01 | Migrations + RLS | Appliqué sur Postgres Docker local (port **5433**) |
+| P0-02 | Compose Docker + env | DB up ; VPS OVH non provisionné |
+| P0-03 | Secrets chiffrés + admin-cli | Smoke OK (`demo-tenant`) |
+| P0-04 | Sessions Postgres + TTL + POST /sessions | Smoke OK (`demo-tenant` → state Qualify) |
+| P0-05 | Orchestration hybride + validation LLM | Fait (`orchestrateTurn`, messages API, tests OK) |
+| P0-06 | LLM Mistral UE | `MistralLlmClient` + factory ; défaut `mistral-small-latest` sur `api.eu.mistral.ai` |
+| P0-07 | Alertes e-mail | SMTP (nodemailer) + console fallback ; retry ×3 ; branché sur messages API |
+| P0-08 | Widget JS | Bundle IIFE marque blanche + disclaimer ; servi via `/widget` et `/demo` |
+| P0-09 | Coûts LLM | `usage_ledger` + soft cap journalier (`KANSO_SOFT_CAP_EUR_PER_DAY`, défaut 5 €) |
+| P0-10 | Rétention | Purge 90/90/365/30 via `purge-retention` (dry-run par défaut) |
+| P0-11 | Eval Inbound | 30 cas mock + `pnpm eval:inbound` ; 30/30 OK (2026-10-10) |
+| P0-12 | Go/no-go Inbound | GO technique mock ; live + juridique encore ouverts |
+| P0-13 | Legal templates | Brouillons DPA / registre / textes moyens dans `docs/legal/` |
+| P0-14 | Design partner | Brief + smoke `smoke-design-partner.mts` |
+| P0-15 | Ops incident | Runbook S1–S3 + rota template |
+| P0-16 | Checklist pilote | `docs/checklist-pilote.md` (signatures associées ouvertes) |
+| P1-01 | Slack alerts | Webhook + console ; multi-canal avec e-mail |
+| P1-02 | Hors horaires | Flag `after_hours` API + notice + bandeau widget |
+| P1-03 | Grafana | Dashboard JSON squelette `infra/grafana/` |
+| P1-05 | D2A pipeline | Étapes extract→validate→draft + worker mock once |
+| P1-04 | Corpus D2A | 100 labels synthétiques lot A + `pnpm eval:corpus` |
+| P1-06 | Eval D2A | `pnpm eval:documents` (échantillon mock) |
+| P1-07 | Staging | `compose.staging.yml` overlay allégé |
+| P2-01…05 | Connecteurs | HubSpot, GCal, Pennylane+inbox, Sellsy, Calendly (sandbox/HTTP) |
+| P2-06 | Back-office | Hors scope — voir `docs/back-office.md` |
+| P3-01 | RAG Inbound | Opt-in `KANSO_RAG_ENABLED` + retriever mémoire |
+| P3-02 | Drive/Dropbox | Sources document `google_drive` / `dropbox` |
+| P3-03 | Mode final | Gated `KANSO_ALLOW_FINAL` + CLI confirm |
+| P3-04 | HA | `compose.ha.yml` + nginx, scale API ×2 |
+| Jobs PG | D2A runtime | `upload_web` API + `claimNextJob` SKIP LOCKED + storage `.data/` |
+
+**Ne pas** migrer sur le projet Supabase `shapemax`. Projet cloud `kanso` optionnel (confirmation requise).
+
+| ID | Hypothèse liée P0-06 | À vérifier |
+|----|----------------------|------------|
+| H-034 | Alias `mistral-small-latest` disponible sur `api.eu.mistral.ai` | `GET /v1/models` avec la clé prod |

@@ -1,0 +1,42 @@
+# Runbook incident — Kanso Inbound
+
+**Fenêtre de 1re réaction :** 7j/7, 9h00–18h00 Europe/Paris  
+**Hors fenêtre :** best effort, reprise au prochain créneau  
+**Astreinte 24/7 :** non (MVP)
+
+## Rota (à remplir)
+
+| Jour | Associé principal | Backup |
+|------|-------------------|--------|
+| Lun–Ven | [nom] | [nom] |
+| Sam–Dim | [nom] | [nom] |
+
+Canal : [e-mail / Slack interne]
+
+## Sévérités
+
+| Sev | Exemples | Actions |
+|-----|----------|---------|
+| **S1** | Fuite données, clé maître exposée, cross-tenant | Contenir (revoke keys, disable tenant/public) → notifier associés → évaluer notification clients / autorités (*avis juridique*) |
+| **S2** | API down, DB unreachable, alertes e-mail en panne > 15 min | Restart services, check Docker/OVH, bascule SMTP, com. partenaire si impact |
+| **S3** | Soft cap dépassé, latence élevée, taux LLM erreurs > 5 % | Investiguer usage/provider, ajuster cap ou rate, pas de coupe auto MVP |
+
+## Diagnostic rapide
+
+```bash
+curl -sS https://API/health
+# Worker heartbeat (logs)
+docker compose -f infra/docker/compose.yml ps
+# Soft caps / audit
+psql "$DATABASE_URL" -c "select * from audit_events where step='soft_cap' order by at desc limit 5;"
+```
+
+## Contournements
+
+- **LLM down :** retirer `MISTRAL_API_KEY` → mock (démo only) ou message dégradé  
+- **SMTP down :** secret sans `host` → console fallback  
+- **Widget cassé :** servir ancien `kanso-widget.js` ; CORS / Origin  
+
+## Post-mortem
+
+Sous 5 jours ouvrés après S1/S2 : timeline, cause, correctifs, owner.

@@ -1,0 +1,34 @@
+{
+  "name": "@kanso/document-pipeline",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@kanso/adapters": "workspace:*",
+    "@kanso/config": "workspace:*",
+    "@kanso/llm": "workspace:*",
+    "@kanso/shared": "workspace:*",
+    "@kanso/tenancy": "workspace:*",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "@types/pg": "^8.15.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

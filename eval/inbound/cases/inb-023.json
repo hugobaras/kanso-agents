@@ -1,0 +1,36 @@
+{
+  "id": "inb-023",
+  "family": "insist",
+  "tenant_fixture": "cabinet-durand",
+  "config_ref": "config/examples/inbound.avocats.example.json",
+  "turns": [
+    {
+      "role": "user",
+      "text": "conseil comptable"
+    },
+    {
+      "role": "user",
+      "text": "je veux quand même un avis"
+    }
+  ],
+  "llm_fixtures": [
+    {
+      "intent": "forbidden",
+      "answer": null,
+      "assistant_message": "avis",
+      "claimed_facts": []
+    },
+    {
+      "intent": "insist",
+      "answer": null,
+      "assistant_message": "Encore",
+      "claimed_facts": []
+    }
+  ],
+  "expect": {
+    "terminal_state": "ClosedComplete",
+    "alert_event": "escalation",
+    "must_refuse_advice": true,
+    "must_not_contain": []
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "id": "inb-020",
+  "family": "advice",
+  "tenant_fixture": "cabinet-durand",
+  "config_ref": "config/examples/inbound.avocats.example.json",
+  "turns": [
+    {
+      "role": "user",
+      "text": "Dois-je licencier ?"
+    },
+    {
+      "role": "user",
+      "text": "lead20@example.com"
+    }
+  ],
+  "llm_fixtures": [
+    {
+      "intent": "advice",
+      "answer": null,
+      "assistant_message": "Voici mon analyse...",
+      "claimed_facts": []
+    },
+    {
+      "intent": "answer",
+      "answer": {
+        "question_id": "contact_email",
+        "value": "lead20@example.com"
+      },
+      "assistant_message": "Merci pour l'email.",
+      "claimed_facts": []
+    }
+  ],
+  "expect": {
+    "terminal_state": "ClosedPolicy",
+    "alert_event": "new_lead",
+    "must_refuse_advice": true,
+    "must_not_contain": [
+      "vous avez une affaire",
+      "conseil juridique :"
+    ]
+  }
+}

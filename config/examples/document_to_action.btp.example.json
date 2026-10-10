@@ -1,0 +1,91 @@
+{
+  "schema_version": "1.0.0",
+  "product": "document_to_action",
+  "sources": [
+    {
+      "type": "email_inbox",
+      "secret_ref": "sources.ingest_mailbox",
+      "options": { "folder": "INBOX", "subject_prefix": "[FACTURE]" }
+    },
+    {
+      "type": "upload_web",
+      "options": { "max_size_mb": 15 }
+    }
+  ],
+  "documents": {
+    "accepted_types": ["invoice", "quote", "delivery_note"],
+    "fields_by_type": {
+      "invoice": [
+        "vendor_name",
+        "invoice_number",
+        "invoice_date",
+        "currency",
+        "total_ht",
+        "total_ttc",
+        "vat_amount",
+        "iban",
+        "due_date"
+      ],
+      "quote": [
+        "vendor_name",
+        "quote_number",
+        "quote_date",
+        "total_ht",
+        "total_ttc",
+        "validity_date"
+      ],
+      "delivery_note": [
+        "vendor_name",
+        "delivery_number",
+        "delivery_date",
+        "site_reference",
+        "line_items_count"
+      ]
+    }
+  },
+  "validation": {
+    "rules": [
+      { "id": "totals", "kind": "totals_coherent", "params": { "tolerance_eur": 0.05 } },
+      {
+        "id": "dup",
+        "kind": "duplicate_check",
+        "params": { "keys": ["vendor_name", "invoice_number"] }
+      },
+      {
+        "id": "iban",
+        "kind": "iban_allowlist",
+        "params": { "secret_ref": "validation.known_ibans" }
+      },
+      {
+        "id": "approval",
+        "kind": "approval_threshold",
+        "params": { "amount_field": "total_ttc", "max_auto_draft_eur": 2000 }
+      },
+      {
+        "id": "confidence",
+        "kind": "confidence_min",
+        "params": { "min": 0.85 }
+      }
+    ]
+  },
+  "action": {
+    "target": {
+      "provider": "pennylane",
+      "secret_ref": "targets.pennylane"
+    },
+    "mode": "draft",
+    "on_failure": "queue_anomaly"
+  },
+  "alerts": {
+    "human_review": {
+      "min_confidence": 0.85,
+      "channels": [
+        {
+          "type": "slack",
+          "secret_ref": "alerts.ops_slack",
+          "on": ["low_confidence", "validation_failed", "duplicate_suspected"]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,15 @@
+# Staging allégé (P1-07) — une API + worker + DB, pas de HA.
+# Usage:
+#   docker compose -f infra/docker/compose.yml -f infra/docker/compose.staging.yml up -d
+services:
+  inbound-api:
+    environment:
+      KANSO_ENV: staging
+      KANSO_SOFT_CAP_EUR_PER_DAY: "5"
+  document-worker:
+    environment:
+      KANSO_ENV: staging
+      KANSO_WORKER_ONCE: "1"
+  db:
+    ports:
+      - "5434:5432"
