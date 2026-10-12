@@ -17,39 +17,37 @@
 
 ## 2. Commandes (local / staging)
 
+Template générique : [`config/examples/inbound.partner-template.json`](../config/examples/inbound.partner-template.json)  
+(remplacer `PARTNER_DISPLAY_NAME`, options, scoring, couleur).
+
 ```bash
-export DATABASE_URL=postgres://kanso:kanso@127.0.0.1:5433/kanso
+# Reset démo 2 tenants (Durand + Martin)
+pnpm demo:reset
+
+# Ou onboarding template partenaire
+export DATABASE_URL=postgres://kanso:kanso@127.0.0.1:5434/kanso
 export KANSO_MASTER_KEY='…'   # ≥ 32 caractères
-
-pnpm --filter @kanso/admin-cli exec node dist/index.js create-tenant cabinet-durand "Cabinet Durand"
-
-pnpm --filter @kanso/admin-cli exec node dist/index.js put-secret cabinet-durand alerts.intake_email \
-  '{"host":"","port":"","user":"","pass":"","from":"alerts@example.com","to":"ops@example.com"}'
-
-# Éditer puis publier la config
-pnpm --filter @kanso/admin-cli exec node dist/index.js publish-config cabinet-durand \
-  config/examples/inbound.avocats.example.json
+DESIGN_PARTNER_TENANT=partner-template \
+DESIGN_PARTNER_NAME='Cabinet Exemple' \
+pnpm smoke:partner
 ```
 
 ## 3. Smoke
 
 ```bash
-# API up
-DATABASE_URL=… KANSO_MASTER_KEY=… pnpm --filter @kanso/inbound-api dev
-
-# Session + 1 tour
-./apps/inbound-api/node_modules/.bin/tsx scripts/smoke-turn.mts
-
-# Widget
+# Widget cockpit valeur
 open http://127.0.0.1:3000/demo
-# ou snip:
+
+# Snippet site partenaire
 # <script src="https://API/widget/kanso-widget.js"
-#   data-tenant="cabinet-durand" data-api="https://API" data-primary-color="#1B2A4A"></script>
+#   data-tenant="partner-template" data-api="https://API" data-primary-color="#1B2A4A"></script>
 ```
 
 ## 4. Checklist remise
 
 - [ ] Disclaimer IA visible  
-- [ ] Alerte e-mail reçue (ou log console en démo)  
-- [ ] Pas de conseil juridique dans les réponses  
-- [ ] Soft cap / usage visibles côté Kanso (`usage_ledger`)  
+- [ ] Alerte e-mail reçue (ou log console / panneau ops en démo)  
+- [ ] Pas de conseil juridique/comptable dans les réponses  
+- [ ] Score + `hot_lead` / handoff visibles côté ops  
+- [ ] Soft cap / usage visibles (`usage_ledger`)  
+- [ ] Config publiée depuis template (pas de secrets en git)  

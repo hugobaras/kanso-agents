@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0.0",
+  "product": "inbound",
+  "identity": {
+    "display_name": "PARTNER_DISPLAY_NAME",
+    "locale_default": "fr",
+    "branding": {
+      "primary_color": "#1B2A4A",
+      "logo_url": null
+    }
+  },
+  "disclosure": {
+    "ai_notice": "Vous échangez avec un assistant automatisé de PARTNER_DISPLAY_NAME. Ce n’est pas un professionnel réglementé et cela ne constitue pas un conseil.",
+    "forbidden_topics": ["conseil_juridique", "conseil_comptable", "diagnostic_medical"]
+  },
+  "qualification": {
+    "questions": [
+      {
+        "id": "matter_type",
+        "prompt": "Quel est le domaine de votre demande ?",
+        "type": "single_choice",
+        "required": true,
+        "options": [
+          { "id": "primary", "label": "Offre principale" },
+          { "id": "secondary", "label": "Offre secondaire" },
+          { "id": "other", "label": "Autre" }
+        ]
+      },
+      {
+        "id": "urgency",
+        "prompt": "Sous quel délai souhaitez-vous un premier échange ?",
+        "type": "single_choice",
+        "required": true,
+        "options": [
+          { "id": "48h", "label": "Sous 48 h" },
+          { "id": "week", "label": "Sous 7 jours" },
+          { "id": "flex", "label": "Flexible" }
+        ]
+      },
+      {
+        "id": "contact_email",
+        "prompt": "Votre e-mail professionnel ?",
+        "type": "free_text",
+        "required": true
+      }
+    ]
+  },
+  "scoring": {
+    "max_score": 100,
+    "thresholds": { "hot": 70, "warm": 40, "cold": 0 },
+    "weights": {
+      "matter_type": {
+        "kind": "choice_map",
+        "points": { "primary": 35, "secondary": 25, "other": 10 }
+      },
+      "urgency": {
+        "kind": "choice_map",
+        "points": { "48h": 35, "week": 20, "flex": 10 }
+      },
+      "contact_email": { "kind": "free_text", "points_if_non_empty": 5 }
+    }
+  },
+  "alerts": {
+    "channels": [
+      {
+        "type": "email",
+        "secret_ref": "alerts.intake_email",
+        "on": ["hot_lead", "escalation", "handoff"]
+      }
+    ]
+  },
+  "operations": {
+    "timezone": "Europe/Paris",
+    "languages": ["fr"],
+    "business_hours": {
+      "mon": [["09:00", "12:30"], ["14:00", "18:00"]],
+      "tue": [["09:00", "12:30"], ["14:00", "18:00"]],
+      "wed": [["09:00", "12:30"], ["14:00", "18:00"]],
+      "thu": [["09:00", "12:30"], ["14:00", "18:00"]],
+      "fri": [["09:00", "12:30"], ["14:00", "17:00"]],
+      "sat": [],
+      "sun": []
+    },
+    "escalation": {
+      "user_requests_human": true,
+      "keywords": ["parler à un humain", "appeler un conseiller"],
+      "message": "Je transmets votre demande à l’équipe. Un collaborateur vous recontactera."
+    }
+  },
+  "integrations": {
+    "crm": { "provider": "hubspot", "secret_ref": "crm.hubspot" },
+    "calendar": { "provider": "google_calendar", "secret_ref": "calendar.google" }
+  }
+}

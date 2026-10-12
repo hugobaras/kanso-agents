@@ -9,8 +9,11 @@
     "test": "turbo run test",
     "dev:api": "pnpm --filter @kanso/inbound-api dev",
     "eval:inbound": "tsx eval/inbound/run.mts",
+    "eval:inbound:live": "tsx eval/inbound/run-live.mts",
     "eval:documents": "tsx eval/documents/run.mts",
-    "eval:corpus": "tsx eval/documents/run-corpus.mts"
+    "eval:corpus": "tsx eval/documents/run-corpus.mts",
+    "demo:reset": "bash scripts/demo-reset.sh",
+    "smoke:partner": "bash scripts/smoke-partner-template.sh"
   },
   "devDependencies": {
     "turbo": "^2.5.4",

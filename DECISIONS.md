@@ -341,9 +341,26 @@ Sources : docs publiques OpenAI, Anthropic, Mistral. Non contractuel ; revalider
 
 ---
 
+## 2026-10-12 — Phase 12 Gold + packaging
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-096 | Priorité P12 | Eval gold **et** packaging démo/partenaire en parallèle | Phase 12 Q1 = 3 | Validée |
+| D-097 | Eval live | 3–5 cas Mistral hors CI dès P12 | Phase 12 Q2 = 1 | Validée |
+| D-098 | Design partner | Template tenant + smoke (pas chasse DPA dans le code) | Phase 12 Q3 = 2 | Validée |
+| D-099 | SMTP | Console démo OK jusqu’au pilote | Phase 12 Q4 = 3 | Validée |
+
+### Lien livrable
+
+- [docs/phase-12-gold-et-packaging.md](docs/phase-12-gold-et-packaging.md)
+
+---
+
 ## Suite
 
-Phases 0–10 fondations. Phase 11 décisions validées — attendre **go** pour exécution. Exécution P0–P3 / P10 : voir docs `p*-execution.md`.
+Phases 0–11. Phase 12 décisions validées — attendre **go**. Exécution : docs `p*-execution.md`.
 
 ### 2026-10-10 — Exécution P0 (en cours)
 
