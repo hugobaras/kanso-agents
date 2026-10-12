@@ -304,9 +304,28 @@ Sources : docs publiques OpenAI, Anthropic, Mistral. Non contractuel ; revalider
 
 ---
 
+## 2026-10-12 — Phase 10 Mise en prod / fondations live
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-085 | Runtime apps | Staging Docker local d’abord ; OVH ensuite | Phase 10 Q1 = 2 | Proposée |
+| D-086 | Postgres | Supabase UE `kanso` + apps (VPS plus tard) | Phase 10 Q2 = 3 | Proposée |
+| D-087 | LLM | Mistral EU live dès phase 10 | Phase 10 Q3 = 1 | Proposée |
+| D-088 | Alertes | SMTP UE uniquement (pas Slack obligatoire) | Phase 10 Q4 = 1 | Proposée |
+| D-089 | Données | Démo interne live + chasse partenaire ; DPA avant données réelles | Phase 10 Q5 = 3 | Proposée |
+| D-090 | Remote Git | GitHub | Phase 10 Q6 = 1 | Proposée |
+
+### Lien livrable
+
+- [docs/phase-10-mise-en-prod.md](docs/phase-10-mise-en-prod.md)
+
+---
+
 ## Suite
 
-Cadrage phases 0–9 **clos** (2026-10-10). Exécution P0 démarrée — voir [docs/p0-execution.md](docs/p0-execution.md).
+Cadrage phases 0–9 **clos** (2026-10-10). Phase 10 rédigée (2026-10-12) — attendre **validé**. Exécution P0–P3 : voir [docs/p0-execution.md](docs/p0-execution.md) et suivants.
 
 ### 2026-10-10 — Exécution P0 (en cours)
 

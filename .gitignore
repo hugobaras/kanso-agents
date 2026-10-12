@@ -9,6 +9,7 @@ eval/documents/corpus/files/
 .env
 .env.*
 !.env.example
+!.env.staging.example
 coverage
 *.log
 .DS_Store
