@@ -4,133 +4,223 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Kanso — Portail connecteurs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Sora:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <style>
       :root {
-        --ink: #142033;
-        --muted: #5a6578;
-        --paper: #f3efe6;
-        --card: #fffdf8;
-        --line: rgba(20, 32, 51, 0.12);
-        --accent: #2a5a4a;
-        --danger: #9b2c2c;
-        --ok: #1f6b45;
+        --ink: #121820;
+        --muted: #66707c;
+        --bg1: #f2f3f5;
+        --card: rgba(255, 255, 255, 0.9);
+        --card-solid: #ffffff;
+        --line: rgba(18, 24, 32, 0.09);
+        --accent: #1a2740;
+        --accent-soft: #e8ebf0;
+        --danger: #b42318;
+        --danger-soft: #fef3f2;
+        --ok: #3451a1;
+        --ok-soft: #eef1f8;
+        --radius: 1.1rem;
+        --radius-sm: 0.75rem;
+        --radius-pill: 999px;
+        --shadow: 0 1px 2px rgba(18, 24, 32, 0.04),
+          0 12px 32px rgba(18, 24, 32, 0.06);
+        --font-ui: "Sora", ui-sans-serif, system-ui, sans-serif;
+        --font-display: "Fraunces", Georgia, serif;
       }
       * { box-sizing: border-box; }
       body {
         margin: 0;
         min-height: 100vh;
-        font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+        font-family: var(--font-ui);
         color: var(--ink);
-        background:
-          radial-gradient(ellipse at 10% 0%, #e7dfd0 0%, transparent 45%),
-          linear-gradient(160deg, #efe9de, #d8e0e8 70%);
+        background: var(--bg1);
       }
-      .wrap { max-width: 40rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+      .wrap {
+        max-width: 42rem;
+        margin: 0 auto;
+        padding: 2rem 1.15rem 4rem;
+      }
+      .hero {
+        margin-bottom: 1.5rem;
+        animation: rise 0.45s ease-out both;
+      }
+      @keyframes rise {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: none; }
+      }
       .brand {
-        font-family: ui-sans-serif, system-ui, sans-serif;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
         font-size: 0.72rem;
-        letter-spacing: 0.16em;
+        font-weight: 600;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
-        color: var(--muted);
-      }
-      h1 {
-        font-weight: 500;
-        font-size: clamp(1.75rem, 4vw, 2.25rem);
-        margin: 0.6rem 0 0.35rem;
-        line-height: 1.2;
-      }
-      .sub { color: var(--muted); margin: 0 0 1.75rem; line-height: 1.45; }
-      .panel {
-        background: var(--card);
-        border: 1px solid var(--line);
-        padding: 1.25rem;
+        color: var(--accent);
+        background: var(--accent-soft);
+        border-radius: var(--radius-pill);
+        padding: 0.35rem 0.75rem;
         margin-bottom: 1rem;
       }
-      .panel h2 {
-        font-size: 1.05rem;
-        font-weight: 600;
-        margin: 0 0 0.75rem;
+      .brand::before {
+        content: "";
+        width: 0.45rem;
+        height: 0.45rem;
+        border-radius: 50%;
+        background: var(--accent);
       }
+      h1 {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: clamp(1.85rem, 4.5vw, 2.45rem);
+        margin: 0 0 0.45rem;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+      }
+      .sub {
+        color: var(--muted);
+        margin: 0;
+        line-height: 1.55;
+        font-size: 0.95rem;
+        max-width: 34rem;
+      }
+      .panel {
+        background: var(--card);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 1.35rem 1.3rem 1.4rem;
+        margin-bottom: 1rem;
+        animation: rise 0.5s ease-out both;
+      }
+      .panel h2 {
+        font-family: var(--font-display);
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin: 0 0 0.35rem;
+        letter-spacing: -0.01em;
+      }
+      .panel > .meta:first-of-type { margin-top: 0; margin-bottom: 1rem; }
       label {
         display: block;
-        font-family: ui-sans-serif, system-ui, sans-serif;
-        font-size: 0.78rem;
+        font-size: 0.75rem;
+        font-weight: 500;
         color: var(--muted);
-        margin: 0.65rem 0 0.25rem;
+        margin: 0.75rem 0 0.35rem;
       }
       input, textarea, select, button {
-        font: inherit;
+        font-family: var(--font-ui);
         width: 100%;
-        padding: 0.55rem 0.65rem;
+        padding: 0.7rem 0.9rem;
         border: 1px solid var(--line);
-        background: #fff;
-        border-radius: 2px;
+        background: var(--card-solid);
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
+        transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
       }
-      textarea { min-height: 5rem; resize: vertical; }
+      input:focus, textarea:focus, select:focus {
+        outline: none;
+        border-color: rgba(26, 39, 64, 0.4);
+        box-shadow: 0 0 0 4px rgba(26, 39, 64, 0.1);
+      }
+      textarea { min-height: 5.5rem; resize: vertical; }
       button {
         cursor: pointer;
         background: var(--accent);
-        color: #f7f4ee;
-        border-color: var(--accent);
-        margin-top: 0.85rem;
-        font-family: ui-sans-serif, system-ui, sans-serif;
-        font-size: 0.9rem;
+        color: #f5f6f8;
+        border-color: transparent;
+        margin-top: 1rem;
+        font-weight: 600;
+        font-size: 0.88rem;
+        border-radius: var(--radius-pill);
+        padding: 0.75rem 1.15rem;
       }
+      button:hover { filter: brightness(1.06); }
+      button:active { transform: scale(0.98); }
       button.secondary {
-        background: transparent;
+        background: var(--card-solid);
         color: var(--ink);
-        border-color: var(--line);
+        border: 1px solid var(--line);
       }
       button.danger {
-        background: transparent;
+        background: var(--danger-soft);
         color: var(--danger);
-        border-color: rgba(155, 44, 44, 0.35);
+        border: 1px solid transparent;
       }
       button:disabled { opacity: 0.5; cursor: not-allowed; }
       .row-actions {
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem;
+        margin-top: 0.35rem;
       }
-      .row-actions button { width: auto; flex: 1; min-width: 7rem; margin-top: 0.5rem; }
+      .row-actions button {
+        width: auto;
+        flex: 1;
+        min-width: 7rem;
+        margin-top: 0.35rem;
+      }
       .conn {
-        border-top: 1px solid var(--line);
-        padding: 1rem 0 0.25rem;
+        background: var(--card-solid);
+        border: 1px solid var(--line);
+        border-radius: calc(var(--radius) - 0.2rem);
+        padding: 1.1rem 1.05rem 1rem;
         margin-top: 0.75rem;
       }
-      .conn:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+      .conn:first-of-type { margin-top: 0.25rem; }
       .conn-head {
         display: flex;
         justify-content: space-between;
-        align-items: baseline;
+        align-items: center;
         gap: 0.75rem;
       }
-      .conn-head strong { font-size: 1rem; }
-      .badge {
-        font-family: ui-sans-serif, system-ui, sans-serif;
-        font-size: 0.72rem;
-        padding: 0.2rem 0.45rem;
-        border: 1px solid var(--line);
-        color: var(--muted);
+      .conn-head strong {
+        font-size: 1rem;
+        font-weight: 600;
       }
-      .badge.on { color: var(--ok); border-color: rgba(31, 107, 69, 0.35); }
-      .badge.off { color: var(--danger); border-color: rgba(155, 44, 44, 0.3); }
+      .badge {
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.28rem 0.65rem;
+        border-radius: var(--radius-pill);
+        background: #f0f2f5;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .badge.on {
+        color: var(--ok);
+        background: var(--ok-soft);
+      }
+      .badge.off {
+        color: var(--danger);
+        background: var(--danger-soft);
+      }
       .meta {
-        font-family: ui-sans-serif, system-ui, sans-serif;
         font-size: 0.78rem;
         color: var(--muted);
-        margin: 0.35rem 0 0.5rem;
-        line-height: 1.4;
+        margin: 0.4rem 0 0.55rem;
+        line-height: 1.45;
       }
       .msg {
-        font-family: ui-sans-serif, system-ui, sans-serif;
-        font-size: 0.82rem;
-        margin: 0.75rem 0;
-        padding: 0.65rem 0.75rem;
-        border: 1px solid var(--line);
-        background: rgba(255,255,255,0.55);
+        font-size: 0.84rem;
+        margin: 0 0 1rem;
+        padding: 0.8rem 1rem;
+        border-radius: var(--radius-sm);
+        background: var(--accent-soft);
+        color: var(--accent);
+        border: none;
+        animation: rise 0.3s ease-out both;
       }
-      .msg.err { border-color: rgba(155, 44, 44, 0.4); color: var(--danger); }
+      .msg.err {
+        background: var(--danger-soft);
+        color: var(--danger);
+      }
       .hidden { display: none !important; }
       .topbar {
         display: flex;
@@ -138,27 +228,66 @@
         align-items: center;
         gap: 1rem;
         margin-bottom: 1rem;
-        font-family: ui-sans-serif, system-ui, sans-serif;
+        padding: 0.85rem 1rem;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
         font-size: 0.85rem;
+        animation: rise 0.4s ease-out both;
       }
-      .topbar button { width: auto; margin: 0; padding: 0.4rem 0.7rem; }
-      details { margin-top: 0.5rem; }
+      .topbar strong { font-weight: 600; }
+      .topbar button {
+        width: auto;
+        margin: 0;
+        padding: 0.5rem 0.95rem;
+      }
+      details {
+        margin-top: 0.55rem;
+        border-radius: var(--radius-sm);
+        background: var(--bg1);
+        padding: 0.65rem 0.85rem 0.85rem;
+      }
       summary {
         cursor: pointer;
-        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--accent);
+        list-style: none;
+      }
+      summary::-webkit-details-marker { display: none; }
+      summary::after {
+        content: " ›";
+        opacity: 0.6;
+      }
+      details[open] summary::after { content: " ˅"; }
+      details input, details button { margin-top: 0.35rem; }
+      details button { margin-top: 0.75rem; }
+      #custom-list {
+        margin-top: 1rem;
+        display: grid;
+        gap: 0.45rem;
+      }
+      #custom-list .req {
+        background: var(--bg1);
+        border-radius: var(--radius-sm);
+        padding: 0.65rem 0.8rem;
         font-size: 0.8rem;
         color: var(--muted);
       }
+      #custom-list .req b { color: var(--ink); font-weight: 600; }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <div class="brand">Kanso · Portail client</div>
-      <h1>Connecteurs d’alerte</h1>
-      <p class="sub">
-        Branchez ou révoquez e-mail et Slack. Pour Teams, WhatsApp ou autre,
-        déposez une demande sur-mesure.
-      </p>
+      <header class="hero">
+        <div class="brand">Kanso · Portail client</div>
+        <h1>Connecteurs d’alerte</h1>
+        <p class="sub">
+          Branchez ou révoquez e-mail et Slack. Pour Teams, WhatsApp ou autre,
+          déposez une demande sur-mesure.
+        </p>
+      </header>
 
       <div id="msg" class="msg hidden"></div>
 
@@ -176,13 +305,14 @@
         <div class="topbar">
           <div>
             <strong id="who"></strong>
-            <div class="meta" id="tenant-label" style="margin:0"></div>
+            <div class="meta" id="tenant-label" style="margin:0.15rem 0 0"></div>
           </div>
           <button id="btn-logout" class="secondary" type="button">Déconnexion</button>
         </div>
 
         <div class="panel">
           <h2>Canaux</h2>
+          <p class="meta">Activez, mettez en pause ou révoquez vos destinations.</p>
           <div id="connectors"></div>
         </div>
 
@@ -196,7 +326,7 @@
           <label for="cdesc">Description</label>
           <textarea id="cdesc" placeholder="Canal, fréquence, contraintes…"></textarea>
           <button id="btn-custom" type="button">Envoyer la demande</button>
-          <div id="custom-list" class="meta" style="margin-top:1rem"></div>
+          <div id="custom-list"></div>
         </div>
       </section>
     </div>
@@ -321,9 +451,9 @@
         $("custom-list").innerHTML = (customs.requests || [])
           .map(
             (r) =>
-              `<div>• [${r.status}] ${r.platform} — ${r.title}</div>`,
+              `<div class="req"><b>${r.platform}</b> — ${r.title} <span class="badge">${r.status}</span></div>`,
           )
-          .join("") || "Aucune demande pour l’instant.";
+          .join("") || '<div class="meta">Aucune demande pour l’instant.</div>';
       }
 
       $("btn-login").onclick = async () => {
