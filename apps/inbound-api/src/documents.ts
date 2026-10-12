@@ -2,6 +2,7 @@ import { parseDocumentToActionConfig } from "@kanso/config";
 import { enqueueUploadJob } from "@kanso/document-pipeline";
 import { getPool, requireTenantId } from "@kanso/tenancy";
 import type { Hono } from "hono";
+import { assertDocumentUploadAllowed } from "./dpa-gate.js";
 import { patchDemoDocument, recordDemoDocument } from "./demo-ops.js";
 
 async function loadPublishedDocumentConfig(tenantId: string) {
@@ -18,11 +19,6 @@ async function loadPublishedDocumentConfig(tenantId: string) {
 export function mountDocumentRoutes(app: Hono) {
   app.post("/v1/:tenantId/documents", async (c) => {
     const tenantId = requireTenantId(c.req.param("tenantId"));
-    const published = await loadPublishedDocumentConfig(tenantId);
-    if (!published) {
-      return c.json({ error: "no_published_document_config" }, 404);
-    }
-    parseDocumentToActionConfig(published.config);
 
     const body = (await c.req.json().catch(() => ({}))) as {
       content_base64?: string;
@@ -43,6 +39,28 @@ export function mountDocumentRoutes(app: Hono) {
     if (content.length > 15 * 1024 * 1024) {
       return c.json({ error: "file_too_large" }, 413);
     }
+
+    // D-103: gate before config lookup so unsigned tenants always get dpa_required
+    const gate = await assertDocumentUploadAllowed({
+      tenantId,
+      content,
+      filename: body.filename,
+    });
+    if (!gate.allowed) {
+      return c.json(
+        {
+          error: gate.error,
+          hint: "Signer le DPA puis: kanso-admin set-dpa <tenant> --signed. Stubs demo-* / demo-facture restent autorisés.",
+        },
+        403,
+      );
+    }
+
+    const published = await loadPublishedDocumentConfig(tenantId);
+    if (!published) {
+      return c.json({ error: "no_published_document_config" }, 404);
+    }
+    parseDocumentToActionConfig(published.config);
 
     const pool = getPool();
     const enqueued = await enqueueUploadJob(pool, {

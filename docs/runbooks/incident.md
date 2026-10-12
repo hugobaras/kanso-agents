@@ -4,14 +4,15 @@
 **Hors fenêtre :** best effort, reprise au prochain créneau  
 **Astreinte 24/7 :** non (MVP)
 
-## Rota (à remplir)
+## Rota (placeholder M4 — à nommer avant pilote réel)
 
 | Jour | Associé principal | Backup |
 |------|-------------------|--------|
-| Lun–Ven | [nom] | [nom] |
-| Sam–Dim | [nom] | [nom] |
+| Lun–Ven | Associé A *(TBD)* | Associé B *(TBD)* |
+| Sam–Dim | Associé B *(TBD)* | Associé A *(TBD)* |
 
-Canal : [e-mail / Slack interne]
+Canal : e-mail associés / Slack interne *(TBD)*  
+Escalade S1 : les deux associés + avis juridique si données perso.
 
 ## Sévérités
 

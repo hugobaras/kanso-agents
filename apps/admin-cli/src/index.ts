@@ -14,6 +14,7 @@ function usage() {
   kanso-admin create-tenant <tenant_id> <display_name>
   kanso-admin put-secret <tenant_id> <secret_ref> <json-credentials>
   kanso-admin publish-config <tenant_id> <path-to-config.json>
+  kanso-admin set-dpa <tenant_id> --signed|--unsigned
   kanso-admin purge-retention [--dry-run|--execute]
   kanso-admin confirm-final-action <tenant_id> --i-understand-final
 `);
@@ -124,6 +125,32 @@ async function main() {
     console.log(
       JSON.stringify({ ok: true, tenantId, product: raw.product, version }),
     );
+    await pool.end();
+    return;
+  }
+
+  if (cmd === "set-dpa") {
+    const [tenantId, flag] = args;
+    if (!tenantId || (flag !== "--signed" && flag !== "--unsigned")) {
+      usage();
+      process.exit(1);
+    }
+    requireTenantId(tenantId);
+    const signed = flag === "--signed";
+    const pool = getPool();
+    const res = await pool.query(
+      `update tenants
+       set dpa_signed = $2,
+           dpa_signed_at = case when $2 then now() else null end
+       where tenant_id = $1
+       returning tenant_id, dpa_signed, dpa_signed_at`,
+      [tenantId, signed],
+    );
+    if (!res.rows[0]) {
+      console.error(JSON.stringify({ ok: false, error: "tenant_not_found" }));
+      process.exit(1);
+    }
+    console.log(JSON.stringify({ ok: true, ...res.rows[0] }));
     await pool.end();
     return;
   }

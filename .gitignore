@@ -3,6 +3,7 @@ dist
 dist-tsc
 .turbo
 .data/
+tmp/
 eval/inbound/reports/*.json
 eval/documents/reports/*.json
 eval/documents/corpus/files/

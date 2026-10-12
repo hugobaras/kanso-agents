@@ -358,9 +358,27 @@ Sources : docs publiques OpenAI, Anthropic, Mistral. Non contractuel ; revalider
 
 ---
 
+## 2026-10-12 — Phase 13 Design partner M4
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-100 | Priorité P13 | Onboard script **et** legal/ops | Phase 13 Q1 = 3 | Validée |
+| D-101 | OVH | Doc provision seulement | Phase 13 Q2 = 2 | Validée |
+| D-102 | SMTP onboard | Slot optionnel ; console par défaut | Phase 13 Q3 = 2 | Validée |
+| D-103 | Garde DPA | Flag `dpa_signed` bloque uploads docs réels | Phase 13 Q4 = 2 | Validée |
+
+### Lien livrable
+
+- [docs/phase-13-design-partner-m4.md](docs/phase-13-design-partner-m4.md)
+- [docs/p13-execution.md](docs/p13-execution.md)
+
+---
+
 ## Suite
 
-Phases 0–11. Phase 12 décisions validées — attendre **go**. Exécution : docs `p*-execution.md`.
+Phases 0–13 livrées côté repo. Prochain : M5 / pilote (DPA signé humain, OVH, SMTP réel).
 
 ### 2026-10-10 — Exécution P0 (en cours)
 

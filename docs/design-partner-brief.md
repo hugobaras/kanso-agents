@@ -24,12 +24,22 @@ Template générique : [`config/examples/inbound.partner-template.json`](../conf
 # Reset démo 2 tenants (Durand + Martin)
 pnpm demo:reset
 
-# Ou onboarding template partenaire
+# Onboard design partner (P13) — génère pack + snippet
 export DATABASE_URL=postgres://kanso:kanso@127.0.0.1:5434/kanso
 export KANSO_MASTER_KEY='…'   # ≥ 32 caractères
+PARTNER_TENANT=cabinet-exemple \
+PARTNER_NAME='Cabinet Exemple' \
+PARTNER_COLOR='#1B2A4A' \
+PARTNER_ALERT_TO=contact@cabinet-exemple.fr \
+pnpm onboard:partner
+
+# Ou smoke template générique
 DESIGN_PARTNER_TENANT=partner-template \
 DESIGN_PARTNER_NAME='Cabinet Exemple' \
 pnpm smoke:partner
+
+# Après DPA signé
+pnpm --filter @kanso/admin-cli exec node dist/index.js set-dpa cabinet-exemple --signed
 ```
 
 ## 3. Smoke
