@@ -6,7 +6,15 @@ describe("inbound-api health", () => {
     const app = createApp();
     const res = await app.request("/health");
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = (await res.json()) as {
+      ok: boolean;
+      service: string;
+      db: { ok: boolean };
+      worker: { stale: boolean };
+    };
     expect(body.ok).toBe(true);
+    expect(body.service).toBe("inbound-api");
+    expect(body.db).toBeDefined();
+    expect(body.worker).toBeDefined();
   });
 });

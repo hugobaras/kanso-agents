@@ -16,7 +16,8 @@
     "smoke:partner": "bash scripts/smoke-partner-template.sh",
     "smoke:portal": "bash scripts/smoke-portal.sh",
     "onboard:partner": "bash scripts/onboard-partner.sh",
-    "m5": "bash scripts/m5-go-nogo.sh"
+    "m5": "bash scripts/m5-go-nogo.sh",
+    "pilote:freeze": "bash scripts/freeze-pilote.sh"
   },
   "devDependencies": {
     "turbo": "^2.5.4",

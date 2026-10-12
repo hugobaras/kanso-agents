@@ -413,9 +413,27 @@ Sources : docs publiques OpenAI, Anthropic, Mistral. Non contractuel ; revalider
 
 ---
 
+## 2026-10-12 — Phase 16 M6 pilote prod
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-113 | Priorité P16 | Kit embed + checklist M6 | Phase 16 Q1 = 1 | Validée |
+| D-114 | Observabilité | Enrichir `/health` (+ worker heartbeat) | Phase 16 Q2 = 2 | Validée |
+| D-115 | SMTP | Console jusqu’à credentials | Phase 16 Q3 = 1 | Validée |
+| D-116 | Tenant pilote | Slot `pilote-<slug>` + freeze config | Phase 16 Q4 = 2 | Validée |
+
+### Lien livrable
+
+- [docs/phase-16-m6-pilote-prod.md](docs/phase-16-m6-pilote-prod.md)
+- [docs/p16-execution.md](docs/p16-execution.md)
+
+---
+
 ## Suite
 
-Phases 0–15 livrées — **GO technique M5**.  
+Phases 0–16 livrées (kit embed M6).  
 Bloquants humains : DPA signé, OVH, rota, SMTP prod (optionnel).
 
 ### 2026-10-10 — Exécution P0 (en cours)

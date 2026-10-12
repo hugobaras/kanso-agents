@@ -27,7 +27,9 @@ import {
   patchLatestAlert,
   recordDemoTurn,
 } from "./demo-ops.js";
+import { resolveCorsOrigin } from "./cors-origins.js";
 import { mountDocumentRoutes } from "./documents.js";
+import { buildHealth } from "./health.js";
 import { syncInboundIntegrations } from "./integrations.js";
 import { mountPortalRoutes } from "./portal.js";
 import { resolveRag } from "./rag.js";
@@ -41,6 +43,10 @@ const widgetJsCandidates = [
 const demoHtmlCandidates = [
   join(here, "../../inbound-widget/public/demo.html"),
   join(process.cwd(), "apps/inbound-widget/public/demo.html"),
+];
+const embedHtmlCandidates = [
+  join(here, "../../inbound-widget/public/embed-preview.html"),
+  join(process.cwd(), "apps/inbound-widget/public/embed-preview.html"),
 ];
 
 function firstExisting(paths: string[]): string | null {
@@ -78,19 +84,13 @@ export function createApp(deps: AppDeps = {}) {
   app.use(
     "*",
     cors({
-      origin: (origin) => origin || "*",
+      origin: (origin) => resolveCorsOrigin(origin ?? ""),
       allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       allowHeaders: ["Content-Type", "Accept", "Authorization"],
     }),
   );
 
-  app.get("/health", (c) =>
-    c.json({
-      ok: true,
-      service: "inbound-api",
-      env: process.env.KANSO_ENV ?? "local",
-    }),
-  );
+  app.get("/health", async (c) => c.json(await buildHealth()));
 
   app.get("/widget/kanso-widget.js", (c) => {
     const path = firstExisting(widgetJsCandidates);
@@ -103,6 +103,12 @@ export function createApp(deps: AppDeps = {}) {
   app.get("/demo", (c) => {
     const path = firstExisting(demoHtmlCandidates);
     if (!path) return c.text("demo.html missing", 404);
+    return c.html(readFileSync(path, "utf8"));
+  });
+
+  app.get("/embed-preview", (c) => {
+    const path = firstExisting(embedHtmlCandidates);
+    if (!path) return c.text("embed-preview.html missing", 404);
     return c.html(readFileSync(path, "utf8"));
   });
 

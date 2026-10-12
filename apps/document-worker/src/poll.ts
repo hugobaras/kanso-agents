@@ -1,5 +1,6 @@
 import { claimNextJob } from "@kanso/document-pipeline";
 import { getPool } from "@kanso/tenancy";
+import { persistWorkerHeartbeat } from "./heartbeat.js";
 import { processClaimedJob } from "./process-job.js";
 
 export async function pollOnce(): Promise<boolean> {
@@ -16,6 +17,7 @@ export async function pollOnce(): Promise<boolean> {
     }),
   );
   await processClaimedJob(job);
+  await persistWorkerHeartbeat({ last: "claimed", job_id: job.id });
   return true;
 }
 
@@ -33,6 +35,7 @@ export async function pollLoop(opts: {
       continue;
     }
     idle += 1;
+    await persistWorkerHeartbeat({ last: "idle", idle_rounds: idle });
     if (maxIdle > 0 && idle >= maxIdle) {
       console.log(
         JSON.stringify({

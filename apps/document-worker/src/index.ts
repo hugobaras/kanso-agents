@@ -1,4 +1,4 @@
-import { workerHeartbeat } from "./heartbeat.js";
+import { persistWorkerHeartbeat, workerHeartbeat } from "./heartbeat.js";
 import { processInboxOnce } from "./inbox-once.js";
 import { pollLoop, pollOnce } from "./poll.js";
 import { processOnceMock } from "./process-once.js";
@@ -11,6 +11,7 @@ async function main() {
       ...workerHeartbeat(),
     }),
   );
+  await persistWorkerHeartbeat({ last: "starting" });
 
   if (process.env.KANSO_WORKER_BOOTSTRAP !== "0") {
     const result = await processOnceMock();

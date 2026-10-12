@@ -45,6 +45,10 @@ pnpm --filter @kanso/admin-cli exec node dist/index.js set-dpa cabinet-exemple -
 pnpm --filter @kanso/admin-cli exec node dist/index.js \
   invite-portal-user cabinet-exemple contact@cabinet-exemple.fr --role owner
 open http://127.0.0.1:3000/portal
+
+# Tenant pilote figé + preview embed (M6)
+PILOTE_SLUG=exemple PILOTE_NAME='Cabinet Exemple' pnpm pilote:freeze
+open 'http://127.0.0.1:3000/embed-preview?tenant=pilote-exemple'
 ```
 
 ## 3. Smoke
