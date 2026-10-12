@@ -395,10 +395,28 @@ Sources : docs publiques OpenAI, Anthropic, Mistral. Non contractuel ; revalider
 
 ---
 
+## 2026-10-12 — Phase 15 M5 go/no-go
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-109 | Priorité P15 | Pack M5 script + checklists | Phase 15 Q1 = 1 | Validée |
+| D-110 | SMTP | Console jusqu’à credentials | Phase 15 Q2 = 1 | Validée |
+| D-111 | Live LLM | Rejouer eval live + figer go-nogo | Phase 15 Q3 = 1 | Validée |
+| D-112 | Portail P15 | Aucune feature portail | Phase 15 Q4 = 3 | Validée |
+
+### Lien livrable
+
+- [docs/phase-15-m5-go-nogo.md](docs/phase-15-m5-go-nogo.md)
+- [docs/p15-execution.md](docs/p15-execution.md)
+
+---
+
 ## Suite
 
-Phases 0–14 livrées côté repo.  
-En parallèle humain : DPA signé, OVH, SMTP prod.
+Phases 0–15 livrées — **GO technique M5**.  
+Bloquants humains : DPA signé, OVH, rota, SMTP prod (optionnel).
 
 ### 2026-10-10 — Exécution P0 (en cours)
 

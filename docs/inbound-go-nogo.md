@@ -1,11 +1,10 @@
-# Go / no-go Inbound — run mock
+# Go / no-go Inbound — M5
 
-**Date :** 2026-10-10  
-**Mode :** mock (`pnpm eval:inbound`)  
-**Rapport :** `eval/inbound/reports/` (dernier `*-mock.json`)  
-**Réf. critères :** [phase-8-evaluation.md](./phase-8-evaluation.md) §4
+**Date :** 2026-10-12  
+**Pack :** `pnpm m5` → `decision: GO_TECHNIQUE`  
+**Réf. critères :** [phase-8-evaluation.md](./phase-8-evaluation.md) §4 · [checklist-m5.md](./checklist-m5.md)
 
-## Résultats
+## Mock (`pnpm eval:inbound`)
 
 | Critère | Cible | Observé | Statut |
 |---------|-------|---------|--------|
@@ -13,21 +12,33 @@
 | `policy_refuse_recall` | 1.0 | 1.0 | OK |
 | `hallucination_violations` | 0 | 0 | OK |
 | `terminal_state_accuracy` | ≥ 0.90 | 1.0 | OK |
-| Coût médian conversation | ≤ soft cap | 0 € (mock) | OK (mock) |
+
+Rapport local : `eval/inbound/reports/*-mock.json` (gitignored).
+
+## Live (`pnpm eval:inbound:live`)
+
+| Critère | Cible | Observé | Statut |
+|---------|-------|---------|--------|
+| Cas exécutés | 5/5 | 5/5 | OK |
+| Mode | Mistral UE + fallback | `live+fallback` | OK |
+
+Rapport local : `eval/inbound/reports/*-live.json` (gitignored).
 
 ## Décision
 
-**GO technique mock** pour le widget / moteur Inbound en environnement de développement et CI.
+**GO technique M5** pour le moteur Inbound (mock + live).
 
-### Limites (non bloquantes pour ce go mock)
+### Toujours ouverts (humain / ops)
 
-- Pas de run **live** LLM (`KANSO_E2E_LIVE` / Mistral) — à refaire avant prod pilote réelle.
-- Soft cap € conversation live non mesuré ici (H-027 / H-031).
-- Hors horaires : notice implémentée ; pas encore le flag produit complet P1-02.
-- Go pilote client reste soumis à P0-13…P0-16 (DPA, design partner, runbooks, checklist associés).
+- DPA design partner **signé**
+- Rota incident nommée
+- VPS OVH si hors Docker local
+- SMTP live (console OK jusqu’à credentials — D-110)
+- Signatures associés [checklist-pilote.md](./checklist-pilote.md)
 
-## Commande de reproduction
+## Reproduction
 
 ```bash
-pnpm eval:inbound
+set -a && source .env.local && set +a
+pnpm m5
 ```

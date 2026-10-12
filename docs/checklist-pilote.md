@@ -13,7 +13,7 @@
 
 - [x] `/health` + worker heartbeat skeleton  
 - [x] `usage_ledger` + soft cap  
-- [ ] Run **live** LLM (Mistral) validé  
+- [x] Run **live** LLM (Mistral) validé (`pnpm m5` / eval live 5/5 — 2026-10-12)  
 - [ ] VPS OVH provisionné (hors local Docker)
 
 ## Sécurité / RGPD
