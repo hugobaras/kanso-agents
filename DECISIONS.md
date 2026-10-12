@@ -315,7 +315,7 @@ Sources : docs publiques OpenAI, Anthropic, Mistral. Non contractuel ; revalider
 | D-087 | LLM | Mistral EU live dès phase 10 | Phase 10 Q3 = 1 | Proposée |
 | D-088 | Alertes | SMTP UE uniquement (pas Slack obligatoire) | Phase 10 Q4 = 1 | Proposée |
 | D-089 | Données | Démo interne live + chasse partenaire ; DPA avant données réelles | Phase 10 Q5 = 3 | Proposée |
-| D-090 | Remote Git | GitHub | Phase 10 Q6 = 1 | Proposée |
+| D-090 | Remote Git | GitHub `hugobaras/kanso-agents` (privé) | Phase 10 Q6 = 1 | Exécutée |
 
 ### Lien livrable
 

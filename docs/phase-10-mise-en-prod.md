@@ -40,8 +40,7 @@ Passer du stack **local Docker** à un chemin **staging live** (LLM + SMTP réel
 
 ### Étape A — GitHub (immédiat)
 
-- Repo public ou privé ; branche `main` ; CI déjà dans `.github/workflows/ci.yml`
-- Push commit initial `ebad87c` (ou HEAD)
+- **Fait (2026-10-12) :** repo privé https://github.com/hugobaras/kanso-agents — `main` poussée, CI présente
 
 ### Étape B — Staging Docker local « live-ready »
 
