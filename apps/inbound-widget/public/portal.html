@@ -387,6 +387,23 @@
         </div>
 
         <div class="panel">
+          <h2>Widget</h2>
+          <p class="meta">
+            Même DA que ce portail (Sora, ardoise, arrondis). Testez sur votre tenant
+            ou copiez le snippet pour le site.
+          </p>
+          <div class="row-actions">
+            <button type="button" id="btn-widget-preview" class="secondary">
+              Ouvrir l’aperçu embed
+            </button>
+            <button type="button" id="btn-widget-load">Charger le widget ici</button>
+          </div>
+          <label for="widget-snippet" style="margin-top:0.85rem">Snippet</label>
+          <textarea id="widget-snippet" readonly rows="5"></textarea>
+          <button type="button" id="btn-widget-copy" class="secondary">Copier le snippet</button>
+        </div>
+
+        <div class="panel">
           <h2>Sur-mesure</h2>
           <p class="meta">Pas d’intégration inventée — une demande ops structurée.</p>
           <label for="platform">Plateforme</label>
@@ -532,13 +549,28 @@
         }
       }
 
+      function widgetSnippet(tenantId) {
+        const apiBase = location.origin.replace(/\/$/, "");
+        return `<!-- Kanso Inbound -->
+<script
+  src="${apiBase}/widget/kanso-widget.js"
+  data-tenant="${tenantId}"
+  data-api="${apiBase}"
+  data-primary-color="#1a2740"
+><\/script>`;
+      }
+
+      let portalTenant = "";
+
       async function loadApp() {
         const me = await api("/portal/api/me");
         $("login").classList.add("hidden");
         $("app").classList.remove("hidden");
         $("who").textContent = me.user.email;
+        portalTenant = me.user.tenant_id;
         $("tenant-label").textContent =
           me.user.display_name + " · " + me.user.tenant_id;
+        $("widget-snippet").value = widgetSnippet(portalTenant);
         try {
           renderUsage(await api("/portal/api/usage"));
         } catch (e) {
@@ -555,6 +587,38 @@
           )
           .join("") || '<div class="meta">Aucune demande pour l’instant.</div>';
       }
+
+      $("btn-widget-preview").onclick = () => {
+        if (!portalTenant) return;
+        window.open(
+          "/embed-preview?tenant=" + encodeURIComponent(portalTenant) +
+            "&color=" + encodeURIComponent("#1a2740"),
+          "_blank",
+        );
+      };
+
+      $("btn-widget-load").onclick = () => {
+        if (!portalTenant) return;
+        document.querySelectorAll("script[data-kanso-portal-widget]").forEach((s) => s.remove());
+        document.getElementById("kanso-root")?.remove();
+        const s = document.createElement("script");
+        s.src = "/widget/kanso-widget.js?t=" + Date.now();
+        s.dataset.tenant = portalTenant;
+        s.dataset.api = location.origin.replace(/\/$/, "");
+        s.dataset.primaryColor = "#1a2740";
+        s.dataset.kansoPortalWidget = "1";
+        document.body.appendChild(s);
+        showMsg("Widget chargé — bulle en bas à droite.");
+      };
+
+      $("btn-widget-copy").onclick = async () => {
+        try {
+          await navigator.clipboard.writeText($("widget-snippet").value);
+          showMsg("Snippet copié.");
+        } catch {
+          showMsg("Sélectionnez le textarea et copiez (⌘C).", true);
+        }
+      };
 
       $("btn-login").onclick = async () => {
         clearMsg();

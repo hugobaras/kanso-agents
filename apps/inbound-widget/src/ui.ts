@@ -13,76 +13,143 @@ export type ChatUi = {
   onSubmit: (handler: (text: string) => void) => void;
 };
 
+/** Aligné sur la DA portail admin (/portal) : tokens --radius / --radius-sm / pill. */
 export function mountChatUi(config: WidgetConfig): ChatUi {
+  const accent = config.primaryColor || "#1a2740";
   const style = document.createElement("style");
   style.textContent = `
-    .kanso-root { all: initial; font-family: Georgia, "Times New Roman", serif; }
-    .kanso-root * { box-sizing: border-box; }
+    @import url("https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap");
+    .kanso-root {
+      all: initial;
+      --k-ink: #121820;
+      --k-muted: #66707c;
+      --k-bg: #f2f3f5;
+      --k-card: #ffffff;
+      --k-line: rgba(18, 24, 32, 0.09);
+      --k-accent: ${accent};
+      --k-accent-soft: #e8ebf0;
+      --k-radius: 1.1rem;
+      --k-radius-sm: 0.75rem;
+      --k-radius-card: 0.9rem;
+      --k-radius-pill: 999px;
+      --k-shadow: 0 1px 2px rgba(18, 24, 32, 0.04), 0 12px 32px rgba(18, 24, 32, 0.06);
+      font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
+      color: var(--k-ink);
+    }
+    .kanso-root *, .kanso-root *::before, .kanso-root *::after { box-sizing: border-box; }
     .kanso-bubble {
       position: fixed; right: 20px; bottom: 20px; z-index: 2147483000;
-      width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;
-      background: ${config.primaryColor}; color: #fff; font-size: 22px;
-      box-shadow: 0 8px 24px rgba(0,0,0,.18);
+      width: 56px; height: 56px; border-radius: var(--k-radius-pill); border: none; cursor: pointer;
+      background: var(--k-accent); color: #f5f6f8; font-size: 15px; font-weight: 600;
+      letter-spacing: 0.02em;
+      box-shadow: var(--k-shadow);
+      transition: transform .12s ease, filter .15s ease;
     }
+    .kanso-bubble:hover { filter: brightness(1.06); }
+    .kanso-bubble:active { transform: scale(0.98); }
     .kanso-panel {
       position: fixed; right: 20px; bottom: 88px; z-index: 2147483000;
       width: min(380px, calc(100vw - 32px)); height: min(520px, calc(100vh - 120px));
       display: none; flex-direction: column; overflow: hidden;
-      background: #f7f4ef; color: #1a1a1a;
-      border: 1px solid rgba(0,0,0,.08); border-radius: 4px;
-      box-shadow: 0 16px 40px rgba(0,0,0,.16);
+      background: var(--k-card); color: var(--k-ink);
+      border: 1px solid var(--k-line);
+      border-radius: var(--k-radius);
+      box-shadow: var(--k-shadow);
     }
     .kanso-panel.open { display: flex; }
     .kanso-header {
-      padding: 14px 16px; background: ${config.primaryColor}; color: #fff;
-      font-size: 15px; letter-spacing: .02em;
+      padding: 1.05rem 1.15rem 1rem;
+      background: var(--k-accent); color: #f5f6f8;
+      font-size: 0.95rem; font-weight: 600; letter-spacing: -0.01em;
+      border-radius: var(--k-radius) var(--k-radius) 0 0;
     }
     .kanso-ai-badge {
-      display: block; margin-top: 4px; font-size: 11px; opacity: .85;
-      font-family: ui-sans-serif, system-ui, sans-serif;
+      display: inline-block; margin-top: 0.45rem;
+      font-size: 0.68rem; font-weight: 600; letter-spacing: 0.04em;
+      text-transform: uppercase; opacity: .9;
+      background: rgba(245, 246, 248, 0.14);
+      border-radius: var(--k-radius-pill);
+      padding: 0.28rem 0.65rem;
     }
     .kanso-after-hours {
-      display: none; padding: 8px 12px; font-size: 12px; line-height: 1.4;
-      font-family: ui-sans-serif, system-ui, sans-serif;
-      background: #1a2740; color: #f5f6f8;
+      display: none; padding: 0.7rem 1.05rem; font-size: 0.75rem; line-height: 1.45;
+      font-weight: 500; background: var(--k-ink); color: #f5f6f8;
     }
     .kanso-after-hours.visible { display: block; }
     .kanso-root.after-hours .kanso-form { opacity: .55; pointer-events: none; }
     .kanso-root.after-hours .kanso-choices { display: none !important; }
     .kanso-messages {
-      flex: 1; overflow-y: auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 10px;
-      font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; line-height: 1.45;
+      flex: 1; overflow-y: auto; padding: 1rem 0.9rem;
+      display: flex; flex-direction: column; gap: 0.7rem;
+      font-size: 0.875rem; line-height: 1.45; background: var(--k-bg);
     }
-    .kanso-msg { max-width: 92%; padding: 10px 12px; border-radius: 2px; white-space: pre-wrap; }
-    .kanso-msg.assistant, .kanso-msg.system { align-self: flex-start; background: #fff; border: 1px solid rgba(0,0,0,.06); }
-    .kanso-msg.user { align-self: flex-end; background: ${config.primaryColor}; color: #fff; }
-    .kanso-msg.system { font-size: 12px; color: #444; background: #efeae2; }
+    .kanso-msg {
+      max-width: 92%; padding: 0.75rem 0.95rem;
+      border-radius: var(--k-radius-card);
+      white-space: pre-wrap;
+    }
+    .kanso-msg.assistant {
+      align-self: flex-start; background: var(--k-card);
+      border: 1px solid var(--k-line);
+      border-bottom-left-radius: 0.35rem;
+    }
+    .kanso-msg.system {
+      align-self: flex-start; font-size: 0.75rem; color: var(--k-muted);
+      background: var(--k-accent-soft); border: none;
+      border-radius: var(--k-radius-sm);
+    }
+    .kanso-msg.user {
+      align-self: flex-end; background: var(--k-accent); color: #f5f6f8;
+      border-bottom-right-radius: 0.35rem;
+    }
     .kanso-choices {
-      display: none; flex-wrap: wrap; gap: 6px; padding: 0 10px 8px;
-      font-family: ui-sans-serif, system-ui, sans-serif;
+      display: none; flex-wrap: wrap; gap: 0.45rem; padding: 0 0.9rem 0.75rem;
+      background: var(--k-bg);
     }
     .kanso-choices.visible { display: flex; }
     .kanso-chip {
-      border: 1px solid rgba(0,0,0,.15); background: #fff; color: #1a1a1a;
-      border-radius: 2px; padding: 8px 10px; font: inherit; font-size: 13px;
-      cursor: pointer; text-align: left;
+      border: 1px solid var(--k-line); background: var(--k-card); color: var(--k-ink);
+      border-radius: var(--k-radius-pill);
+      padding: 0.45rem 0.85rem; font: inherit; font-size: 0.78rem;
+      font-weight: 500; cursor: pointer; text-align: left;
+      transition: border-color .12s, color .12s, filter .15s, transform .12s;
     }
-    .kanso-chip:hover { border-color: ${config.primaryColor}; color: ${config.primaryColor}; }
+    .kanso-chip:hover { border-color: var(--k-accent); color: var(--k-accent); }
+    .kanso-chip:active { transform: scale(0.98); }
     .kanso-chip:disabled { opacity: .5; cursor: not-allowed; }
-    .kanso-form { display: flex; gap: 8px; padding: 10px; border-top: 1px solid rgba(0,0,0,.08); background: #fff; }
+    .kanso-form {
+      display: flex; gap: 0.5rem; align-items: center;
+      padding: 0.85rem 0.9rem;
+      border-top: 1px solid var(--k-line); background: var(--k-card);
+      border-radius: 0 0 var(--k-radius) var(--k-radius);
+    }
     .kanso-input {
-      flex: 1; border: 1px solid rgba(0,0,0,.15); border-radius: 2px; padding: 10px;
-      font: inherit; outline: none;
+      flex: 1; border: 1px solid var(--k-line);
+      border-radius: var(--k-radius-sm);
+      padding: 0.7rem 0.9rem; font: inherit; font-size: 0.875rem; outline: none;
+      background: var(--k-card); color: var(--k-ink);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .kanso-input:focus {
+      border-color: rgba(26, 39, 64, 0.4);
+      box-shadow: 0 0 0 4px rgba(26, 39, 64, 0.1);
     }
     .kanso-send {
-      border: none; background: ${config.primaryColor}; color: #fff; padding: 0 14px;
-      border-radius: 2px; cursor: pointer; font: inherit;
+      border: none; background: var(--k-accent); color: #f5f6f8;
+      padding: 0.7rem 1.15rem;
+      border-radius: var(--k-radius-pill); cursor: pointer;
+      font: inherit; font-size: 0.82rem; font-weight: 600;
+      transition: filter .15s, transform .12s;
+      white-space: nowrap;
     }
+    .kanso-send:hover { filter: brightness(1.06); }
+    .kanso-send:active { transform: scale(0.98); }
     .kanso-send:disabled { opacity: .5; cursor: not-allowed; }
   `;
   document.head.appendChild(style);
 
   const root = document.createElement("div");
+  root.id = "kanso-root";
   root.className = "kanso-root";
   root.setAttribute("data-kanso-widget", "1");
 
@@ -161,7 +228,6 @@ export function mountChatUi(config: WidgetConfig): ChatUi {
         if (busy) return;
         const label = opt.label?.trim();
         if (!label) return;
-        // Send label (natural) — backend maps to option id
         submitHandler?.(label);
       });
       choices.appendChild(btn);

@@ -128,7 +128,7 @@
           </div>
           <div>
             <label for="color">Couleur</label>
-            <input id="color" value="#1B2A4A" />
+            <input id="color" value="#1a2740" />
           </div>
         </div>
         <label for="api">API base</label>
@@ -159,7 +159,7 @@
       function buildSnippet() {
         const tenant = $("tenant").value.trim() || "demo-tenant";
         const api = ($("api").value.trim() || defaultApi).replace(/\/$/, "");
-        const color = $("color").value.trim() || "#1B2A4A";
+        const color = $("color").value.trim() || "#1a2740";
         return `<!-- Kanso Inbound -->
 <script
   src="${api}/widget/kanso-widget.js"
