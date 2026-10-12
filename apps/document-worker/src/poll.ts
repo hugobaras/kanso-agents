@@ -2,6 +2,7 @@ import { claimNextJob } from "@kanso/document-pipeline";
 import { getPool } from "@kanso/tenancy";
 import { persistWorkerHeartbeat } from "./heartbeat.js";
 import { processClaimedJob } from "./process-job.js";
+import { runDueJobs } from "./scheduler.js";
 
 export async function pollOnce(): Promise<boolean> {
   const pool = getPool();
@@ -28,7 +29,15 @@ export async function pollLoop(opts: {
   const intervalMs = opts.intervalMs ?? Number(process.env.KANSO_POLL_MS ?? 2000);
   const maxIdle = opts.maxIdleRounds ?? Number(process.env.KANSO_POLL_IDLE_EXIT ?? 0);
   let idle = 0;
+  let lastSchedule = 0;
+  const scheduler = process.env.KANSO_SCHEDULER !== "0";
   for (;;) {
+    if (scheduler && Date.now() - lastSchedule > 30_000) {
+      lastSchedule = Date.now();
+      await runDueJobs().catch((err: unknown) =>
+        console.error(JSON.stringify({ level: "error", event: "scheduler_failed", message: err instanceof Error ? err.message : String(err) })),
+      );
+    }
     const worked = await pollOnce();
     if (worked) {
       idle = 0;

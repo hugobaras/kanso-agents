@@ -13,9 +13,11 @@
   },
   "dependencies": {
     "@kanso/adapters": "workspace:*",
+    "@kanso/billing": "workspace:*",
     "@kanso/config": "workspace:*",
     "@kanso/document-pipeline": "workspace:*",
     "@kanso/llm": "workspace:*",
+    "@kanso/mailer": "workspace:*",
     "@kanso/shared": "workspace:*",
     "@kanso/tenancy": "workspace:*"
   },

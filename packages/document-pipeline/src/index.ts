@@ -6,6 +6,8 @@ export {
   createDraftAction,
   runDocumentPipeline,
   finalModeAllowed,
+  buildExtractionPrompt,
+  duplicateKey,
   type DocumentJob,
   type DocumentJobStep,
 } from "./pipeline.js";
@@ -18,6 +20,9 @@ export {
 } from "./pg-jobs.js";
 export { storageRoot, writeJobPayload, readJobPayload } from "./storage.js";
 export { sniffMime, MAX_DOCUMENT_BYTES, type SupportedMime } from "./file-type.js";
+export { extractDocumentText, MAX_PAGES, type TextExtraction } from "./text-extract.js";
+export { heuristicExtract } from "./heuristic-extract.js";
+export { runValidationRules, type ValidationReport, type RuleContext } from "./rules.js";
 
 import type { DocumentToActionConfig } from "@kanso/config";
 import type { AccountingTargetAdapter, AlertAdapter } from "@kanso/adapters";
@@ -40,3 +45,4 @@ export async function runDocumentHappyPath(opts: {
 }): Promise<DocumentJob> {
   return runDocumentPipeline(opts);
 }
+export { buildInvoicePdf } from "./fixtures.js";

@@ -12,6 +12,7 @@ export { RetryLlmClient, type RetryLlmClientOptions } from "./retry.js";
 export { estimateUsageEur } from "./pricing.js";
 export { MistralLlmClient, INBOUND_RESPONSE_JSON_SCHEMA } from "./mistral.js";
 export { createLlmClient, type CreateLlmClientOptions } from "./factory.js";
+export { MistralOcrClient, type OcrClient, type OcrResult } from "./mistral-ocr.js";
 
 export const InboundLlmOutputSchema = z.object({
   intent: z.enum([

@@ -10,6 +10,27 @@
   "references": [
     {
       "path": "../../packages/shared"
+    },
+    {
+      "path": "../../packages/config"
+    },
+    {
+      "path": "../../packages/tenancy"
+    },
+    {
+      "path": "../../packages/llm"
+    },
+    {
+      "path": "../../packages/adapters"
+    },
+    {
+      "path": "../../packages/document-pipeline"
+    },
+    {
+      "path": "../../packages/mailer"
+    },
+    {
+      "path": "../../packages/billing"
     }
   ],
   "exclude": [
