@@ -28,19 +28,25 @@ export async function enqueueUploadJob(
     configVersion: number;
     content: Buffer;
     filename?: string;
+    mimeType?: string;
+    uploadedBy?: string;
   },
 ): Promise<{ jobId: string; contentSha256: string; storageRef: string }> {
   const contentSha256 = sha256(opts.content);
   const insert = await pool.query<{ id: string }>(
     `insert into document_jobs
-       (tenant_id, config_version, source_type, source_item_id, step, status, content_sha256)
-     values ($1, $2, 'upload_web', $3, 'ingest', 'pending', $4)
+       (tenant_id, config_version, source_type, source_item_id, step, status, content_sha256,
+        original_filename, mime_type, size_bytes, uploaded_by)
+     values ($1, $2, 'upload_web', $3, 'ingest', 'pending', $4, $3, $5, $6, $7)
      returning id`,
     [
       opts.tenantId,
       opts.configVersion,
       opts.filename ?? null,
       contentSha256,
+      opts.mimeType ?? null,
+      opts.content.length,
+      opts.uploadedBy ?? null,
     ],
   );
   const jobId = insert.rows[0]!.id;

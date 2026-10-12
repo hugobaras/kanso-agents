@@ -36,8 +36,16 @@ export function requireTenantId(tenantId: string | undefined): string {
 
 export { encryptJson, decryptJson } from "./crypto.js";
 export { PostgresSecretStore } from "./pg-secrets.js";
-export { getPool, withTenantLocal } from "./pg-pool.js";
-export type { Pool } from "pg";
+export { getPool, withTenantLocal, withTransaction } from "./pg-pool.js";
+export type { Pool, PoolClient } from "pg";
+export {
+  loadPublishedConfig,
+  publishConfig,
+  loadDraftConfig,
+  saveDraftConfig,
+  listConfigVersions,
+  type PublishedConfig,
+} from "./configs.js";
 export {
   recordUsage,
   sumUsageEurToday,
@@ -47,6 +55,12 @@ export {
   softCapEurPerDay,
   type UsageRecordInput,
 } from "./usage.js";
+export {
+  buildWorkspaceExport,
+  writeExportFile,
+  readExportFile,
+  purgeTenant,
+} from "./data-export.js";
 export {
   RETENTION_DAYS,
   runRetentionPurge,

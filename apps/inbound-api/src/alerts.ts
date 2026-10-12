@@ -4,287 +4,146 @@ import {
   createSlackAlertAdapter,
   withAdapterRetry,
 } from "@kanso/adapters";
-import {
-  getPool,
-  PostgresSecretStore,
-  type AuthContext,
-} from "@kanso/tenancy";
-import { recordDemoAlert } from "./demo-ops.js";
+import { templates } from "@kanso/mailer";
+import { getPool, PostgresSecretStore, type AuthContext } from "@kanso/tenancy";
+import { extractContact, labelledAnswers, type LeadTier } from "./services/leads.js";
+import { appLink, deliver } from "./services/mail.js";
+import { createNotification } from "./services/notifications.js";
 
 export type ChannelDelivery = {
   type: "email" | "slack";
   delivered: boolean;
-  mode: "smtp" | "console" | "webhook" | "skipped";
+  mode: "platform" | "smtp" | "console" | "webhook" | "skipped";
   error?: string;
-  title?: string;
-  body?: string;
+};
+
+const EVENT_TITLE: Record<string, string> = {
+  hot_lead: "Demande prioritaire",
+  handoff: "Nouvelle demande qualifiée",
+  new_lead: "Nouvelle demande",
+  escalation: "Demande de contact humain",
 };
 
 export async function dispatchInboundAlert(opts: {
   tenantId: string;
   sessionId: string;
+  leadId: string;
+  tier: LeadTier;
   configVersion: number;
   config: InboundConfig;
   event: string;
-  scoreFinal: number | null;
+  scoreFinal: number;
   answers?: Record<string, unknown>;
-}): Promise<{
-  delivered: boolean;
-  mode: string;
-  channels: ChannelDelivery[];
-  error?: string;
-  title: string;
-  body: string;
-}> {
+}): Promise<{ delivered: boolean; channels: ChannelDelivery[] }> {
   const answers = opts.answers ?? {};
-  const title = `[Kanso] ${opts.event} — ${opts.config.identity.display_name}`;
-  const body = [
-    `Tenant: ${opts.tenantId}`,
-    `Cabinet: ${opts.config.identity.display_name}`,
-    `Événement: ${opts.event}`,
-    `Score final: ${opts.scoreFinal ?? "n/a"} / ${opts.config.scoring.max_score}`,
-    `Seuil hot: ${opts.config.scoring.thresholds.hot}`,
-    `Session: ${opts.sessionId}`,
-    `Réponses: ${JSON.stringify(answers, null, 2)}`,
-  ].join("\n");
+  const contact = extractContact(answers);
+  const rows = labelledAnswers(opts.config, answers);
+  const leadPath = `/app/${opts.tenantId}/demandes/${opts.leadId}`;
+  const title = `${EVENT_TITLE[opts.event] ?? "Nouvelle demande"} — ${contact.name ?? contact.email ?? "visiteur"}`;
 
-  const channels = opts.config.alerts.channels.filter(
-    (c) =>
-      c.enabled !== false && (c.on as string[]).includes(opts.event),
-  );
-  if (channels.length === 0) {
-    const skipped = {
-      delivered: false,
-      mode: "skipped",
-      channels: [] as ChannelDelivery[],
-      error: "no_channel_for_event",
-      title,
-      body,
-    };
-    recordDemoAlert({
-      tenant_id: opts.tenantId,
-      session_id: opts.sessionId,
-      event: opts.event,
-      score_final: opts.scoreFinal,
-      answers,
-      channels: [],
-      mode: "skipped",
-      delivered: false,
-      title,
-      body,
-    });
-    return skipped;
-  }
-
-  const masterKey = process.env.KANSO_MASTER_KEY;
-  if (!masterKey) {
-    return {
-      delivered: false,
-      mode: "skipped",
-      channels: [],
-      error: "missing_master_key",
-      title,
-      body,
-    };
-  }
-
-  const pool = getPool();
-  const secrets = new PostgresSecretStore(pool, masterKey);
-  const results: ChannelDelivery[] = [];
-
-  for (const channel of channels) {
-    if (channel.type === "email") {
-      results.push(
-        await sendEmailChannel({
-          secrets,
-          tenantId: opts.tenantId,
-          sessionId: opts.sessionId,
-          configVersion: opts.configVersion,
-          secretRef: channel.secret_ref,
-          event: opts.event,
-          scoreFinal: opts.scoreFinal,
-          title,
-          body,
-        }),
-      );
-    } else if (channel.type === "slack") {
-      results.push(
-        await sendSlackChannel({
-          secrets,
-          tenantId: opts.tenantId,
-          sessionId: opts.sessionId,
-          configVersion: opts.configVersion,
-          secretRef: channel.secret_ref,
-          event: opts.event,
-          scoreFinal: opts.scoreFinal,
-          title,
-          body,
-        }),
-      );
-    }
-  }
-
-  const delivered = results.some((r) => r.delivered);
-  const modes = results.map((r) => `${r.type}:${r.mode}`).join(",");
-  const out = {
-    delivered,
-    mode: modes || "skipped",
-    channels: results,
-    error: delivered
-      ? undefined
-      : results.map((r) => r.error).filter(Boolean).join("; ") || undefined,
+  await createNotification({
+    tenantId: opts.tenantId,
+    type: `lead:${opts.event}`,
     title,
-    body,
-  };
-
-  recordDemoAlert({
-    tenant_id: opts.tenantId,
-    session_id: opts.sessionId,
-    event: opts.event,
-    score_final: opts.scoreFinal,
-    answers,
-    channels: results,
-    mode: out.mode,
-    delivered,
-    title,
-    body,
+    body: `Score ${opts.scoreFinal}/100`,
+    link: leadPath,
   });
 
-  return out;
-}
-
-async function sendEmailChannel(opts: {
-  secrets: PostgresSecretStore;
-  tenantId: string;
-  sessionId: string;
-  configVersion: number;
-  secretRef: string;
-  event: string;
-  scoreFinal: number | null;
-  title: string;
-  body: string;
-}): Promise<ChannelDelivery> {
-  let auth: AuthContext;
-  try {
-    auth = await opts.secrets.resolve(opts.tenantId, "email", opts.secretRef);
-  } catch (err) {
-    return {
-      type: "email",
-      delivered: false,
-      mode: "skipped",
-      error: err instanceof Error ? err.message : "secret_resolve_failed",
-      title: opts.title,
-      body: opts.body,
-    };
-  }
-
-  const adapter = createEmailAlertAdapter(auth);
-  const mode = auth.credentials.host ? "smtp" : "console";
-  const result = await withAdapterRetry((attempt) =>
-    adapter.send(
-      {
-        channel: "email",
-        event: opts.event,
-        title: opts.title,
-        body: opts.body,
-        metadata: {
-          score: opts.scoreFinal ?? 0,
-          session_id: opts.sessionId,
-        },
-      },
-      auth,
-      {
-        tenantId: opts.tenantId,
-        correlationId: opts.sessionId,
-        configVersion: opts.configVersion,
-        attempt,
-      },
-    ),
+  const channels = opts.config.alerts.channels.filter(
+    (c) => c.enabled !== false && (c.on as string[]).includes(opts.event),
   );
-
-  if (result.status !== "ok") {
-    return {
-      type: "email",
-      delivered: false,
-      mode,
-      error: result.message,
-      title: opts.title,
-      body: opts.body,
-    };
+  const masterKey = process.env.KANSO_MASTER_KEY;
+  if (channels.length === 0 || !masterKey) {
+    return { delivered: false, channels: [] };
   }
-  return {
-    type: "email",
-    delivered: true,
-    mode,
-    title: opts.title,
-    body: opts.body,
-  };
+
+  const secrets = new PostgresSecretStore(getPool(), masterKey);
+  const results: ChannelDelivery[] = [];
+  const textBody = [
+    title,
+    `Score : ${opts.scoreFinal} / 100`,
+    ...rows.map(([k, v]) => `${k} : ${v}`),
+    appLink(leadPath),
+  ].join("\n");
+
+  for (const channel of channels) {
+    let auth: AuthContext;
+    try {
+      auth = await secrets.resolve(opts.tenantId, channel.type, channel.secret_ref);
+    } catch (err) {
+      results.push({
+        type: channel.type,
+        delivered: false,
+        mode: "skipped",
+        error: err instanceof Error ? err.message : "secret_resolve_failed",
+      });
+      continue;
+    }
+    if (channel.type === "email") {
+      results.push(await sendEmail(opts, auth, rows, leadPath, textBody, title));
+    } else {
+      results.push(await sendSlack(opts, auth, textBody, title));
+    }
+  }
+  return { delivered: results.some((r) => r.delivered), channels: results };
 }
 
-async function sendSlackChannel(opts: {
-  secrets: PostgresSecretStore;
-  tenantId: string;
-  sessionId: string;
-  configVersion: number;
-  secretRef: string;
-  event: string;
-  scoreFinal: number | null;
-  title: string;
-  body: string;
-}): Promise<ChannelDelivery> {
-  let auth: AuthContext;
-  try {
-    auth = await opts.secrets.resolve(opts.tenantId, "slack", opts.secretRef);
-  } catch (err) {
-    return {
-      type: "slack",
-      delivered: false,
-      mode: "skipped",
-      error: err instanceof Error ? err.message : "secret_resolve_failed",
-      title: opts.title,
-      body: opts.body,
-    };
+async function sendEmail(
+  opts: Parameters<typeof dispatchInboundAlert>[0],
+  auth: AuthContext,
+  rows: Array<[string, string]>,
+  leadPath: string,
+  textBody: string,
+  title: string,
+): Promise<ChannelDelivery> {
+  // Legacy pilotes: tenant-specific SMTP stored in the secret.
+  if (auth.credentials.host) {
+    const result = await withAdapterRetry((attempt) =>
+      createEmailAlertAdapter(auth).send(
+        { channel: "email", event: opts.event, title, body: textBody, metadata: { score: opts.scoreFinal } },
+        auth,
+        { tenantId: opts.tenantId, correlationId: opts.sessionId, configVersion: opts.configVersion, attempt },
+      ),
+    );
+    return result.status === "ok"
+      ? { type: "email", delivered: true, mode: "smtp" }
+      : { type: "email", delivered: false, mode: "smtp", error: result.message };
   }
+  const recipients = (auth.credentials.to ?? "")
+    .split(/[,;\s]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.includes("@"));
+  if (recipients.length === 0) {
+    return { type: "email", delivered: false, mode: "skipped", error: "no_recipient" };
+  }
+  const email = templates.newLead({
+    workspace: opts.config.identity.display_name,
+    tier: opts.tier,
+    score: opts.scoreFinal,
+    event: opts.event,
+    rows,
+    url: appLink(leadPath),
+  });
+  let ok = true;
+  for (const to of recipients) ok = (await deliver(to, email)) && ok;
+  return { type: "email", delivered: ok, mode: "platform" };
+}
 
-  const adapter = createSlackAlertAdapter(auth);
+async function sendSlack(
+  opts: Parameters<typeof dispatchInboundAlert>[0],
+  auth: AuthContext,
+  textBody: string,
+  title: string,
+): Promise<ChannelDelivery> {
   const mode = auth.credentials.webhook_url ? "webhook" : "console";
   const result = await withAdapterRetry((attempt) =>
-    adapter.send(
-      {
-        channel: "slack",
-        event: opts.event,
-        title: opts.title,
-        body: opts.body,
-        metadata: {
-          score: opts.scoreFinal ?? 0,
-          session_id: opts.sessionId,
-        },
-      },
+    createSlackAlertAdapter(auth).send(
+      { channel: "slack", event: opts.event, title, body: textBody, metadata: { score: opts.scoreFinal } },
       auth,
-      {
-        tenantId: opts.tenantId,
-        correlationId: opts.sessionId,
-        configVersion: opts.configVersion,
-        attempt,
-      },
+      { tenantId: opts.tenantId, correlationId: opts.sessionId, configVersion: opts.configVersion, attempt },
     ),
   );
-
-  if (result.status !== "ok") {
-    return {
-      type: "slack",
-      delivered: false,
-      mode,
-      error: result.message,
-      title: opts.title,
-      body: opts.body,
-    };
-  }
-  return {
-    type: "slack",
-    delivered: true,
-    mode,
-    title: opts.title,
-    body: opts.body,
-  };
+  return result.status === "ok"
+    ? { type: "slack", delivered: true, mode }
+    : { type: "slack", delivered: false, mode, error: result.message };
 }

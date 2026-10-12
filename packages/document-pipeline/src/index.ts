@@ -17,6 +17,7 @@ export {
   type DocumentJobRow,
 } from "./pg-jobs.js";
 export { storageRoot, writeJobPayload, readJobPayload } from "./storage.js";
+export { sniffMime, MAX_DOCUMENT_BYTES, type SupportedMime } from "./file-type.js";
 
 import type { DocumentToActionConfig } from "@kanso/config";
 import type { AccountingTargetAdapter, AlertAdapter } from "@kanso/adapters";

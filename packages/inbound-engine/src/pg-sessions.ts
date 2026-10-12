@@ -65,8 +65,43 @@ export class PostgresSessionStore {
       scoreCurrent: row.score_current,
       scoreFinal: row.score_final,
       answers: row.answers,
-      messages: [],
+      messages: await this.recentMessages(tenantId, sessionId),
     };
+  }
+
+  /** Last N turns (oldest first) so the LLM keeps conversational context. */
+  async recentMessages(
+    tenantId: string,
+    sessionId: string,
+    limit = 20,
+  ): Promise<string[]> {
+    const res = await this.pool.query<{ content: string }>(
+      `select content from (
+         select content, created_at from inbound_messages
+         where session_id = $1::uuid and tenant_id = $2
+         order by created_at desc limit $3
+       ) m order by created_at asc`,
+      [sessionId, tenantId, limit],
+    );
+    return res.rows.map((r) => r.content);
+  }
+
+  /** Full transcript with roles, for the widget resume + dashboard. */
+  async transcript(
+    tenantId: string,
+    sessionId: string,
+  ): Promise<Array<{ role: "user" | "assistant" | "system"; content: string; created_at: Date }>> {
+    const res = await this.pool.query<{
+      role: "user" | "assistant" | "system";
+      content: string;
+      created_at: Date;
+    }>(
+      `select role, content, created_at from inbound_messages
+       where session_id = $1::uuid and tenant_id = $2
+       order by created_at asc, role desc`,
+      [sessionId, tenantId],
+    );
+    return res.rows;
   }
 
   async save(session: InboundSession): Promise<void> {

@@ -1,5 +1,7 @@
 import type { InboundConfig } from "@kanso/config";
 import {
+  AFTER_HOURS_QUALIFY_NOTICE,
+  blocksAfterHours,
   isWithinBusinessHours,
   resolveAfterHoursMessage,
 } from "./business-hours.js";
@@ -61,7 +63,8 @@ export function startQualification(
   assistantMessage: string;
   afterHours: boolean;
 } {
-  const afterHours = !isWithinBusinessHours(config, opts.now ?? new Date());
+  const now = opts.now ?? new Date();
+  const afterHours = blocksAfterHours(config, now);
   const notice = config.disclosure.ai_notice;
 
   if (afterHours) {
@@ -84,7 +87,17 @@ export function startQualification(
     messages: [...session.messages, notice],
   };
   const first = config.qualification.questions[0];
-  const assistantMessage = [notice, first?.prompt ?? ""].join("\n\n");
+  const closedNote = isWithinBusinessHours(config, now)
+    ? null
+    : config.operations.after_hours_message?.trim() || AFTER_HOURS_QUALIFY_NOTICE;
+  const assistantMessage = [
+    config.identity.welcome_message,
+    notice,
+    closedNote,
+    first?.prompt ?? "",
+  ]
+    .filter((m): m is string => !!m && m.trim().length > 0)
+    .join("\n\n");
   return { session: next, assistantMessage, afterHours: false };
 }
 

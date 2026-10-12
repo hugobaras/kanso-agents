@@ -12,7 +12,9 @@ export {
 } from "./session.js";
 export {
   isWithinBusinessHours,
+  blocksAfterHours,
   AFTER_HOURS_NOTICE,
+  AFTER_HOURS_QUALIFY_NOTICE,
   resolveAfterHoursMessage,
 } from "./business-hours.js";
 export {
@@ -72,13 +74,14 @@ export async function runInboundHappyPath(opts: {
   alerts: AlertAdapter;
   auth: AuthContext;
   userTexts?: string[];
+  now?: Date;
 }): Promise<RunInboundE2EResult> {
   let session = createSession(
     "00000000-0000-4000-8000-0000000000e2",
     opts.tenantId,
     1,
   );
-  const started = startQualification(session, opts.config);
+  const started = startQualification(session, opts.config, { now: opts.now });
   session = started.session;
   const alertEvents: string[] = [];
   const texts = opts.userTexts ?? ["corporate", "48h", "lead@example.com"];

@@ -1,337 +1,109 @@
-import { readFileSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { randomUUID } from "node:crypto";
+import { getPool } from "@kanso/tenancy";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import {
-  createSession,
-  InboundHeuristicLlmClient,
-  isWithinBusinessHours,
-  newSessionId,
-  orchestrateTurn,
-  PostgresSessionStore,
-  resolveAfterHoursMessage,
-  resolveExpectedQuestion,
-  startQualification,
-} from "@kanso/inbound-engine";
-import { parseInboundConfig, type InboundConfig } from "@kanso/config";
-import type { LlmClient } from "@kanso/llm";
-import {
-  createLlmClient,
-  FallbackLlmClient,
-  MeteringLlmClient,
-  RetryLlmClient,
-} from "@kanso/llm";
-import { getPool, requireTenantId } from "@kanso/tenancy";
-import { dispatchInboundAlert } from "./alerts.js";
-import {
-  listDemoOps,
-  patchLatestAlert,
-  recordDemoTurn,
-} from "./demo-ops.js";
+import { secureHeaders } from "hono/secure-headers";
+import { csrfGuard, loadSession, requireUser, requireWorkspace } from "./auth/middleware.js";
 import { resolveCorsOrigin } from "./cors-origins.js";
-import { mountDocumentRoutes } from "./documents.js";
+import { devToolsEnabled, legacyWidgetEnabled } from "./env.js";
 import { buildHealth } from "./health.js";
-import { syncInboundIntegrations } from "./integrations.js";
-import { mountPortalRoutes } from "./portal.js";
-import { resolveRag } from "./rag.js";
-import { flushMeteredUsage } from "./usage.js";
+import { handleError } from "./http/errors.js";
+import { RateLimiter } from "./http/rate-limit.js";
+import type { AppEnv } from "./http/types.js";
+import { adminRoutes } from "./routes/admin.js";
+import { assistantRoutes } from "./routes/app/assistant.js";
+import { billingRoutes } from "./routes/app/billing.js";
+import { documentsRoutes } from "./routes/app/documents.js";
+import { integrationsRoutes } from "./routes/app/integrations.js";
+import { leadsRoutes } from "./routes/app/leads.js";
+import { overviewRoutes } from "./routes/app/overview.js";
+import { settingsRoutes } from "./routes/app/settings.js";
+import { teamRoutes } from "./routes/app/team.js";
+import { authRoutes } from "./routes/auth.js";
+import { devRoutes } from "./routes/dev.js";
+import { legacyRoutes } from "./routes/legacy.js";
+import { publicRoutes } from "./routes/public.js";
+import { stripeRoutes } from "./routes/stripe.js";
+import { widgetRoutes } from "./routes/widget.js";
+import type { InboundDeps } from "./services/inbound.js";
 
-const here = dirname(fileURLToPath(import.meta.url));
-const widgetJsCandidates = [
-  join(here, "../../inbound-widget/dist/kanso-widget.js"),
-  join(process.cwd(), "apps/inbound-widget/dist/kanso-widget.js"),
-];
-const demoHtmlCandidates = [
-  join(here, "../../inbound-widget/public/demo.html"),
-  join(process.cwd(), "apps/inbound-widget/public/demo.html"),
-];
-const embedHtmlCandidates = [
-  join(here, "../../inbound-widget/public/embed-preview.html"),
-  join(process.cwd(), "apps/inbound-widget/public/embed-preview.html"),
-];
-
-function firstExisting(paths: string[]): string | null {
-  return paths.find((p) => existsSync(p)) ?? null;
-}
-
-export type AppDeps = {
-  getPublishedInboundConfig?: (
-    tenantId: string,
-  ) => Promise<{ config: unknown; version: number } | null>;
-  sessionStore?: PostgresSessionStore;
-  llm?: LlmClient;
-};
-
-async function loadPublishedConfig(
-  tenantId: string,
-  deps: AppDeps,
-): Promise<{ config: unknown; version: number } | null> {
-  if (deps.getPublishedInboundConfig) {
-    return deps.getPublishedInboundConfig(tenantId);
-  }
-  const pool = getPool();
-  const res = await pool.query<{ config: unknown; version: number }>(
-    `select config, version from tenant_configs
-     where tenant_id = $1 and product = 'inbound' and status = 'published'
-     order by version desc limit 1`,
-    [tenantId],
-  );
-  return res.rows[0] ?? null;
-}
+export type AppDeps = InboundDeps;
 
 export function createApp(deps: AppDeps = {}) {
-  const app = new Hono();
+  const app = new Hono<AppEnv>();
+  const limiter = new RateLimiter(() => getPool());
 
+  app.onError(handleError);
+  app.notFound((c) => c.json({ error: "not_found" }, 404));
+
+  app.use("*", async (c, next) => {
+    const id = c.req.header("x-request-id")?.slice(0, 64) || randomUUID();
+    c.set("requestId", id);
+    c.header("X-Request-Id", id);
+    const started = Date.now();
+    await next();
+    if (c.req.path !== "/health" && process.env.KANSO_ACCESS_LOG !== "0") {
+      console.log(
+        JSON.stringify({
+          level: "info",
+          event: "http",
+          request_id: id,
+          method: c.req.method,
+          path: c.req.routePath === "/*" ? c.req.path : c.req.routePath,
+          status: c.res.status,
+          ms: Date.now() - started,
+        }),
+      );
+    }
+  });
   app.use(
     "*",
-    cors({
-      origin: (origin) => resolveCorsOrigin(origin ?? ""),
-      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowHeaders: ["Content-Type", "Accept", "Authorization"],
+    secureHeaders({
+      crossOriginResourcePolicy: false,
+      crossOriginOpenerPolicy: false,
+      xFrameOptions: "DENY",
+      referrerPolicy: "strict-origin-when-cross-origin",
     }),
   );
 
   app.get("/health", async (c) => c.json(await buildHealth()));
 
-  app.get("/widget/kanso-widget.js", (c) => {
-    const path = firstExisting(widgetJsCandidates);
-    if (!path) return c.text("widget not built — run pnpm --filter @kanso/inbound-widget build", 404);
-    c.header("Content-Type", "application/javascript; charset=utf-8");
-    c.header("Cache-Control", "no-store");
-    return c.body(readFileSync(path));
-  });
+  // Public widget (own CORS + per-key origin allowlist).
+  app.route("/", widgetRoutes(limiter, deps));
+  if (legacyWidgetEnabled()) app.route("/", legacyRoutes(deps));
 
-  app.get("/demo", (c) => {
-    const path = firstExisting(demoHtmlCandidates);
-    if (!path) return c.text("demo.html missing", 404);
-    return c.html(readFileSync(path, "utf8"));
-  });
+  // Stripe webhook: raw body, signature-verified, no session/CSRF.
+  app.route("/api/stripe", stripeRoutes());
 
-  app.get("/embed-preview", (c) => {
-    const path = firstExisting(embedHtmlCandidates);
-    if (!path) return c.text("embed-preview.html missing", 404);
-    return c.html(readFileSync(path, "utf8"));
-  });
-
-  /** Ops démo : tours + alertes en mémoire (valeur cabinet visible). */
-  app.get("/demo/ops", (c) =>
-    c.json({
-      ok: true,
-      events: listDemoOps(50),
-      hint: "Alertes console = mode démo sans SMTP ; le contenu est ici.",
+  // Credentialed API for the web app.
+  app.use(
+    "/api/*",
+    cors({
+      origin: (origin) => resolveCorsOrigin(origin ?? ""),
+      credentials: true,
+      allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      allowHeaders: ["Content-Type", "Accept", "X-Kanso-Internal"],
+      maxAge: 600,
     }),
   );
+  app.use("/api/*", loadSession);
 
-  mountDocumentRoutes(app);
-  mountPortalRoutes(app);
+  app.route("/api/public", publicRoutes(limiter, deps));
+  app.route("/api/auth", authRoutes(limiter));
+  app.route("/api/admin", adminRoutes());
+  if (devToolsEnabled()) app.route("/api/dev", devRoutes());
 
-  app.post("/v1/:tenantId/sessions", async (c) => {
-    const tenantId = requireTenantId(c.req.param("tenantId"));
-    const pool = getPool();
-    const store = deps.sessionStore ?? new PostgresSessionStore(pool);
-    const published = await loadPublishedConfig(tenantId, deps);
-    if (!published) {
-      return c.json({ error: "no_published_inbound_config" }, 404);
-    }
-
-    const config = parseInboundConfig(published.config);
-    const session = createSession(
-      newSessionId(),
-      tenantId,
-      published.version,
-    );
-    const started = startQualification(session, config, { now: new Date() });
-    await store.create(started.session);
-    const expected = started.afterHours
-      ? null
-      : resolveExpectedQuestion(config, started.session);
-
-    return c.json({
-      session_id: started.session.id,
-      state: started.session.state,
-      assistant_message: started.assistantMessage,
-      after_hours: started.afterHours,
-      expected_question: expected,
-    });
-  });
-
-  app.post("/v1/:tenantId/sessions/:sessionId/messages", async (c) => {
-    const tenantId = requireTenantId(c.req.param("tenantId"));
-    const sessionId = c.req.param("sessionId");
-    const body = (await c.req.json().catch(() => ({}))) as { text?: string };
-    if (!body.text?.trim()) {
-      return c.json({ error: "text_required" }, 400);
-    }
-
-    const pool = getPool();
-    const store = deps.sessionStore ?? new PostgresSessionStore(pool);
-    const session = await store.getActive(tenantId, sessionId);
-    if (!session) {
-      return c.json({ error: "session_not_found" }, 404);
-    }
-
-    const published = await loadPublishedConfig(tenantId, deps);
-    if (!published) {
-      return c.json({ error: "no_published_inbound_config" }, 404);
-    }
-    const config = parseInboundConfig(published.config);
-
-    // D-118: refuse turns outside business hours
-    if (!isWithinBusinessHours(config, new Date())) {
-      const msg = resolveAfterHoursMessage(config);
-      return c.json(
-        {
-          error: "after_hours",
-          after_hours: true,
-          assistant_message: msg,
-          session_id: sessionId,
-          state: session.state,
-        },
-        403,
-      );
-    }
-
-    const metering = new MeteringLlmClient(
-      deps.llm ?? resolveLlmClient(config),
-    );
-
-    const turn = await orchestrateTurn({
-      session,
-      config,
-      userText: body.text,
-      llm: metering,
-      rag: resolveRag(tenantId),
-    });
-    await store.save(turn.session);
-
-    await pool.query(
-      `insert into inbound_messages (session_id, tenant_id, role, content)
-       values ($1::uuid, $2, 'user', $3), ($1::uuid, $2, 'assistant', $4)`,
-      [sessionId, tenantId, body.text, turn.assistantMessage],
-    );
-
-    let usage = {
-      recorded: 0,
-      dayTotalEur: 0,
-      softCapBreached: false,
-    };
-    try {
-      usage = await flushMeteredUsage({
-        tenantId,
-        correlationId: sessionId,
-        metering,
-      });
-    } catch (err) {
-      console.error(
-        JSON.stringify({
-          level: "error",
-          event: "usage_ledger_failed",
-          tenant_id: tenantId,
-          correlation_id: sessionId,
-          message: err instanceof Error ? err.message : String(err),
-        }),
-      );
-    }
-
-    let alert:
-      | { delivered: boolean; mode: string; error?: string; channels?: unknown }
-      | null = null;
-    let integrations: Awaited<ReturnType<typeof syncInboundIntegrations>> | null =
-      null;
-    if (turn.alertEvent) {
-      alert = await dispatchInboundAlert({
-        tenantId,
-        sessionId,
-        configVersion: published.version,
-        config,
-        event: turn.alertEvent,
-        scoreFinal: turn.session.scoreFinal,
-        answers: turn.session.answers,
-      });
-      integrations = await syncInboundIntegrations({
-        tenantId,
-        sessionId,
-        configVersion: published.version,
-        config,
-        session: turn.session,
-      });
-    }
-
-    const expected = resolveExpectedQuestion(config, turn.session);
-
-    if (turn.alertEvent && integrations) {
-      patchLatestAlert(sessionId, { integrations });
-    }
-
-    const score =
-      turn.session.scoreFinal ?? turn.session.scoreCurrent;
-    const band =
-      score >= config.scoring.thresholds.hot
-        ? "hot"
-        : score >= config.scoring.thresholds.warm
-          ? "warm"
-          : "cold";
-
-    recordDemoTurn({
-      tenant_id: tenantId,
-      session_id: turn.session.id,
-      state: turn.session.state,
-      intent: turn.intent,
-      score_current: turn.session.scoreCurrent,
-      score_final: turn.session.scoreFinal,
-      answers: turn.session.answers,
-      user_text: body.text,
-      assistant_message: turn.assistantMessage,
-      alert_event: turn.alertEvent ?? null,
-    });
-
-    return c.json({
-      session_id: turn.session.id,
-      state: turn.session.state,
-      score_current: turn.session.scoreCurrent,
-      score_final: turn.session.scoreFinal,
-      score_band: band,
-      score_thresholds: config.scoring.thresholds,
-      answers: turn.session.answers,
-      intent: turn.intent,
-      alert_event: turn.alertEvent ?? null,
-      alert,
-      integrations,
-      assistant_message: turn.assistantMessage,
-      expected_question: expected,
-      tenant_display_name: config.identity.display_name,
-      llm_provider: process.env.MISTRAL_API_KEY ? "mistral" : "heuristic",
-      usage: {
-        calls: usage.recorded,
-        day_total_eur: usage.dayTotalEur,
-        soft_cap_breached: usage.softCapBreached,
-      },
-    });
-  });
+  const ws = new Hono<AppEnv>();
+  ws.use("*", requireUser, csrfGuard, requireWorkspace("member"));
+  ws.route("/", overviewRoutes());
+  ws.route("/leads", leadsRoutes());
+  ws.route("/assistant", assistantRoutes(limiter));
+  ws.route("/documents", documentsRoutes());
+  ws.route("/team", teamRoutes());
+  ws.route("/integrations", integrationsRoutes());
+  ws.route("/billing", billingRoutes());
+  ws.route("/settings", settingsRoutes());
+  app.route("/api/app/:workspace", ws);
 
   return app;
-}
-
-/**
- * D-093: Mistral with retries, then heuristic filet only if still failing.
- */
-function resolveLlmClient(config: InboundConfig): LlmClient {
-  const heuristic = new InboundHeuristicLlmClient(config);
-  if (!process.env.MISTRAL_API_KEY) {
-    return heuristic;
-  }
-  const primary = new RetryLlmClient(createLlmClient(), {
-    maxAttempts: 3,
-    baseDelayMs: 500,
-  });
-  return new FallbackLlmClient(primary, heuristic, (err) => {
-    console.error(
-      JSON.stringify({
-        level: "warn",
-        event: "llm_primary_failed_fallback_heuristic",
-        message: err instanceof Error ? err.message : String(err),
-      }),
-    );
-  });
 }

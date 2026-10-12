@@ -10,6 +10,9 @@ const RATES_EUR_PER_MTOK: Record<
 > = {
   "mistral:mistral-small-latest": { input: 0.1, output: 0.3 },
   "mistral:mistral-small": { input: 0.1, output: 0.3 },
+  "mistral:ministral-8b-latest": { input: 0.1, output: 0.1 },
+  "mistral:ministral-8b": { input: 0.1, output: 0.1 },
+  "mistral:mistral-ocr-latest": { input: 1, output: 0 },
   "mock:mock-deterministic": { input: 0, output: 0 },
 };
 
