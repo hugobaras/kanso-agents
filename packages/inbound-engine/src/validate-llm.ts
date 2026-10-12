@@ -4,6 +4,7 @@ import {
   type InboundLlmOutput,
 } from "@kanso/llm";
 import { KansoError } from "@kanso/shared";
+import type { ExpectedQuestionPayload } from "./expected-question.js";
 
 const HALLUCINATION_PATTERNS =
   /\b(\d+\s*€|euros?|tarif|prix|disponible demain|je vous rappelle sous|vous avez une affaire|conseil juridique\s*:)/i;
@@ -48,33 +49,82 @@ export function validateInboundLlmAgainstConfig(
   if (!sanitizedMessage) {
     throw new KansoError("empty assistant_message", "llm_empty_message");
   }
-  if (HALLUCINATION_PATTERNS.test(sanitizedMessage) || output.claimed_facts.length > 0) {
+  // claimed_facts alone must not wipe a valid ack — only strip unsafe prose.
+  if (HALLUCINATION_PATTERNS.test(sanitizedMessage)) {
     sanitizedMessage =
       "Je ne peux pas indiquer de prix, délais ou faits non présents dans la configuration. Continuons la qualification.";
+  } else if (output.claimed_facts.length > 0) {
+    // Soft: keep wording, drop facts (code owns truth).
+    sanitizedMessage = sanitizedMessage;
   }
 
-  return { ...output, sanitizedMessage };
+  return {
+    ...output,
+    claimed_facts: [],
+    sanitizedMessage,
+  };
 }
 
 export function buildInboundSystemPrompt(
   config: InboundConfig,
   expectedQuestionId: string | undefined,
   ragContext?: string,
+  opts?: {
+    expected?: ExpectedQuestionPayload | null;
+    recentMessages?: string[];
+    answers?: Record<string, unknown>;
+  },
 ): string {
   const questionIds = config.qualification.questions.map((q) => q.id).join(", ");
   const forbidden = config.disclosure.forbidden_topics.join(", ");
+  const expected = opts?.expected;
   const lines = [
-    "Tu es un assistant de qualification. Tu n'es pas un humain.",
+    "Tu es un assistant de qualification conversationnel. Tu n'es pas un humain.",
     `Disclaimer déjà affiché: ${config.disclosure.ai_notice}`,
     `Topics interdits (intent advice/forbidden): ${forbidden}`,
     "Ne donne jamais de conseil juridique ou comptable.",
     "N'affirme jamais de prix, délais de rappel, disponibilités ou faits hors configuration.",
+    "Ton: naturel, concis, professionnel — évite les réponses d'un mot seules (« Merci. ») ; reformule brièvement puis enchaîne.",
     `question_id autorisés: ${questionIds}`,
-    expectedQuestionId
-      ? `Question attendue actuellement: ${expectedQuestionId}. Si l'utilisateur répond, intent=answer avec ce question_id.`
-      : "Aucune question required restante.",
-    "Réponds uniquement en JSON structuré conforme au schéma.",
   ];
+
+  if (expected) {
+    lines.push(
+      `Question attendue actuellement: ${expected.id} — « ${expected.prompt} »`,
+    );
+    if (expected.options?.length) {
+      lines.push(
+        "Options autorisées pour answer.value (utiliser l'id) :",
+        ...expected.options.map((o) => `- ${o.id}: ${o.label}`),
+      );
+      lines.push(
+        "Mappe le langage naturel vers l'id d'option le plus proche (ex. « d'ici jeudi » → week si présent).",
+      );
+    }
+    lines.push(
+      `Si l'utilisateur répond à cette question, intent=answer avec question_id=${expected.id}.`,
+    );
+  } else if (expectedQuestionId) {
+    lines.push(
+      `Question attendue actuellement: ${expectedQuestionId}. Si l'utilisateur répond, intent=answer avec ce question_id.`,
+    );
+  } else {
+    lines.push("Aucune question required restante.");
+  }
+
+  if (opts?.answers && Object.keys(opts.answers).length > 0) {
+    lines.push(`Réponses déjà collectées: ${JSON.stringify(opts.answers)}`);
+  }
+
+  const recent = opts?.recentMessages?.filter(Boolean).slice(-12) ?? [];
+  if (recent.length) {
+    lines.push("Historique récent de la conversation (du plus ancien au plus récent) :");
+    for (const m of recent) {
+      lines.push(`- ${m.slice(0, 400)}`);
+    }
+  }
+
+  lines.push("Réponds uniquement en JSON structuré conforme au schéma.");
   if (ragContext) {
     lines.push(ragContext);
   }

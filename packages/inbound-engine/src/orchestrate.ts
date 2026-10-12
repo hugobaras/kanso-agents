@@ -23,6 +23,8 @@ import {
   parseInboundLlmOutput,
   validateInboundLlmAgainstConfig,
 } from "./validate-llm.js";
+import { resolveExpectedQuestion } from "./expected-question.js";
+import { synthesizeHandoffMessage } from "./handoff.js";
 
 export type TurnResult = {
   session: InboundSession;
@@ -37,20 +39,30 @@ const FALLBACK_MESSAGE =
 async function callLlmValidated(
   llm: LlmClient,
   config: InboundConfig,
+  session: InboundSession,
   userText: string,
   expectedQuestionId: string | undefined,
   ragContext?: string,
 ): Promise<ReturnType<typeof validateInboundLlmAgainstConfig>> {
+  const expected = resolveExpectedQuestion(config, session);
   const system = buildInboundSystemPrompt(
     config,
     expectedQuestionId,
     ragContext,
+    {
+      expected,
+      recentMessages: session.messages,
+      answers: session.answers,
+    },
   );
   let lastError: unknown;
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const { data } = await llm.completeStructured({
-        system: attempt === 1 ? system : `${system}\nCorrection: respecte strictement le schéma et question_id.`,
+        system:
+          attempt === 1
+            ? system
+            : `${system}\nCorrection: respecte strictement le schéma et question_id.`,
         user: userText,
         schema: InboundLlmOutputSchema,
       });
@@ -98,15 +110,6 @@ export async function orchestrateTurn(opts: {
   }
 
   if (
-    session.state.startsWith("Closed") ||
-    session.state === "Alerting" ||
-    session.state === "Handoff" ||
-    session.state === "ScoreReady"
-  ) {
-    // Allow completing ScoreReady → handoff in same path below via empty qualify
-  }
-
-  if (
     session.state === "ClosedComplete" ||
     session.state === "ClosedAbandoned" ||
     session.state === "ClosedPolicy" ||
@@ -114,7 +117,8 @@ export async function orchestrateTurn(opts: {
   ) {
     return {
       session,
-      assistantMessage: "Cette conversation est terminée. Rechargez le widget pour en démarrer une nouvelle.",
+      assistantMessage:
+        "Cette conversation est terminée. Rechargez le widget pour en démarrer une nouvelle.",
       intent: "bye",
     };
   }
@@ -139,15 +143,21 @@ export async function orchestrateTurn(opts: {
     validated = await callLlmValidated(
       opts.llm,
       opts.config,
+      session,
       text,
       expected?.id,
       ragContext,
     );
   } catch {
     const prompt = expected?.prompt ?? "Comment puis-je vous aider ?";
+    const choices =
+      expected?.type === "single_choice" && expected.options?.length
+        ? `\nOptions : ${expected.options.map((o) => o.label).join(", ")}.`
+        : "";
+    const msg = `${FALLBACK_MESSAGE}${choices}\n\n${prompt}`;
     return {
-      session: appendMessages(session, text, FALLBACK_MESSAGE),
-      assistantMessage: `${FALLBACK_MESSAGE}\n\n${prompt}`,
+      session: appendMessages(session, text, msg),
+      assistantMessage: msg,
       intent: "other",
     };
   }
@@ -250,15 +260,21 @@ export async function orchestrateTurn(opts: {
       session = maybeCompleteQualification(session, opts.config);
 
       if (session.state === "ScoreReady") {
-        const handoff =
-          "Merci. J'ai transmis votre demande à l'équipe. Un collaborateur vous recontactera selon leurs disponibilités (sans engagement de délai).";
         session = withState(session, "Handoff");
-        session = withState(appendMessages(session, handoff), "Alerting");
+        const handoff = await synthesizeHandoffMessage({
+          llm: opts.llm,
+          config: opts.config,
+          session,
+        });
+        session = withState(
+          appendMessages(session, handoff.message),
+          "Alerting",
+        );
         const event = alertEventForScore(opts.config, session.scoreFinal ?? 0);
         session = withState(session, "ClosedComplete");
         return {
           session,
-          assistantMessage: handoff,
+          assistantMessage: handoff.message,
           intent: "answer",
           alertEvent: event,
         };

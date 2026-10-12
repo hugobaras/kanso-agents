@@ -15,8 +15,11 @@ export type MistralLlmClientOptions = {
 };
 
 const DEFAULT_EU_BASE = "https://api.eu.mistral.ai/v1";
-/** Alias documented by Mistral; exact snapshot availability is EU-endpoint dependent. */
-const DEFAULT_MODEL = "mistral-small-latest";
+/**
+ * Phase 11 (D-095): prefer ministral-8b — lower rate-limit pressure than small on demo quotas.
+ * Override with KANSO_MISTRAL_MODEL.
+ */
+const DEFAULT_MODEL = "ministral-8b-latest";
 
 /**
  * Minimal JSON Schema for inbound structured turns.
@@ -153,12 +156,25 @@ export class MistralLlmClient implements LlmClient {
  * Map known Kanso zod schemas to JSON Schema objects for Mistral.
  * Unknown schemas → generic object (json_object path via loose schema).
  */
+const HANDOFF_RESPONSE_JSON_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    assistant_message: { type: "string" },
+    claimed_facts: { type: "array", items: { type: "string" } },
+  },
+  required: ["assistant_message", "claimed_facts"],
+} as const;
+
 function zodLikeToLooseObjectSchema(schema: z.ZodType<unknown>): object {
   const typeName = (schema as { _def?: { typeName?: string } })._def?.typeName;
   // Heuristic: inbound schema is an object with intent enum — use dedicated schema.
   const shape = (schema as { shape?: Record<string, unknown> }).shape;
   if (shape && "intent" in shape && "assistant_message" in shape) {
     return INBOUND_RESPONSE_JSON_SCHEMA;
+  }
+  if (shape && "assistant_message" in shape && !("intent" in shape)) {
+    return HANDOFF_RESPONSE_JSON_SCHEMA;
   }
   if (typeName === "ZodObject" || shape) {
     return {

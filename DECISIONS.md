@@ -323,9 +323,27 @@ Sources : docs publiques OpenAI, Anthropic, Mistral. Non contractuel ; revalider
 
 ---
 
+## 2026-10-12 — Phase 11 Inbound riche (M2)
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-091 | Priorité P11 | LLM-first (contexte + retries) **et** chips widget en parallèle | Phase 11 Q1 = 3 | Validée |
+| D-092 | Handoff | Synthèse LLM contrainte + template code si LLM down | Phase 11 Q2 = 3 | Validée |
+| D-093 | Heuristique | Filet uniquement après retries Mistral | Phase 11 Q3 = 2 | Validée |
+| D-094 | SMTP P11 | Reporter (console OK) | Phase 11 Q4 = 2 | Validée |
+| D-095 | Modèle Mistral | Choix agent après smoke quota | Phase 11 Q5 = 3 | Validée |
+
+### Lien livrable
+
+- [docs/phase-11-inbound-riche.md](docs/phase-11-inbound-riche.md)
+
+---
+
 ## Suite
 
-Cadrage phases 0–9 **clos** (2026-10-10). Phase 10 rédigée (2026-10-12) — attendre **validé**. Exécution P0–P3 : voir [docs/p0-execution.md](docs/p0-execution.md) et suivants.
+Phases 0–10 fondations. Phase 11 décisions validées — attendre **go** pour exécution. Exécution P0–P3 / P10 : voir docs `p*-execution.md`.
 
 ### 2026-10-10 — Exécution P0 (en cours)
 

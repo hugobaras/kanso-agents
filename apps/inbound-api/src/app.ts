@@ -5,16 +5,22 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
   createSession,
+  InboundHeuristicLlmClient,
   newSessionId,
   orchestrateTurn,
   PostgresSessionStore,
+  resolveExpectedQuestion,
   startQualification,
 } from "@kanso/inbound-engine";
-import { parseInboundConfig } from "@kanso/config";
+import { parseInboundConfig, type InboundConfig } from "@kanso/config";
 import type { LlmClient } from "@kanso/llm";
-import { createLlmClient, MeteringLlmClient, MockLlmClient } from "@kanso/llm";
+import {
+  createLlmClient,
+  FallbackLlmClient,
+  MeteringLlmClient,
+  RetryLlmClient,
+} from "@kanso/llm";
 import { getPool, requireTenantId } from "@kanso/tenancy";
-import type { InboundSession } from "@kanso/inbound-engine";
 import { dispatchInboundAlert } from "./alerts.js";
 import { mountDocumentRoutes } from "./documents.js";
 import { syncInboundIntegrations } from "./integrations.js";
@@ -113,12 +119,14 @@ export function createApp(deps: AppDeps = {}) {
     );
     const started = startQualification(session, config, { now: new Date() });
     await store.create(started.session);
+    const expected = resolveExpectedQuestion(config, started.session);
 
     return c.json({
       session_id: started.session.id,
       state: started.session.state,
       assistant_message: started.assistantMessage,
       after_hours: started.afterHours,
+      expected_question: expected,
     });
   });
 
@@ -143,7 +151,7 @@ export function createApp(deps: AppDeps = {}) {
     }
     const config = parseInboundConfig(published.config);
     const metering = new MeteringLlmClient(
-      deps.llm ?? resolveLlmClient(session, body.text.trim()),
+      deps.llm ?? resolveLlmClient(config),
     );
 
     const turn = await orchestrateTurn({
@@ -207,6 +215,8 @@ export function createApp(deps: AppDeps = {}) {
       });
     }
 
+    const expected = resolveExpectedQuestion(config, turn.session);
+
     return c.json({
       session_id: turn.session.id,
       state: turn.session.state,
@@ -217,7 +227,8 @@ export function createApp(deps: AppDeps = {}) {
       alert,
       integrations,
       assistant_message: turn.assistantMessage,
-      llm_provider: process.env.MISTRAL_API_KEY ? "mistral" : "mock",
+      expected_question: expected,
+      llm_provider: process.env.MISTRAL_API_KEY ? "mistral" : "heuristic",
       usage: {
         calls: usage.recorded,
         day_total_eur: usage.dayTotalEur,
@@ -229,22 +240,25 @@ export function createApp(deps: AppDeps = {}) {
   return app;
 }
 
-/** Live Mistral if MISTRAL_API_KEY; else one-shot mock fixture for local smoke. */
-function resolveLlmClient(session: InboundSession, userText: string): LlmClient {
-  if (process.env.MISTRAL_API_KEY) {
-    return createLlmClient();
+/**
+ * D-093: Mistral with retries, then heuristic filet only if still failing.
+ */
+function resolveLlmClient(config: InboundConfig): LlmClient {
+  const heuristic = new InboundHeuristicLlmClient(config);
+  if (!process.env.MISTRAL_API_KEY) {
+    return heuristic;
   }
-  const n = Object.keys(session.answers).length;
-  return new MockLlmClient([
-    {
-      intent: "answer",
-      answer: {
-        question_id:
-          n === 0 ? "matter_type" : n === 1 ? "urgency" : "contact_email",
-        value: n === 0 ? "corporate" : n === 1 ? "48h" : userText,
-      },
-      assistant_message: "Merci.",
-      claimed_facts: [],
-    },
-  ]);
+  const primary = new RetryLlmClient(createLlmClient(), {
+    maxAttempts: 3,
+    baseDelayMs: 500,
+  });
+  return new FallbackLlmClient(primary, heuristic, (err) => {
+    console.error(
+      JSON.stringify({
+        level: "warn",
+        event: "llm_primary_failed_fallback_heuristic",
+        message: err instanceof Error ? err.message : String(err),
+      }),
+    );
+  });
 }

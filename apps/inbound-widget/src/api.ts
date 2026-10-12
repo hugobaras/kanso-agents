@@ -1,8 +1,16 @@
+export type ExpectedQuestion = {
+  id: string;
+  prompt: string;
+  type: string;
+  options: Array<{ id: string; label: string }> | null;
+};
+
 export type SessionStart = {
   session_id: string;
   state: string;
   assistant_message: string;
   after_hours?: boolean;
+  expected_question?: ExpectedQuestion | null;
 };
 
 export type MessageReply = {
@@ -11,6 +19,7 @@ export type MessageReply = {
   assistant_message: string;
   score_final: number | null;
   alert_event: string | null;
+  expected_question?: ExpectedQuestion | null;
 };
 
 export async function startSession(

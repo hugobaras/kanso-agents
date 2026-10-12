@@ -1,6 +1,11 @@
 import { parseScriptConfig } from "./config.js";
-import { sendMessage, startSession } from "./api.js";
+import { sendMessage, startSession, type ExpectedQuestion } from "./api.js";
 import { mountChatUi } from "./ui.js";
+
+function chipsFromExpected(eq: ExpectedQuestion | null | undefined) {
+  if (!eq || eq.type !== "single_choice" || !eq.options?.length) return null;
+  return eq.options;
+}
 
 export async function bootstrap(script: HTMLScriptElement | null = null) {
   const config = parseScriptConfig(
@@ -21,7 +26,6 @@ export async function bootstrap(script: HTMLScriptElement | null = null) {
       try {
         const started = await startSession(config.apiBase, config.tenantId);
         sessionId = started.session_id;
-        // Premier message API = disclaimer IA + première question (phase 2/3)
         ui.appendMessage("system", "Vous parlez à une IA, pas à un humain.");
         if (started.after_hours) {
           ui.appendMessage(
@@ -30,6 +34,7 @@ export async function bootstrap(script: HTMLScriptElement | null = null) {
           );
         }
         ui.appendMessage("assistant", started.assistant_message);
+        ui.setChoices(chipsFromExpected(started.expected_question));
       } catch (err) {
         ui.appendMessage(
           "system",
@@ -50,12 +55,16 @@ export async function bootstrap(script: HTMLScriptElement | null = null) {
 
   ui.onSubmit(async (text) => {
     if (closed) {
-      ui.appendMessage("system", "Conversation terminée. Rechargez la page pour recommencer.");
+      ui.appendMessage(
+        "system",
+        "Conversation terminée. Rechargez la page pour recommencer.",
+      );
       return;
     }
     await ensureSession();
     if (!sessionId) return;
     ui.appendMessage("user", text);
+    ui.setChoices(null);
     ui.setBusy(true);
     try {
       const reply = await sendMessage(
@@ -67,6 +76,9 @@ export async function bootstrap(script: HTMLScriptElement | null = null) {
       ui.appendMessage("assistant", reply.assistant_message);
       if (reply.state.startsWith("Closed")) {
         closed = true;
+        ui.setChoices(null);
+      } else {
+        ui.setChoices(chipsFromExpected(reply.expected_question));
       }
     } catch (err) {
       ui.appendMessage(

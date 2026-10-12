@@ -29,6 +29,15 @@ export {
   type SessionTtlConfig,
 } from "./pg-sessions.js";
 export { orchestrateTurn, type TurnResult } from "./orchestrate.js";
+export { InboundHeuristicLlmClient } from "./heuristic-llm.js";
+export {
+  resolveExpectedQuestion,
+  type ExpectedQuestionPayload,
+} from "./expected-question.js";
+export {
+  buildHandoffTemplate,
+  synthesizeHandoffMessage,
+} from "./handoff.js";
 export {
   parseInboundLlmOutput,
   validateInboundLlmAgainstConfig,

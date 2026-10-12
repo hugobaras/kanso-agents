@@ -1,9 +1,13 @@
 FROM node:22-alpine
 WORKDIR /app
 RUN corepack enable
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
 COPY apps/inbound-api ./apps/inbound-api
+COPY apps/inbound-widget ./apps/inbound-widget
 COPY packages ./packages
-RUN pnpm install --filter @kanso/inbound-api...
+RUN pnpm install --filter @kanso/inbound-api... --filter @kanso/inbound-widget... \
+  && pnpm --filter @kanso/llm build \
+  && pnpm --filter @kanso/inbound-engine build \
+  && pnpm --filter @kanso/inbound-widget build
 WORKDIR /app/apps/inbound-api
 CMD ["pnpm", "exec", "tsx", "src/index.ts"]

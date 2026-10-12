@@ -12,7 +12,7 @@ services:
       KANSO_MASTER_KEY: ${KANSO_MASTER_KEY:-local-dev-only-change-me-32chars!}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
       MISTRAL_BASE_URL: ${MISTRAL_BASE_URL:-https://api.mistral.ai}
-      KANSO_MISTRAL_MODEL: ${KANSO_MISTRAL_MODEL:-mistral-small-latest}
+      KANSO_MISTRAL_MODEL: ${KANSO_MISTRAL_MODEL:-ministral-8b-latest}
       KANSO_STORAGE_DIR: /data/storage
     volumes:
       - kanso_storage:/data/storage

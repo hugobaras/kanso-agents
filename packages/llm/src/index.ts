@@ -7,6 +7,8 @@ export type {
 } from "./types.js";
 export { MockLlmClient } from "./mock.js";
 export { MeteringLlmClient } from "./metering.js";
+export { FallbackLlmClient } from "./fallback.js";
+export { RetryLlmClient, type RetryLlmClientOptions } from "./retry.js";
 export { estimateUsageEur } from "./pricing.js";
 export { MistralLlmClient, INBOUND_RESPONSE_JSON_SCHEMA } from "./mistral.js";
 export { createLlmClient, type CreateLlmClientOptions } from "./factory.js";
@@ -33,6 +35,14 @@ export const InboundLlmOutputSchema = z.object({
 });
 
 export type InboundLlmOutput = z.infer<typeof InboundLlmOutputSchema>;
+
+/** Short handoff / closing message (phase 11). */
+export const HandoffMessageSchema = z.object({
+  assistant_message: z.string().min(1),
+  claimed_facts: z.array(z.string()).default([]),
+});
+
+export type HandoffMessage = z.infer<typeof HandoffMessageSchema>;
 
 export const ExtractLlmOutputSchema = z.object({
   document_type: z.enum(["invoice", "quote", "delivery_note"]),

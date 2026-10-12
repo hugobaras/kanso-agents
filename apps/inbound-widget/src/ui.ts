@@ -1,11 +1,14 @@
 import type { WidgetConfig } from "./config.js";
 
+export type ChoiceOption = { id: string; label: string };
+
 export type ChatUi = {
   root: HTMLElement;
   open: () => void;
   close: () => void;
   setBusy: (busy: boolean) => void;
   appendMessage: (role: "user" | "assistant" | "system", text: string) => void;
+  setChoices: (options: ChoiceOption[] | null) => void;
   onSubmit: (handler: (text: string) => void) => void;
 };
 
@@ -45,6 +48,18 @@ export function mountChatUi(config: WidgetConfig): ChatUi {
     .kanso-msg.assistant, .kanso-msg.system { align-self: flex-start; background: #fff; border: 1px solid rgba(0,0,0,.06); }
     .kanso-msg.user { align-self: flex-end; background: ${config.primaryColor}; color: #fff; }
     .kanso-msg.system { font-size: 12px; color: #444; background: #efeae2; }
+    .kanso-choices {
+      display: none; flex-wrap: wrap; gap: 6px; padding: 0 10px 8px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+    .kanso-choices.visible { display: flex; }
+    .kanso-chip {
+      border: 1px solid rgba(0,0,0,.15); background: #fff; color: #1a1a1a;
+      border-radius: 2px; padding: 8px 10px; font: inherit; font-size: 13px;
+      cursor: pointer; text-align: left;
+    }
+    .kanso-chip:hover { border-color: ${config.primaryColor}; color: ${config.primaryColor}; }
+    .kanso-chip:disabled { opacity: .5; cursor: not-allowed; }
     .kanso-form { display: flex; gap: 8px; padding: 10px; border-top: 1px solid rgba(0,0,0,.08); background: #fff; }
     .kanso-input {
       flex: 1; border: 1px solid rgba(0,0,0,.15); border-radius: 2px; padding: 10px;
@@ -80,6 +95,10 @@ export function mountChatUi(config: WidgetConfig): ChatUi {
   const messages = document.createElement("div");
   messages.className = "kanso-messages";
 
+  const choices = document.createElement("div");
+  choices.className = "kanso-choices";
+  choices.setAttribute("aria-label", "Suggestions de réponse");
+
   const form = document.createElement("form");
   form.className = "kanso-form";
   const input = document.createElement("input");
@@ -93,11 +112,12 @@ export function mountChatUi(config: WidgetConfig): ChatUi {
   send.textContent = "Envoyer";
 
   form.append(input, send);
-  panel.append(header, messages, form);
+  panel.append(header, messages, choices, form);
   root.append(bubble, panel);
   document.body.appendChild(root);
 
   let submitHandler: ((text: string) => void) | null = null;
+  let busy = false;
 
   bubble.addEventListener("click", () => {
     panel.classList.toggle("open");
@@ -105,18 +125,44 @@ export function mountChatUi(config: WidgetConfig): ChatUi {
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const text = input.value.trim();
-    if (!text || send.disabled) return;
+    if (!text || busy) return;
     input.value = "";
     submitHandler?.(text);
   });
+
+  function renderChoices(options: ChoiceOption[] | null) {
+    choices.replaceChildren();
+    if (!options?.length) {
+      choices.classList.remove("visible");
+      return;
+    }
+    choices.classList.add("visible");
+    for (const opt of options) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "kanso-chip";
+      btn.textContent = opt.label;
+      btn.disabled = busy;
+      btn.addEventListener("click", () => {
+        if (busy) return;
+        // Send label (natural) — backend maps to option id
+        submitHandler?.(opt.label);
+      });
+      choices.appendChild(btn);
+    }
+  }
 
   return {
     root,
     open: () => panel.classList.add("open"),
     close: () => panel.classList.remove("open"),
-    setBusy: (busy) => {
-      send.disabled = busy;
-      input.disabled = busy;
+    setBusy: (next) => {
+      busy = next;
+      send.disabled = next;
+      input.disabled = next;
+      choices.querySelectorAll("button").forEach((b) => {
+        (b as HTMLButtonElement).disabled = next;
+      });
     },
     appendMessage: (role, text) => {
       const el = document.createElement("div");
@@ -125,6 +171,7 @@ export function mountChatUi(config: WidgetConfig): ChatUi {
       messages.appendChild(el);
       messages.scrollTop = messages.scrollHeight;
     },
+    setChoices: renderChoices,
     onSubmit: (handler) => {
       submitHandler = handler;
     },
