@@ -73,9 +73,11 @@ export const InboundConfigSchema = z.object({
           on: z.array(
             z.enum(["new_lead", "hot_lead", "escalation", "handoff"]),
           ),
+          /** Portal toggle (D-106); absent = enabled */
+          enabled: z.boolean().optional(),
         }),
       )
-      .min(1),
+      .default([]),
   }),
   operations: z.object({
     timezone: z.string().min(1),

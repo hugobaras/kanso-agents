@@ -29,6 +29,7 @@ import {
 } from "./demo-ops.js";
 import { mountDocumentRoutes } from "./documents.js";
 import { syncInboundIntegrations } from "./integrations.js";
+import { mountPortalRoutes } from "./portal.js";
 import { resolveRag } from "./rag.js";
 import { flushMeteredUsage } from "./usage.js";
 
@@ -78,8 +79,8 @@ export function createApp(deps: AppDeps = {}) {
     "*",
     cors({
       origin: (origin) => origin || "*",
-      allowMethods: ["GET", "POST", "OPTIONS"],
-      allowHeaders: ["Content-Type", "Accept"],
+      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowHeaders: ["Content-Type", "Accept", "Authorization"],
     }),
   );
 
@@ -115,6 +116,7 @@ export function createApp(deps: AppDeps = {}) {
   );
 
   mountDocumentRoutes(app);
+  mountPortalRoutes(app);
 
   app.post("/v1/:tenantId/sessions", async (c) => {
     const tenantId = requireTenantId(c.req.param("tenantId"));

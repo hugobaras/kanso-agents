@@ -15,6 +15,7 @@ function usage() {
   kanso-admin put-secret <tenant_id> <secret_ref> <json-credentials>
   kanso-admin publish-config <tenant_id> <path-to-config.json>
   kanso-admin set-dpa <tenant_id> --signed|--unsigned
+  kanso-admin invite-portal-user <tenant_id> <email> [--role owner|ops]
   kanso-admin purge-retention [--dry-run|--execute]
   kanso-admin confirm-final-action <tenant_id> --i-understand-final
 `);
@@ -151,6 +152,42 @@ async function main() {
       process.exit(1);
     }
     console.log(JSON.stringify({ ok: true, ...res.rows[0] }));
+    await pool.end();
+    return;
+  }
+
+  if (cmd === "invite-portal-user") {
+    const [tenantId, email, ...rest] = args;
+    if (!tenantId || !email) {
+      usage();
+      process.exit(1);
+    }
+    requireTenantId(tenantId);
+    let role: "owner" | "ops" = "owner";
+    for (let i = 0; i < rest.length; i++) {
+      if (rest[i] === "--role" && rest[i + 1]) {
+        const r = rest[++i];
+        if (r !== "owner" && r !== "ops") {
+          console.error(JSON.stringify({ ok: false, error: "invalid_role" }));
+          process.exit(1);
+        }
+        role = r;
+      }
+    }
+    if (!email.includes("@")) {
+      console.error(JSON.stringify({ ok: false, error: "invalid_email" }));
+      process.exit(1);
+    }
+    const pool = getPool();
+    const res = await pool.query(
+      `insert into portal_users (tenant_id, email, role)
+       values ($1, lower($2), $3)
+       on conflict (tenant_id, email)
+       do update set role = excluded.role
+       returning id, tenant_id, email, role`,
+      [tenantId, email.trim(), role],
+    );
+    console.log(JSON.stringify({ ok: true, user: res.rows[0] }));
     await pool.end();
     return;
   }

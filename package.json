@@ -14,6 +14,7 @@
     "eval:corpus": "tsx eval/documents/run-corpus.mts",
     "demo:reset": "bash scripts/demo-reset.sh",
     "smoke:partner": "bash scripts/smoke-partner-template.sh",
+    "smoke:portal": "bash scripts/smoke-portal.sh",
     "onboard:partner": "bash scripts/onboard-partner.sh"
   },
   "devDependencies": {

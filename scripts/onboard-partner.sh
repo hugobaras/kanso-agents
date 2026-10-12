@@ -113,6 +113,12 @@ Après signature DPA réelle:
 \`\`\`
 pnpm --filter @kanso/admin-cli exec node dist/index.js set-dpa $TENANT --signed
 \`\`\`
+
+Portail connecteurs:
+\`\`\`
+pnpm --filter @kanso/admin-cli exec node dist/index.js invite-portal-user $TENANT ops@example.com --role owner
+open ${API_BASE}/portal
+\`\`\`
 EOF
 
 export TENANT NAME SET_DPA OUT_DIR SNIPPET API_BASE

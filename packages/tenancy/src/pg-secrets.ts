@@ -44,4 +44,53 @@ export class PostgresSecretStore {
     );
     return { provider, tenantId, credentials };
   }
+
+  async exists(tenantId: string, secretRef: string): Promise<boolean> {
+    const res = await this.pool.query(
+      `select 1 from tenant_secrets where tenant_id = $1 and secret_ref = $2`,
+      [tenantId, secretRef],
+    );
+    return res.rows.length > 0;
+  }
+
+  /** Peek non-sensitive hints for portal UI (never return raw secrets). */
+  async peekHints(
+    tenantId: string,
+    secretRef: string,
+  ): Promise<Record<string, string> | null> {
+    const res = await this.pool.query<{ ciphertext: Buffer }>(
+      `select ciphertext from tenant_secrets
+       where tenant_id = $1 and secret_ref = $2`,
+      [tenantId, secretRef],
+    );
+    const row = res.rows[0];
+    if (!row) return null;
+    try {
+      const credentials = decryptJson<Record<string, string>>(
+        this.masterKey,
+        row.ciphertext,
+      );
+      const hints: Record<string, string> = {};
+      if (credentials.to) hints.to = credentials.to;
+      if (credentials.from) hints.from = credentials.from;
+      if (credentials.host) hints.host = credentials.host;
+      if (credentials.webhook_url) {
+        const u = credentials.webhook_url;
+        hints.webhook_masked =
+          u.length > 24 ? `${u.slice(0, 28)}…${u.slice(-6)}` : "••••";
+      }
+      return Object.keys(hints).length > 0 ? hints : { configured: "true" };
+    } catch {
+      // Secret present but undecryptable with current master key
+      return { configured: "true" };
+    }
+  }
+
+  async delete(tenantId: string, secretRef: string): Promise<boolean> {
+    const res = await this.pool.query(
+      `delete from tenant_secrets where tenant_id = $1 and secret_ref = $2`,
+      [tenantId, secretRef],
+    );
+    return (res.rowCount ?? 0) > 0;
+  }
 }

@@ -44,6 +44,10 @@ kanso-admin set-dpa <tenant_id> --signed
 
 Tenants `demo-*` et fichiers stub restent autorisés pour la démo.
 
+## Portail connecteurs
+
+Après invitation (`invite-portal-user`) : [http://API/portal](http://127.0.0.1:3000/portal) — brancher / révoquer e-mail & Slack, demande sur-mesure.
+
 ## Liens
 
 | Doc | Rôle |
@@ -51,4 +55,5 @@ Tenants `demo-*` et fichiers stub restent autorisés pour la démo.
 | [dpa-design-partner.md](./legal/dpa-design-partner.md) | Modèle DPA |
 | [design-partner-brief.md](./design-partner-brief.md) | Infos à collecter |
 | [checklist-m4.md](./checklist-m4.md) | Go M4 |
+| [phase-14-portail-connecteurs.md](./phase-14-portail-connecteurs.md) | Portail client |
 | [runbooks/incident.md](./runbooks/incident.md) | Incident / rota |

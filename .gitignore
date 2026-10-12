@@ -4,6 +4,7 @@ dist-tsc
 .turbo
 .data/
 tmp/
+.pnpm-store/
 eval/inbound/reports/*.json
 eval/documents/reports/*.json
 eval/documents/corpus/files/

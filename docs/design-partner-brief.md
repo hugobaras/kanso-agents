@@ -40,6 +40,11 @@ pnpm smoke:partner
 
 # Après DPA signé
 pnpm --filter @kanso/admin-cli exec node dist/index.js set-dpa cabinet-exemple --signed
+
+# Portail connecteurs (e-mail / Slack / sur-mesure)
+pnpm --filter @kanso/admin-cli exec node dist/index.js \
+  invite-portal-user cabinet-exemple contact@cabinet-exemple.fr --role owner
+open http://127.0.0.1:3000/portal
 ```
 
 ## 3. Smoke

@@ -376,9 +376,29 @@ Sources : docs publiques OpenAI, Anthropic, Mistral. Non contractuel ; revalider
 
 ---
 
+## 2026-10-12 — Phase 14 Portail connecteurs
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-104 | Auth portail | Magic link e-mail → `portal_users` / session liée `tenant_id` | Phase 14 Q1 = 1 | Validée |
+| D-105 | Slack MVP | Incoming Webhook collé (pas OAuth) | Phase 14 Q2 = 1 | Validée |
+| D-106 | Canaux | Portail écrit secrets **et** republie `alerts.channels` | Phase 14 Q3 = 1 | Validée |
+| D-107 | Sur-mesure | Formulaire → `custom_integration_requests` + alerte ops | Phase 14 Q4 = 1 | Validée |
+| D-108 | Scope vs D-021 | Portail = alertes seulement ; scoring/questions restent CLI | Phase 14 | Validée |
+
+### Lien livrable
+
+- [docs/phase-14-portail-connecteurs.md](docs/phase-14-portail-connecteurs.md)
+- [docs/p14-execution.md](docs/p14-execution.md)
+
+---
+
 ## Suite
 
-Phases 0–13 livrées côté repo. Prochain : M5 / pilote (DPA signé humain, OVH, SMTP réel).
+Phases 0–14 livrées côté repo.  
+En parallèle humain : DPA signé, OVH, SMTP prod.
 
 ### 2026-10-10 — Exécution P0 (en cours)
 

@@ -48,8 +48,9 @@ export async function dispatchInboundAlert(opts: {
     `Réponses: ${JSON.stringify(answers, null, 2)}`,
   ].join("\n");
 
-  const channels = opts.config.alerts.channels.filter((c) =>
-    (c.on as string[]).includes(opts.event),
+  const channels = opts.config.alerts.channels.filter(
+    (c) =>
+      c.enabled !== false && (c.on as string[]).includes(opts.event),
   );
   if (channels.length === 0) {
     const skipped = {

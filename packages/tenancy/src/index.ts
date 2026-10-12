@@ -37,6 +37,7 @@ export function requireTenantId(tenantId: string | undefined): string {
 export { encryptJson, decryptJson } from "./crypto.js";
 export { PostgresSecretStore } from "./pg-secrets.js";
 export { getPool, withTenantLocal } from "./pg-pool.js";
+export type { Pool } from "pg";
 export {
   recordUsage,
   sumUsageEurToday,
