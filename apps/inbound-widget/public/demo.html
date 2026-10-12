@@ -187,7 +187,7 @@
           <div class="row" id="d2a-row" style="margin-top:0.5rem;flex-direction:column;align-items:flex-start;gap:0.4rem">
             <label>Document-to-Action (tenant sélectionné)</label>
             <div class="row">
-              <button type="button" class="scenario" id="btn-d2a">
+              <button type="button" class="scenario" id="btn-d2a" data-d2a="1">
                 Enqueue facture démo → pipeline
               </button>
             </div>
@@ -373,6 +373,8 @@
 
       document.querySelectorAll("button.scenario").forEach((btn) => {
         btn.addEventListener("click", () => {
+          // Ne pas traiter le bouton D2A (pas de data-text) comme un message chat
+          if (btn.dataset.d2a || !btn.dataset.text) return;
           const text = btn.dataset.text;
           const input = document.querySelector(".kanso-input");
           const form = document.querySelector(".kanso-form");

@@ -54,6 +54,8 @@ export async function bootstrap(script: HTMLScriptElement | null = null) {
   });
 
   ui.onSubmit(async (text) => {
+    const trimmed = text?.trim();
+    if (!trimmed || trimmed === "undefined") return;
     if (closed) {
       ui.appendMessage(
         "system",
@@ -63,7 +65,7 @@ export async function bootstrap(script: HTMLScriptElement | null = null) {
     }
     await ensureSession();
     if (!sessionId) return;
-    ui.appendMessage("user", text);
+    ui.appendMessage("user", trimmed);
     ui.setChoices(null);
     ui.setBusy(true);
     try {
@@ -71,7 +73,7 @@ export async function bootstrap(script: HTMLScriptElement | null = null) {
         config.apiBase,
         config.tenantId,
         sessionId,
-        text,
+        trimmed,
       );
       ui.appendMessage("assistant", reply.assistant_message);
       window.dispatchEvent(

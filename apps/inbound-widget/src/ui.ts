@@ -145,8 +145,10 @@ export function mountChatUi(config: WidgetConfig): ChatUi {
       btn.disabled = busy;
       btn.addEventListener("click", () => {
         if (busy) return;
+        const label = opt.label?.trim();
+        if (!label) return;
         // Send label (natural) — backend maps to option id
-        submitHandler?.(opt.label);
+        submitHandler?.(label);
       });
       choices.appendChild(btn);
     }
