@@ -22,11 +22,12 @@ bootstrap_one() {
 
 bootstrap_one demo-tenant "Demo Cabinet Durand" \
   "$ROOT/config/examples/inbound.avocats.example.json"
-# D2A only on avocats demo
 "${CLI[@]}" publish-config demo-tenant \
   "$ROOT/config/examples/document_to_action.btp.example.json" || true
 
 bootstrap_one demo-martin "Demo Cabinet Martin" \
   "$ROOT/config/examples/inbound.experts-comptables.example.json"
+"${CLI[@]}" publish-config demo-martin \
+  "$ROOT/config/examples/document_to_action.btp.example.json" || true
 
 echo '{"ok":true,"tenants":["demo-tenant","demo-martin"],"next":"open http://127.0.0.1:3000/demo"}'

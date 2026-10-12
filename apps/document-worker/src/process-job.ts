@@ -81,11 +81,17 @@ export async function processClaimedJob(row: DocumentJobRow): Promise<void> {
 
   try {
     const content = readJobPayload(row.storage_ref);
-    const llm = process.env.MISTRAL_API_KEY
-      ? createLlmClient()
-      : new MockLlmClient([
-          mockFixtureFromSha(row.content_sha256 ?? content.toString("hex")),
-        ]);
+    const forceMock =
+      process.env.KANSO_D2A_FORCE_MOCK === "1" ||
+      content.length < 512 ||
+      content.toString("utf8").includes("demo-facture") ||
+      content.toString("utf8").includes("demo kanso");
+    const llm =
+      process.env.MISTRAL_API_KEY && !forceMock
+        ? createLlmClient()
+        : new MockLlmClient([
+            mockFixtureFromSha(row.content_sha256 ?? content.toString("hex")),
+          ]);
     const target = createPennylaneAdapter({
       provider: "pennylane",
       tenantId: row.tenant_id,

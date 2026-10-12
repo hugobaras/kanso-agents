@@ -185,13 +185,13 @@
             Qualifie jusqu’au bout → <strong>alerte + CRM/agenda sandbox</strong> à droite.
           </p>
           <div class="row" id="d2a-row" style="margin-top:0.5rem;flex-direction:column;align-items:flex-start;gap:0.4rem">
-            <label>Document-to-Action (tenant Durand)</label>
+            <label>Document-to-Action (tenant sélectionné)</label>
             <div class="row">
               <button type="button" class="scenario" id="btn-d2a">
                 Enqueue facture démo → pipeline
               </button>
             </div>
-            <p class="hint" id="d2a-status">Pas encore de job. (Martin n’a pas de config D2A.)</p>
+            <p class="hint" id="d2a-status">Clique pour créer un job sur le tenant actif.</p>
           </div>
         </div>
       </section>
@@ -260,8 +260,9 @@
         document.getElementById("site-title").textContent = opt.dataset.title;
         document.getElementById("site-brand").textContent =
           "Site client · " + opt.textContent.trim();
-        document.getElementById("d2a-row").style.opacity =
-          opt.value === "demo-tenant" ? "1" : "0.45";
+        document.getElementById("d2a-row").style.opacity = "1";
+        d2aStatus.textContent =
+          "Prêt — job ira sur « " + opt.value + " ». Clique le bouton.";
 
         const s = document.createElement("script");
         s.src = "/widget/kanso-widget.js?t=" + Date.now();
@@ -388,16 +389,15 @@
         });
       });
 
+      let d2aTenant = "demo-tenant";
+
       document.getElementById("btn-d2a").addEventListener("click", async () => {
-        if (sel.value !== "demo-tenant") {
-          d2aStatus.textContent = "Switch sur Cabinet Durand pour D2A.";
-          return;
-        }
-        d2aStatus.textContent = "Upload en cours…";
-        // Minimal PDF bytes — worker traite le job (extract mock / pipeline)
+        d2aTenant = sel.value;
+        d2aStatus.textContent = "Upload en cours sur " + d2aTenant + "…";
+        // Stub PDF — worker staging utilise extract mock (KANSO_D2A_FORCE_MOCK)
         const pdfB64 = btoa("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\ndemo-facture-kanso");
         try {
-          const res = await fetch(API + "/v1/demo-tenant/documents", {
+          const res = await fetch(API + "/v1/" + d2aTenant + "/documents", {
             method: "POST",
             headers: { "content-type": "application/json", Accept: "application/json" },
             body: JSON.stringify({
@@ -411,7 +411,8 @@
             return;
           }
           pollJobId = data.job_id;
-          d2aStatus.textContent = "Job " + pollJobId.slice(0, 8) + "… pending/ingest — worker poll…";
+          d2aStatus.textContent =
+            "Job " + pollJobId.slice(0, 8) + "… pending — worker poll (" + d2aTenant + ")";
           pollOps();
         } catch (err) {
           d2aStatus.textContent = String(err);
@@ -421,7 +422,9 @@
       async function pollDocJob() {
         if (!pollJobId) return;
         try {
-          const res = await fetch(API + "/v1/demo-tenant/documents/" + pollJobId);
+          const res = await fetch(
+            API + "/v1/" + d2aTenant + "/documents/" + pollJobId,
+          );
           if (!res.ok) return;
           const job = await res.json();
           d2aStatus.textContent =
