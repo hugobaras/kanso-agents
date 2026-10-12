@@ -41,6 +41,7 @@ export type { Pool } from "pg";
 export {
   recordUsage,
   sumUsageEurToday,
+  usageStatsToday,
   softCapAlreadyAlertedToday,
   recordSoftCapBreach,
   softCapEurPerDay,

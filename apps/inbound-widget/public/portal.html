@@ -276,6 +276,52 @@
         color: var(--muted);
       }
       #custom-list .req b { color: var(--ink); font-weight: 600; }
+      .usage-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.65rem;
+        margin: 0.75rem 0 0.5rem;
+      }
+      @media (max-width: 560px) {
+        .usage-grid { grid-template-columns: 1fr; }
+      }
+      .usage-stat {
+        background: var(--bg1, #f2f3f5);
+        border-radius: var(--radius-sm);
+        padding: 0.75rem 0.85rem;
+      }
+      .usage-stat .lbl {
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .usage-stat .val {
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin-top: 0.2rem;
+      }
+      .usage-bar {
+        height: 0.45rem;
+        border-radius: var(--radius-pill);
+        background: #e8ebf0;
+        overflow: hidden;
+        margin-top: 0.75rem;
+      }
+      .usage-bar > span {
+        display: block;
+        height: 100%;
+        background: var(--accent);
+        border-radius: inherit;
+        width: 0%;
+        transition: width 0.25s ease;
+      }
+      .usage-bar.breach > span { background: var(--danger); }
+      .badge.breach {
+        color: var(--danger);
+        background: var(--danger-soft);
+      }
     </style>
   </head>
   <body>
@@ -308,6 +354,30 @@
             <div class="meta" id="tenant-label" style="margin:0.15rem 0 0"></div>
           </div>
           <button id="btn-logout" class="secondary" type="button">Déconnexion</button>
+        </div>
+
+        <div class="panel" id="usage-panel">
+          <div class="conn-head" style="margin-bottom:0.25rem">
+            <h2 style="margin:0">Usage LLM (aujourd’hui)</h2>
+            <span id="usage-badge" class="badge">—</span>
+          </div>
+          <p class="meta" id="usage-hint">Chargement…</p>
+          <div class="usage-grid">
+            <div class="usage-stat">
+              <div class="lbl">Conso estimée</div>
+              <div class="val" id="usage-eur">—</div>
+            </div>
+            <div class="usage-stat">
+              <div class="lbl">Soft cap</div>
+              <div class="val" id="usage-cap">—</div>
+            </div>
+            <div class="usage-stat">
+              <div class="lbl">Appels</div>
+              <div class="val" id="usage-calls">—</div>
+            </div>
+          </div>
+          <div class="usage-bar" id="usage-bar"><span id="usage-bar-fill"></span></div>
+          <p class="meta" id="usage-day" style="margin-top:0.55rem"></p>
         </div>
 
         <div class="panel">
@@ -438,6 +508,30 @@
         }
       }
 
+      function renderUsage(u) {
+        const eur = Number(u.day_total_eur || 0);
+        const cap = Number(u.soft_cap_eur || 0);
+        $("usage-eur").textContent = eur.toFixed(4) + " €";
+        $("usage-cap").textContent = cap.toFixed(2) + " €";
+        $("usage-calls").textContent = String(u.call_count ?? 0);
+        $("usage-hint").textContent = u.hint || "";
+        $("usage-day").textContent =
+          "Jour " + (u.day || "") + " · " + (u.timezone || "Europe/Paris");
+        const pct = Math.min(100, Number(u.usage_pct || 0));
+        $("usage-bar-fill").style.width = pct + "%";
+        const bar = $("usage-bar");
+        const badge = $("usage-badge");
+        if (u.soft_cap_breached) {
+          bar.classList.add("breach");
+          badge.className = "badge breach";
+          badge.textContent = "Soft cap atteint";
+        } else {
+          bar.classList.remove("breach");
+          badge.className = "badge on";
+          badge.textContent = pct + " % du cap";
+        }
+      }
+
       async function loadApp() {
         const me = await api("/portal/api/me");
         $("login").classList.add("hidden");
@@ -445,6 +539,12 @@
         $("who").textContent = me.user.email;
         $("tenant-label").textContent =
           me.user.display_name + " · " + me.user.tenant_id;
+        try {
+          renderUsage(await api("/portal/api/usage"));
+        } catch (e) {
+          $("usage-hint").textContent =
+            e.message || "Usage indisponible";
+        }
         const cons = await api("/portal/api/connectors");
         renderConnectors(cons.connectors);
         const customs = await api("/portal/api/custom-requests");

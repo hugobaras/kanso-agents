@@ -40,11 +40,24 @@ curl -sS -X PUT "$API/portal/api/connectors/email" \
   -d '{"to":"portal-ops@example.com","from":"alerts@example.com"}' >/dev/null
 
 LIST=$(curl -sS "$API/portal/api/connectors" -H "authorization: Bearer $ST")
-export LIST TENANT
+USAGE=$(curl -sS "$API/portal/api/usage" -H "authorization: Bearer $ST")
+export LIST USAGE TENANT
 python3 - <<'PY'
 import json, os
 d = json.loads(os.environ["LIST"])
 email = next(c for c in d["connectors"] if c["type"] == "email")
 assert email["connected"] and email["enabled"], email
-print(json.dumps({"ok": True, "tenant": os.environ["TENANT"], "email_connected": True}))
+u = json.loads(os.environ["USAGE"])
+assert u.get("ok") is True
+assert "day_total_eur" in u and "soft_cap_eur" in u
+print(json.dumps({
+  "ok": True,
+  "tenant": os.environ["TENANT"],
+  "email_connected": True,
+  "usage": {
+    "day_total_eur": u["day_total_eur"],
+    "soft_cap_eur": u["soft_cap_eur"],
+    "soft_cap_breached": u["soft_cap_breached"],
+  },
+}))
 PY

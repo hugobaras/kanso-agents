@@ -449,10 +449,29 @@ Sources : docs publiques OpenAI, Anthropic, Mistral. Non contractuel ; revalider
 
 ---
 
+## 2026-10-12 — Phase 18 Portail usage / soft-cap
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-121 | Priorité P18 | Usage/soft-cap lecture seule dans `/portal` | Phase 18 Q1 = 1 | Validée |
+| D-122 | Fenêtre usage | Jour calendaire Europe/Paris + `KANSO_SOFT_CAP_EUR_PER_DAY` | Phase 18 Q2 = 1 | Validée |
+| D-123 | Breach UX | Badge + aide (pas de coupe widget) | Phase 18 Q3 = 1 | Validée |
+| D-124 | Suite | Phase 19 = D2A M7 light | Phase 18 Q4 = 2 | Validée |
+| D-119 | Soft-cap UI | Confirmée / exécutée via P18 | Phase 17 Q3 → P18 | Validée |
+
+### Lien livrable
+
+- [docs/phase-18-portail-usage.md](docs/phase-18-portail-usage.md)
+- [docs/p18-execution.md](docs/p18-execution.md)
+
+---
+
 ## Suite
 
-Phases 0–17 livrées (hors-horaires bloquant).  
-Bloquants humains : DPA signé, OVH, rota, SMTP prod (optionnel). Soft-cap portail = D-119 différée.
+Phases 0–18 livrées (usage portail).  
+Proposer **phase 19 D2A M7 light** (D-124). Bloquants humains : DPA, OVH, rota, SMTP.
 
 ### 2026-10-10 — Exécution P0 (en cours)
 

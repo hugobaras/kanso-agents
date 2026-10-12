@@ -48,6 +48,42 @@ export async function sumUsageEurToday(
   return Number(res.rows[0]?.total ?? 0);
 }
 
+/** Portal / ops: day totals in Europe/Paris calendar day. */
+export async function usageStatsToday(
+  pool: Pool,
+  tenantId: string,
+): Promise<{
+  dayTotalEur: number;
+  callCount: number;
+  inputTokens: number;
+  outputTokens: number;
+}> {
+  const res = await pool.query<{
+    total: string;
+    calls: string;
+    input_tokens: string;
+    output_tokens: string;
+  }>(
+    `select
+       coalesce(sum(estimated_eur), 0)::text as total,
+       coalesce(count(*), 0)::text as calls,
+       coalesce(sum(input_tokens), 0)::text as input_tokens,
+       coalesce(sum(output_tokens), 0)::text as output_tokens
+     from usage_ledger
+     where tenant_id = $1
+       and at >= date_trunc('day', now() at time zone 'Europe/Paris')
+         at time zone 'Europe/Paris'`,
+    [tenantId],
+  );
+  const row = res.rows[0];
+  return {
+    dayTotalEur: Number(row?.total ?? 0),
+    callCount: Number(row?.calls ?? 0),
+    inputTokens: Number(row?.input_tokens ?? 0),
+    outputTokens: Number(row?.output_tokens ?? 0),
+  };
+}
+
 export async function softCapAlreadyAlertedToday(
   pool: Pool,
   tenantId: string,

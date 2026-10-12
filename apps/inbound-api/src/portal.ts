@@ -1,7 +1,13 @@
 import { readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getPool, PostgresSecretStore } from "@kanso/tenancy";
+import {
+  getPool,
+  PostgresSecretStore,
+  softCapAlreadyAlertedToday,
+  softCapEurPerDay,
+  usageStatsToday,
+} from "@kanso/tenancy";
 import type { Hono } from "hono";
 import {
   auditPortal,
@@ -175,6 +181,41 @@ export function mountPortalRoutes(app: Hono) {
         role: userOr.role,
         display_name: t.rows[0]?.display_name ?? userOr.tenant_id,
       },
+    });
+  });
+
+  /** D-121…D-123: day usage + soft cap (read-only). */
+  app.get("/portal/api/usage", async (c) => {
+    const userOr = await requireUser(c);
+    if (userOr instanceof Response) return userOr;
+    const pool = getPool();
+    const stats = await usageStatsToday(pool, userOr.tenant_id);
+    const softCapEur = softCapEurPerDay();
+    const breached = stats.dayTotalEur >= softCapEur && softCapEur > 0;
+    const alerted = breached
+      ? await softCapAlreadyAlertedToday(pool, userOr.tenant_id)
+      : false;
+    const pct =
+      softCapEur > 0
+        ? Math.min(100, Math.round((stats.dayTotalEur / softCapEur) * 1000) / 10)
+        : 0;
+    return c.json({
+      ok: true,
+      timezone: "Europe/Paris",
+      day: new Date().toLocaleDateString("fr-FR", {
+        timeZone: "Europe/Paris",
+      }),
+      day_total_eur: Math.round(stats.dayTotalEur * 1e6) / 1e6,
+      soft_cap_eur: softCapEur,
+      soft_cap_breached: breached,
+      soft_cap_alerted: alerted,
+      usage_pct: pct,
+      call_count: stats.callCount,
+      input_tokens: stats.inputTokens,
+      output_tokens: stats.outputTokens,
+      hint: breached
+        ? "Plafond journalier atteint. Les conversations peuvent être dégradées ; contactez Kanso pour ajuster le soft cap."
+        : "Coût estimé LLM du jour (Europe/Paris). Lecture seule — le plafond est géré par Kanso.",
     });
   });
 
