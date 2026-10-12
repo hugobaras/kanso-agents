@@ -1,15 +1,36 @@
-# Staging allégé (P1-07) — une API + worker + DB, pas de HA.
+# Staging local live-ready (phase 10) — Docker d’abord, OVH ensuite.
 # Usage:
-#   docker compose -f infra/docker/compose.yml -f infra/docker/compose.staging.yml up -d
+#   cp .env.staging.example .env.staging   # remplir MISTRAL_API_KEY + master key
+#   docker compose -f infra/docker/compose.yml -f infra/docker/compose.staging.yml --env-file .env.staging up -d --build
+#
+# DB hôte : 5434 (évite conflit avec compose de base sur 5433)
 services:
   inbound-api:
     environment:
       KANSO_ENV: staging
-      KANSO_SOFT_CAP_EUR_PER_DAY: "5"
+      KANSO_SOFT_CAP_EUR_PER_DAY: ${KANSO_SOFT_CAP_EUR_PER_DAY:-5}
+      KANSO_MASTER_KEY: ${KANSO_MASTER_KEY:-local-dev-only-change-me-32chars!}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      MISTRAL_BASE_URL: ${MISTRAL_BASE_URL:-https://api.mistral.ai}
+      KANSO_MISTRAL_MODEL: ${KANSO_MISTRAL_MODEL:-mistral-small-latest}
+      KANSO_STORAGE_DIR: /data/storage
+    volumes:
+      - kanso_storage:/data/storage
   document-worker:
     environment:
       KANSO_ENV: staging
-      KANSO_WORKER_ONCE: "1"
+      KANSO_MASTER_KEY: ${KANSO_MASTER_KEY:-local-dev-only-change-me-32chars!}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      KANSO_WORKER_BOOTSTRAP: "0"
+      KANSO_WORKER_POLL: "1"
+      KANSO_WORKER_ONCE: "0"
+      KANSO_POLL_MS: "2000"
+      KANSO_STORAGE_DIR: /data/storage
+    volumes:
+      - kanso_storage:/data/storage
   db:
     ports:
       - "5434:5432"
+
+volumes:
+  kanso_storage:

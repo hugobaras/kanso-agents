@@ -19,6 +19,7 @@ create or replace function public.kanso_current_tenant_id()
 returns text
 language sql
 stable
+set search_path = public
 as $$
   select nullif(
     coalesce(
