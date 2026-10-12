@@ -74,6 +74,14 @@ export async function bootstrap(script: HTMLScriptElement | null = null) {
         text,
       );
       ui.appendMessage("assistant", reply.assistant_message);
+      window.dispatchEvent(
+        new CustomEvent("kanso:turn", {
+          detail: {
+            tenant_id: config.tenantId,
+            ...reply,
+          },
+        }),
+      );
       if (reply.state.startsWith("Closed")) {
         closed = true;
         ui.setChoices(null);

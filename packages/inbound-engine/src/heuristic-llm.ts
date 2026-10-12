@@ -200,6 +200,12 @@ const SYNONYMS: Record<string, string[]> = {
     "sci",
   ],
   other: ["autre", "divers", "general", "pas sure", "je ne sais", "plusieurs"],
+  tenue: ["tenue", "comptable", "compta", "factures", "ecritures"],
+  bilan: ["bilan", "liasse", "cloture", "annuel"],
+  creation: ["creation", "creer", "immatriculation", "startup", "nouvelle societe"],
+  solo: ["independant", "micro", "auto entrepreneur", "seul", "freelance"],
+  pme: ["pme", "sarl", "sas", "petite", "moyenne"],
+  eti: ["eti", "groupe", "filiale", "50"],
   "48h": [
     "48",
     "urgent",

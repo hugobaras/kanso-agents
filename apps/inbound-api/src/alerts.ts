@@ -9,12 +9,15 @@ import {
   PostgresSecretStore,
   type AuthContext,
 } from "@kanso/tenancy";
+import { recordDemoAlert } from "./demo-ops.js";
 
 export type ChannelDelivery = {
   type: "email" | "slack";
   delivered: boolean;
   mode: "smtp" | "console" | "webhook" | "skipped";
   error?: string;
+  title?: string;
+  body?: string;
 };
 
 export async function dispatchInboundAlert(opts: {
@@ -24,22 +27,52 @@ export async function dispatchInboundAlert(opts: {
   config: InboundConfig;
   event: string;
   scoreFinal: number | null;
+  answers?: Record<string, unknown>;
 }): Promise<{
   delivered: boolean;
   mode: string;
   channels: ChannelDelivery[];
   error?: string;
+  title: string;
+  body: string;
 }> {
+  const answers = opts.answers ?? {};
+  const title = `[Kanso] ${opts.event} — ${opts.config.identity.display_name}`;
+  const body = [
+    `Tenant: ${opts.tenantId}`,
+    `Cabinet: ${opts.config.identity.display_name}`,
+    `Événement: ${opts.event}`,
+    `Score final: ${opts.scoreFinal ?? "n/a"} / ${opts.config.scoring.max_score}`,
+    `Seuil hot: ${opts.config.scoring.thresholds.hot}`,
+    `Session: ${opts.sessionId}`,
+    `Réponses: ${JSON.stringify(answers, null, 2)}`,
+  ].join("\n");
+
   const channels = opts.config.alerts.channels.filter((c) =>
     (c.on as string[]).includes(opts.event),
   );
   if (channels.length === 0) {
-    return {
+    const skipped = {
       delivered: false,
       mode: "skipped",
-      channels: [],
+      channels: [] as ChannelDelivery[],
       error: "no_channel_for_event",
+      title,
+      body,
     };
+    recordDemoAlert({
+      tenant_id: opts.tenantId,
+      session_id: opts.sessionId,
+      event: opts.event,
+      score_final: opts.scoreFinal,
+      answers,
+      channels: [],
+      mode: "skipped",
+      delivered: false,
+      title,
+      body,
+    });
+    return skipped;
   }
 
   const masterKey = process.env.KANSO_MASTER_KEY;
@@ -49,6 +82,8 @@ export async function dispatchInboundAlert(opts: {
       mode: "skipped",
       channels: [],
       error: "missing_master_key",
+      title,
+      body,
     };
   }
 
@@ -67,6 +102,8 @@ export async function dispatchInboundAlert(opts: {
           secretRef: channel.secret_ref,
           event: opts.event,
           scoreFinal: opts.scoreFinal,
+          title,
+          body,
         }),
       );
     } else if (channel.type === "slack") {
@@ -79,6 +116,8 @@ export async function dispatchInboundAlert(opts: {
           secretRef: channel.secret_ref,
           event: opts.event,
           scoreFinal: opts.scoreFinal,
+          title,
+          body,
         }),
       );
     }
@@ -86,14 +125,31 @@ export async function dispatchInboundAlert(opts: {
 
   const delivered = results.some((r) => r.delivered);
   const modes = results.map((r) => `${r.type}:${r.mode}`).join(",");
-  return {
+  const out = {
     delivered,
     mode: modes || "skipped",
     channels: results,
     error: delivered
       ? undefined
       : results.map((r) => r.error).filter(Boolean).join("; ") || undefined,
+    title,
+    body,
   };
+
+  recordDemoAlert({
+    tenant_id: opts.tenantId,
+    session_id: opts.sessionId,
+    event: opts.event,
+    score_final: opts.scoreFinal,
+    answers,
+    channels: results,
+    mode: out.mode,
+    delivered,
+    title,
+    body,
+  });
+
+  return out;
 }
 
 async function sendEmailChannel(opts: {
@@ -104,6 +160,8 @@ async function sendEmailChannel(opts: {
   secretRef: string;
   event: string;
   scoreFinal: number | null;
+  title: string;
+  body: string;
 }): Promise<ChannelDelivery> {
   let auth: AuthContext;
   try {
@@ -114,6 +172,8 @@ async function sendEmailChannel(opts: {
       delivered: false,
       mode: "skipped",
       error: err instanceof Error ? err.message : "secret_resolve_failed",
+      title: opts.title,
+      body: opts.body,
     };
   }
 
@@ -124,8 +184,8 @@ async function sendEmailChannel(opts: {
       {
         channel: "email",
         event: opts.event,
-        title: `Lead ${opts.tenantId}`,
-        body: `score_final=${opts.scoreFinal ?? ""}`,
+        title: opts.title,
+        body: opts.body,
         metadata: {
           score: opts.scoreFinal ?? 0,
           session_id: opts.sessionId,
@@ -142,9 +202,22 @@ async function sendEmailChannel(opts: {
   );
 
   if (result.status !== "ok") {
-    return { type: "email", delivered: false, mode, error: result.message };
+    return {
+      type: "email",
+      delivered: false,
+      mode,
+      error: result.message,
+      title: opts.title,
+      body: opts.body,
+    };
   }
-  return { type: "email", delivered: true, mode };
+  return {
+    type: "email",
+    delivered: true,
+    mode,
+    title: opts.title,
+    body: opts.body,
+  };
 }
 
 async function sendSlackChannel(opts: {
@@ -155,6 +228,8 @@ async function sendSlackChannel(opts: {
   secretRef: string;
   event: string;
   scoreFinal: number | null;
+  title: string;
+  body: string;
 }): Promise<ChannelDelivery> {
   let auth: AuthContext;
   try {
@@ -165,6 +240,8 @@ async function sendSlackChannel(opts: {
       delivered: false,
       mode: "skipped",
       error: err instanceof Error ? err.message : "secret_resolve_failed",
+      title: opts.title,
+      body: opts.body,
     };
   }
 
@@ -175,8 +252,8 @@ async function sendSlackChannel(opts: {
       {
         channel: "slack",
         event: opts.event,
-        title: `Lead ${opts.tenantId}`,
-        body: `score_final=${opts.scoreFinal ?? ""}`,
+        title: opts.title,
+        body: opts.body,
         metadata: {
           score: opts.scoreFinal ?? 0,
           session_id: opts.sessionId,
@@ -193,7 +270,20 @@ async function sendSlackChannel(opts: {
   );
 
   if (result.status !== "ok") {
-    return { type: "slack", delivered: false, mode, error: result.message };
+    return {
+      type: "slack",
+      delivered: false,
+      mode,
+      error: result.message,
+      title: opts.title,
+      body: opts.body,
+    };
   }
-  return { type: "slack", delivered: true, mode };
+  return {
+    type: "slack",
+    delivered: true,
+    mode,
+    title: opts.title,
+    body: opts.body,
+  };
 }

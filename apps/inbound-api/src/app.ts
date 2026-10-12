@@ -22,6 +22,7 @@ import {
 } from "@kanso/llm";
 import { getPool, requireTenantId } from "@kanso/tenancy";
 import { dispatchInboundAlert } from "./alerts.js";
+import { listDemoOps, recordDemoTurn } from "./demo-ops.js";
 import { mountDocumentRoutes } from "./documents.js";
 import { syncInboundIntegrations } from "./integrations.js";
 import { resolveRag } from "./rag.js";
@@ -99,6 +100,15 @@ export function createApp(deps: AppDeps = {}) {
     if (!path) return c.text("demo.html missing", 404);
     return c.html(readFileSync(path, "utf8"));
   });
+
+  /** Ops démo : tours + alertes en mémoire (valeur cabinet visible). */
+  app.get("/demo/ops", (c) =>
+    c.json({
+      ok: true,
+      events: listDemoOps(50),
+      hint: "Alertes console = mode démo sans SMTP ; le contenu est ici.",
+    }),
+  );
 
   mountDocumentRoutes(app);
 
@@ -205,6 +215,7 @@ export function createApp(deps: AppDeps = {}) {
         config,
         event: turn.alertEvent,
         scoreFinal: turn.session.scoreFinal,
+        answers: turn.session.answers,
       });
       integrations = await syncInboundIntegrations({
         tenantId,
@@ -217,17 +228,32 @@ export function createApp(deps: AppDeps = {}) {
 
     const expected = resolveExpectedQuestion(config, turn.session);
 
+    recordDemoTurn({
+      tenant_id: tenantId,
+      session_id: turn.session.id,
+      state: turn.session.state,
+      intent: turn.intent,
+      score_current: turn.session.scoreCurrent,
+      score_final: turn.session.scoreFinal,
+      answers: turn.session.answers,
+      user_text: body.text,
+      assistant_message: turn.assistantMessage,
+      alert_event: turn.alertEvent ?? null,
+    });
+
     return c.json({
       session_id: turn.session.id,
       state: turn.session.state,
       score_current: turn.session.scoreCurrent,
       score_final: turn.session.scoreFinal,
+      answers: turn.session.answers,
       intent: turn.intent,
       alert_event: turn.alertEvent ?? null,
       alert,
       integrations,
       assistant_message: turn.assistantMessage,
       expected_question: expected,
+      tenant_display_name: config.identity.display_name,
       llm_provider: process.env.MISTRAL_API_KEY ? "mistral" : "heuristic",
       usage: {
         calls: usage.recorded,

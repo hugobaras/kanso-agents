@@ -1,0 +1,110 @@
+{
+  "schema_version": "1.0.0",
+  "product": "inbound",
+  "identity": {
+    "display_name": "Cabinet Martin Experts-Comptables",
+    "locale_default": "fr",
+    "branding": {
+      "primary_color": "#0F4C3A",
+      "logo_url": null
+    }
+  },
+  "disclosure": {
+    "ai_notice": "Vous échangez avec un assistant automatisé du Cabinet Martin. Ce n’est pas un expert-comptable et cela ne constitue pas un conseil comptable ou fiscal.",
+    "forbidden_topics": ["conseil_juridique", "conseil_comptable", "conseil_fiscal", "diagnostic_medical"]
+  },
+  "qualification": {
+    "questions": [
+      {
+        "id": "need_type",
+        "prompt": "Quel est votre besoin principal ?",
+        "type": "single_choice",
+        "required": true,
+        "options": [
+          { "id": "tenue", "label": "Tenue comptable" },
+          { "id": "bilan", "label": "Bilan / liasse" },
+          { "id": "creation", "label": "Création d'entreprise" },
+          { "id": "other", "label": "Autre" }
+        ]
+      },
+      {
+        "id": "company_size",
+        "prompt": "Quelle est la taille de votre structure ?",
+        "type": "single_choice",
+        "required": true,
+        "options": [
+          { "id": "solo", "label": "Indépendant / micro" },
+          { "id": "pme", "label": "PME (< 50)" },
+          { "id": "eti", "label": "ETI / groupe" }
+        ]
+      },
+      {
+        "id": "urgency",
+        "prompt": "Sous quel délai souhaitez-vous un premier échange ?",
+        "type": "single_choice",
+        "required": true,
+        "options": [
+          { "id": "48h", "label": "Sous 48 h" },
+          { "id": "week", "label": "Sous 7 jours" },
+          { "id": "flex", "label": "Flexible" }
+        ]
+      },
+      {
+        "id": "contact_email",
+        "prompt": "Votre e-mail professionnel ?",
+        "type": "free_text",
+        "required": true
+      }
+    ]
+  },
+  "scoring": {
+    "max_score": 100,
+    "thresholds": { "hot": 65, "warm": 35, "cold": 0 },
+    "weights": {
+      "need_type": {
+        "kind": "choice_map",
+        "points": { "tenue": 25, "bilan": 30, "creation": 20, "other": 10 }
+      },
+      "company_size": {
+        "kind": "choice_map",
+        "points": { "solo": 10, "pme": 25, "eti": 30 }
+      },
+      "urgency": {
+        "kind": "choice_map",
+        "points": { "48h": 30, "week": 20, "flex": 10 }
+      },
+      "contact_email": { "kind": "free_text", "points_if_non_empty": 10 }
+    }
+  },
+  "alerts": {
+    "channels": [
+      {
+        "type": "email",
+        "secret_ref": "alerts.intake_email",
+        "on": ["hot_lead", "escalation", "handoff"]
+      }
+    ]
+  },
+  "operations": {
+    "timezone": "Europe/Paris",
+    "languages": ["fr"],
+    "business_hours": {
+      "mon": [["09:00", "12:30"], ["14:00", "18:00"]],
+      "tue": [["09:00", "12:30"], ["14:00", "18:00"]],
+      "wed": [["09:00", "12:30"], ["14:00", "18:00"]],
+      "thu": [["09:00", "12:30"], ["14:00", "18:00"]],
+      "fri": [["09:00", "12:30"], ["14:00", "17:00"]],
+      "sat": [],
+      "sun": []
+    },
+    "escalation": {
+      "user_requests_human": true,
+      "keywords": ["parler à un expert", "urgence fiscale"],
+      "message": "Je transmets votre demande à l’équipe Martin. Un collaborateur vous recontactera."
+    }
+  },
+  "integrations": {
+    "crm": { "provider": "hubspot", "secret_ref": "crm.hubspot" },
+    "calendar": { "provider": "google_calendar", "secret_ref": "calendar.google" }
+  }
+}

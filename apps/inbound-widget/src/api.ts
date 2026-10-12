@@ -17,9 +17,14 @@ export type MessageReply = {
   session_id: string;
   state: string;
   assistant_message: string;
+  score_current?: number;
   score_final: number | null;
+  answers?: Record<string, unknown>;
+  intent?: string;
   alert_event: string | null;
+  alert?: unknown;
   expected_question?: ExpectedQuestion | null;
+  tenant_display_name?: string;
 };
 
 export async function startSession(

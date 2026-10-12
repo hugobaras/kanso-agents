@@ -3,38 +3,348 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Kanso widget demo</title>
+    <title>Kanso — démo valeur cabinet</title>
     <style>
+      :root {
+        --ink: #1a1a1a;
+        --paper: #f4f0e8;
+        --panel: #0f1c2e;
+        --accent: #c4a574;
+        --ok: #2f6f4e;
+        --hot: #b33b2e;
+      }
+      * { box-sizing: border-box; }
       body {
         margin: 0;
         min-height: 100vh;
-        font-family: Georgia, serif;
-        background: linear-gradient(160deg, #e8e2d6, #f7f4ef 45%, #d9e2e8);
-        color: #1a1a1a;
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+        color: var(--ink);
+        background:
+          radial-gradient(ellipse at 20% 0%, #e8dfd0 0%, transparent 50%),
+          linear-gradient(165deg, #ebe4d8, #d5dde6);
       }
-      main {
-        max-width: 40rem;
-        margin: 0 auto;
-        padding: 4rem 1.5rem;
+      .layout {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 0;
+        min-height: 100vh;
       }
-      h1 { font-weight: 500; font-size: 2.4rem; margin: 0 0 .5rem; }
-      p { line-height: 1.5; opacity: .85; }
+      @media (max-width: 900px) {
+        .layout { grid-template-columns: 1fr; }
+      }
+      .site {
+        padding: 2.5rem 2rem 8rem;
+        max-width: 36rem;
+      }
+      .site .brand {
+        font-size: 0.75rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        opacity: 0.55;
+        margin-bottom: 1.5rem;
+      }
+      .site h1 {
+        font-weight: 500;
+        font-size: clamp(2rem, 4vw, 2.8rem);
+        line-height: 1.15;
+        margin: 0 0 0.75rem;
+      }
+      .site p { line-height: 1.55; opacity: 0.85; max-width: 32rem; }
+      .controls {
+        margin-top: 1.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+      label { font-size: 0.85rem; opacity: 0.7; margin-right: 0.35rem; }
+      select, button.scenario {
+        font: inherit;
+        font-size: 0.9rem;
+        padding: 0.55rem 0.75rem;
+        border: 1px solid rgba(0,0,0,.18);
+        background: #fff;
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      button.scenario:hover { border-color: var(--ink); }
+      .hint {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 0.78rem;
+        opacity: 0.65;
+        line-height: 1.4;
+      }
+      .ops {
+        background: var(--panel);
+        color: #e8e4dc;
+        padding: 1.5rem 1.25rem 2rem;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        border-left: 1px solid rgba(255,255,255,.06);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        min-height: 100vh;
+      }
+      .ops h2 {
+        margin: 0;
+        font-size: 0.72rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .ops .sub {
+        font-size: 0.8rem;
+        opacity: 0.65;
+        margin: -0.4rem 0 0;
+      }
+      .card {
+        background: rgba(255,255,255,.04);
+        border: 1px solid rgba(255,255,255,.08);
+        border-radius: 4px;
+        padding: 0.9rem 1rem;
+      }
+      .card h3 {
+        margin: 0 0 0.5rem;
+        font-size: 0.7rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        opacity: 0.55;
+        font-weight: 600;
+      }
+      .score {
+        font-size: 2rem;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
+      }
+      .score.hot { color: #f0a090; }
+      .meta { font-size: 0.8rem; opacity: 0.75; line-height: 1.45; }
+      .pill {
+        display: inline-block;
+        padding: 0.15rem 0.45rem;
+        border-radius: 2px;
+        font-size: 0.72rem;
+        background: rgba(196,165,116,.2);
+        color: var(--accent);
+        margin-right: 0.35rem;
+      }
+      .pill.hot { background: rgba(179,59,46,.35); color: #f5c4bc; }
+      .pill.ok { background: rgba(47,111,78,.35); color: #b6e0c8; }
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 0.72rem;
+        line-height: 1.4;
+        opacity: 0.9;
+        max-height: 12rem;
+        overflow: auto;
+      }
+      .feed { display: flex; flex-direction: column; gap: 0.5rem; max-height: 40vh; overflow: auto; }
+      .feed .item {
+        font-size: 0.75rem;
+        padding: 0.5rem 0.6rem;
+        border-left: 2px solid rgba(196,165,116,.4);
+        background: rgba(0,0,0,.2);
+      }
+      .feed .item.alert { border-left-color: #f0a090; }
+      .empty { opacity: 0.45; font-size: 0.85rem; }
     </style>
   </head>
   <body>
-    <main>
-      <h1>Site client (démo)</h1>
-      <p>
-        Le widget Kanso s’ouvre en bas à droite. Le premier message affiche le
-        disclaimer IA servi par l’API.
-      </p>
-    </main>
-    <script
-      src="/widget/kanso-widget.js"
-      data-tenant="demo-tenant"
-      data-api="http://127.0.0.1:3000"
-      data-primary-color="#1B2A4A"
-      data-title="Cabinet Durand"
-    ></script>
+    <div class="layout">
+      <section class="site">
+        <div class="brand" id="site-brand">Site client · démo Kanso</div>
+        <h1 id="site-title">Cabinet Durand</h1>
+        <p id="site-blurb">
+          À droite : la vue <strong>ops cabinet</strong> (score, réponses, alerte e-mail console).
+          Ce n’est pas « juste chatter » — c’est une qualification qui produit un lead actionnable.
+        </p>
+        <div class="controls">
+          <div class="row">
+            <label for="tenant">Tenant</label>
+            <select id="tenant">
+              <option value="demo-tenant" data-color="#1B2A4A" data-title="Cabinet Durand">
+                Avocats — Cabinet Durand
+              </option>
+              <option value="demo-martin" data-color="#0F4C3A" data-title="Cabinet Martin">
+                Experts-comptables — Cabinet Martin
+              </option>
+            </select>
+          </div>
+          <div class="row">
+            <button type="button" class="scenario" data-text="Quel est mon droit exact sur ce licenciement ?">
+              Scénario : demander un conseil (refus)
+            </button>
+            <button type="button" class="scenario" data-text="Quelle est la capitale de la France ?">
+              Scénario : hors sujet
+            </button>
+          </div>
+          <p class="hint">
+            Ouvre le widget en bas à droite, ou utilise les scénarios (injecte un message dans le fil une fois la session démarrée).
+            Qualifie jusqu’au bout pour voir une <strong>alerte</strong> apparaître dans le panneau ops.
+          </p>
+        </div>
+      </section>
+
+      <aside class="ops" aria-label="Console ops démo">
+        <div>
+          <h2>Console ops (démo)</h2>
+          <p class="sub">Live · polling /demo/ops · alertes = e-mail console (pas SMTP)</p>
+        </div>
+
+        <div class="card">
+          <h3>Session en cours</h3>
+          <div class="score" id="live-score">—</div>
+          <div class="meta" id="live-meta">En attente d’un tour…</div>
+          <div style="margin-top:0.6rem" id="live-pills"></div>
+        </div>
+
+        <div class="card">
+          <h3>Réponses collectées</h3>
+          <pre id="live-answers" class="empty">{}</pre>
+        </div>
+
+        <div class="card">
+          <h3>Dernière alerte cabinet</h3>
+          <div id="last-alert" class="empty">Aucune encore — termine une qualification.</div>
+        </div>
+
+        <div class="card">
+          <h3>Fil événements</h3>
+          <div class="feed" id="feed"></div>
+        </div>
+      </aside>
+    </div>
+
+    <div id="widget-host"></div>
+
+    <script>
+      const API = "http://127.0.0.1:3000";
+      const sel = document.getElementById("tenant");
+      const liveScore = document.getElementById("live-score");
+      const liveMeta = document.getElementById("live-meta");
+      const liveAnswers = document.getElementById("live-answers");
+      const livePills = document.getElementById("live-pills");
+      const lastAlert = document.getElementById("last-alert");
+      const feed = document.getElementById("feed");
+
+      function mountWidget() {
+        const opt = sel.selectedOptions[0];
+        const host = document.getElementById("widget-host");
+        host.innerHTML = "";
+        document.querySelectorAll("[data-kanso-widget]").forEach((n) => n.remove());
+        document.getElementById("site-title").textContent = opt.dataset.title;
+        document.getElementById("site-brand").textContent =
+          "Site client · " + opt.textContent.trim();
+
+        const s = document.createElement("script");
+        s.src = "/widget/kanso-widget.js?t=" + Date.now();
+        s.dataset.tenant = opt.value;
+        s.dataset.api = API;
+        s.dataset.primaryColor = opt.dataset.color;
+        s.dataset.title = opt.dataset.title;
+        host.appendChild(s);
+      }
+
+      function renderTurn(d) {
+        const score = d.score_final ?? d.score_current;
+        liveScore.textContent = score == null ? "—" : String(score);
+        liveScore.classList.toggle("hot", (d.score_final ?? 0) >= 70 || d.alert_event === "hot_lead");
+        liveMeta.textContent = [
+          d.tenant_display_name || d.tenant_id || "",
+          "état " + (d.state || "?"),
+          d.intent ? "intent " + d.intent : "",
+        ].filter(Boolean).join(" · ");
+        liveAnswers.textContent = JSON.stringify(d.answers || {}, null, 2);
+        liveAnswers.classList.toggle("empty", !d.answers || !Object.keys(d.answers).length);
+        livePills.innerHTML = "";
+        if (d.alert_event) {
+          const p = document.createElement("span");
+          p.className = "pill " + (d.alert_event === "hot_lead" ? "hot" : "ok");
+          p.textContent = d.alert_event;
+          livePills.appendChild(p);
+        }
+        if (d.alert && d.alert.mode) {
+          const p = document.createElement("span");
+          p.className = "pill";
+          p.textContent = "canal " + d.alert.mode;
+          livePills.appendChild(p);
+        }
+      }
+
+      function renderOps(data) {
+        const events = data.events || [];
+        feed.innerHTML = "";
+        let foundAlert = null;
+        for (const e of events) {
+          const div = document.createElement("div");
+          div.className = "item" + (e.kind === "alert" ? " alert" : "");
+          if (e.kind === "alert" && !foundAlert) foundAlert = e;
+          const when = (e.at || "").slice(11, 19);
+          if (e.kind === "alert") {
+            div.textContent = `${when} ALERTE ${e.event} · score ${e.score_final} · ${e.mode} · ${e.delivered ? "ok" : "fail"}`;
+          } else {
+            div.textContent = `${when} tour · ${e.tenant_id} · ${e.state} · score ${e.score_current} · ${e.intent}`;
+          }
+          feed.appendChild(div);
+        }
+        if (!events.length) {
+          feed.innerHTML = '<div class="empty">Vide — envoie un message dans le widget.</div>';
+        }
+        if (foundAlert) {
+          lastAlert.className = "";
+          lastAlert.innerHTML =
+            `<div class="pill ${foundAlert.event === "hot_lead" ? "hot" : "ok"}">${foundAlert.event}</div>` +
+            `<div class="meta" style="margin-top:0.5rem">${foundAlert.title || ""}</div>` +
+            `<pre style="margin-top:0.5rem">${escapeHtml(foundAlert.body || "")}</pre>`;
+        }
+      }
+
+      function escapeHtml(s) {
+        return s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+      }
+
+      window.addEventListener("kanso:turn", (ev) => {
+        renderTurn(ev.detail || {});
+      });
+
+      async function pollOps() {
+        try {
+          const res = await fetch(API + "/demo/ops");
+          if (res.ok) renderOps(await res.json());
+        } catch (_) {}
+      }
+
+      sel.addEventListener("change", () => {
+        liveScore.textContent = "—";
+        liveMeta.textContent = "Tenant changé — rouvre le widget.";
+        liveAnswers.textContent = "{}";
+        livePills.innerHTML = "";
+        mountWidget();
+      });
+
+      document.querySelectorAll("button.scenario").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const text = btn.dataset.text;
+          const input = document.querySelector(".kanso-input");
+          const form = document.querySelector(".kanso-form");
+          const bubble = document.querySelector(".kanso-bubble");
+          if (bubble) bubble.click();
+          setTimeout(() => {
+            if (!input || !form) {
+              alert("Ouvre d’abord le widget (bulle en bas à droite).");
+              return;
+            }
+            input.value = text;
+            form.requestSubmit();
+          }, 400);
+        });
+      });
+
+      mountWidget();
+      pollOps();
+      setInterval(pollOps, 2000);
+    </script>
   </body>
 </html>
