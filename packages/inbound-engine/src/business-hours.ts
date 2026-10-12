@@ -28,5 +28,11 @@ export function isWithinBusinessHours(
   return windows.some(([start, end]) => hhmm >= start && hhmm < end);
 }
 
+/** D-118: block new messages outside business hours (no qualification). */
 export const AFTER_HOURS_NOTICE =
-  "Nous sommes actuellement hors des horaires d'ouverture. La qualification peut continuer ; un collaborateur vous recontactera aux heures ouvrées.";
+  "Nous sommes actuellement hors des horaires d'ouverture. La conversation n'est pas disponible pour le moment — merci de revenir aux heures ouvrées.";
+
+export function resolveAfterHoursMessage(config: InboundConfig): string {
+  const custom = config.operations.after_hours_message?.trim();
+  return custom && custom.length > 0 ? custom : AFTER_HOURS_NOTICE;
+}

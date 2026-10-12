@@ -1,7 +1,7 @@
 import type { InboundConfig } from "@kanso/config";
 import {
-  AFTER_HOURS_NOTICE,
   isWithinBusinessHours,
+  resolveAfterHoursMessage,
 } from "./business-hours.js";
 import { computeScore } from "./scoring.js";
 
@@ -62,19 +62,30 @@ export function startQualification(
   afterHours: boolean;
 } {
   const afterHours = !isWithinBusinessHours(config, opts.now ?? new Date());
+  const notice = config.disclosure.ai_notice;
+
+  if (afterHours) {
+    const blocked = resolveAfterHoursMessage(config);
+    const next = {
+      ...session,
+      state: "ClosedDegraded" as const,
+      messages: [...session.messages, notice, blocked],
+    };
+    return {
+      session: next,
+      assistantMessage: [notice, blocked].join("\n\n"),
+      afterHours: true,
+    };
+  }
+
   const next = {
     ...session,
     state: "Qualify" as const,
-    messages: [...session.messages, config.disclosure.ai_notice],
+    messages: [...session.messages, notice],
   };
   const first = config.qualification.questions[0];
-  const parts = [config.disclosure.ai_notice];
-  if (afterHours) {
-    parts.push(AFTER_HOURS_NOTICE);
-  }
-  parts.push(first?.prompt ?? "");
-  const assistantMessage = parts.join("\n\n");
-  return { session: next, assistantMessage, afterHours };
+  const assistantMessage = [notice, first?.prompt ?? ""].join("\n\n");
+  return { session: next, assistantMessage, afterHours: false };
 }
 
 export function recordAnswer(

@@ -19,10 +19,11 @@ pnpm --filter @kanso/admin-cli exec node dist/index.js put-secret demo-tenant al
 
 ## P1-02 — Hors-horaires flag + message
 
-**Fait :**
-- Notice + `afterHours` dans `startQualification`
-- API `after_hours` sur `POST …/sessions`
-- Widget : bandeau système si hors horaires
+**Fait (mis à jour phase 17 / D-118) :**
+- Hors plage → `ClosedDegraded` + notice (qualification **bloquée**)
+- API `after_hours` sur `POST …/sessions` ; `POST …/messages` → 403
+- Widget : bandeau + input désactivé
+- Override optionnel `operations.after_hours_message`
 
 ## P1-03 — Grafana Free dashboards
 

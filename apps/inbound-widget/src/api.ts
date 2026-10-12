@@ -61,8 +61,24 @@ export async function sendMessage(
       body: JSON.stringify({ text }),
     },
   );
+  const data = (await res.json().catch(() => ({}))) as MessageReply & {
+    error?: string;
+    after_hours?: boolean;
+  };
   if (!res.ok) {
-    throw new Error(`message failed: ${res.status}`);
+    if (res.status === 403 && data.after_hours) {
+      const err = new Error(
+        data.assistant_message ?? "Hors horaires d'ouverture",
+      ) as Error & { afterHours: boolean; body: typeof data };
+      err.afterHours = true;
+      err.body = data;
+      throw err;
+    }
+    throw new Error(
+      typeof data.error === "string"
+        ? data.error
+        : `message failed: ${res.status}`,
+    );
   }
-  return (await res.json()) as MessageReply;
+  return data as MessageReply;
 }

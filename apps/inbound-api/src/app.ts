@@ -6,9 +6,11 @@ import { cors } from "hono/cors";
 import {
   createSession,
   InboundHeuristicLlmClient,
+  isWithinBusinessHours,
   newSessionId,
   orchestrateTurn,
   PostgresSessionStore,
+  resolveAfterHoursMessage,
   resolveExpectedQuestion,
   startQualification,
 } from "@kanso/inbound-engine";
@@ -141,7 +143,9 @@ export function createApp(deps: AppDeps = {}) {
     );
     const started = startQualification(session, config, { now: new Date() });
     await store.create(started.session);
-    const expected = resolveExpectedQuestion(config, started.session);
+    const expected = started.afterHours
+      ? null
+      : resolveExpectedQuestion(config, started.session);
 
     return c.json({
       session_id: started.session.id,
@@ -172,6 +176,22 @@ export function createApp(deps: AppDeps = {}) {
       return c.json({ error: "no_published_inbound_config" }, 404);
     }
     const config = parseInboundConfig(published.config);
+
+    // D-118: refuse turns outside business hours
+    if (!isWithinBusinessHours(config, new Date())) {
+      const msg = resolveAfterHoursMessage(config);
+      return c.json(
+        {
+          error: "after_hours",
+          after_hours: true,
+          assistant_message: msg,
+          session_id: sessionId,
+          state: session.state,
+        },
+        403,
+      );
+    }
+
     const metering = new MeteringLlmClient(
       deps.llm ?? resolveLlmClient(config),
     );

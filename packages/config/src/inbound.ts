@@ -83,6 +83,8 @@ export const InboundConfigSchema = z.object({
     timezone: z.string().min(1),
     languages: z.array(z.string()).min(1),
     business_hours: z.record(z.array(z.tuple([z.string(), z.string()]))),
+    /** D-118: shown when blocking after-hours; optional override of default notice */
+    after_hours_message: z.string().min(1).optional(),
     escalation: z.object({
       user_requests_human: z.boolean(),
       keywords: z.array(z.string()),

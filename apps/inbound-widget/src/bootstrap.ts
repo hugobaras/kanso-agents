@@ -16,6 +16,7 @@ export async function bootstrap(script: HTMLScriptElement | null = null) {
   const ui = mountChatUi(config);
   let sessionId: string | null = null;
   let closed = false;
+  let afterHours = false;
   let starting: Promise<void> | null = null;
 
   async function ensureSession() {
@@ -28,13 +29,22 @@ export async function bootstrap(script: HTMLScriptElement | null = null) {
         sessionId = started.session_id;
         ui.appendMessage("system", "Vous parlez à une IA, pas à un humain.");
         if (started.after_hours) {
-          ui.appendMessage(
-            "system",
-            "Hors horaires d'ouverture — un collaborateur vous recontactera aux heures ouvrées.",
+          afterHours = true;
+          closed = true;
+          ui.setAfterHours(
+            true,
+            "Hors horaires — conversation indisponible pour le moment.",
           );
         }
         ui.appendMessage("assistant", started.assistant_message);
-        ui.setChoices(chipsFromExpected(started.expected_question));
+        if (!started.after_hours) {
+          ui.setChoices(chipsFromExpected(started.expected_question));
+        } else {
+          ui.setChoices(null);
+        }
+        if (started.state.startsWith("Closed")) {
+          closed = true;
+        }
       } catch (err) {
         ui.appendMessage(
           "system",
@@ -56,6 +66,13 @@ export async function bootstrap(script: HTMLScriptElement | null = null) {
   ui.onSubmit(async (text) => {
     const trimmed = text?.trim();
     if (!trimmed || trimmed === "undefined") return;
+    if (afterHours) {
+      ui.appendMessage(
+        "system",
+        "Hors horaires d'ouverture — la conversation n'est pas disponible.",
+      );
+      return;
+    }
     if (closed) {
       ui.appendMessage(
         "system",
@@ -64,7 +81,7 @@ export async function bootstrap(script: HTMLScriptElement | null = null) {
       return;
     }
     await ensureSession();
-    if (!sessionId) return;
+    if (!sessionId || afterHours) return;
     ui.appendMessage("user", trimmed);
     ui.setChoices(null);
     ui.setBusy(true);
@@ -91,6 +108,12 @@ export async function bootstrap(script: HTMLScriptElement | null = null) {
         ui.setChoices(chipsFromExpected(reply.expected_question));
       }
     } catch (err) {
+      const ah = err as Error & { afterHours?: boolean };
+      if (ah.afterHours) {
+        afterHours = true;
+        closed = true;
+        ui.setAfterHours(true, ah.message);
+      }
       ui.appendMessage(
         "system",
         err instanceof Error ? err.message : "Erreur d'envoi",

@@ -431,10 +431,28 @@ Sources : docs publiques OpenAI, Anthropic, Mistral. Non contractuel ; revalider
 
 ---
 
+## 2026-10-12 — Phase 17 P1 Inbound (hors-horaires)
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-117 | Priorité P17 | Hors-horaires widget (P1-02) seulement | Phase 17 Q1 = 1 | Validée |
+| D-118 | Hors-horaires | Bloquer nouveaux messages hors plage | Phase 17 Q2 = 2 | Validée |
+| D-119 | Soft-cap UI | Lecture seule — reporté (pas dans Q1) | Phase 17 Q3 = 1 | Différée |
+| D-120 | D2A P17 | Hors scope | Phase 17 Q4 = 1 | Validée |
+
+### Lien livrable
+
+- [docs/phase-17-p1-inbound.md](docs/phase-17-p1-inbound.md)
+- [docs/p17-execution.md](docs/p17-execution.md)
+
+---
+
 ## Suite
 
-Phases 0–16 livrées (kit embed M6).  
-Bloquants humains : DPA signé, OVH, rota, SMTP prod (optionnel).
+Phases 0–17 livrées (hors-horaires bloquant).  
+Bloquants humains : DPA signé, OVH, rota, SMTP prod (optionnel). Soft-cap portail = D-119 différée.
 
 ### 2026-10-10 — Exécution P0 (en cours)
 

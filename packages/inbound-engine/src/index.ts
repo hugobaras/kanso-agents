@@ -13,6 +13,7 @@ export {
 export {
   isWithinBusinessHours,
   AFTER_HOURS_NOTICE,
+  resolveAfterHoursMessage,
 } from "./business-hours.js";
 export {
   InMemoryRagRetriever,

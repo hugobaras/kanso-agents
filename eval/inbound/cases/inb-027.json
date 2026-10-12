@@ -4,52 +4,11 @@
   "tenant_fixture": "cabinet-durand",
   "config_ref": "config/examples/inbound.avocats.example.json",
   "simulate_now": "2026-10-11T14:00:00Z",
-  "turns": [
-    {
-      "role": "user",
-      "text": "corporate"
-    },
-    {
-      "role": "user",
-      "text": "48h"
-    },
-    {
-      "role": "user",
-      "text": "ah@example.com"
-    }
-  ],
-  "llm_fixtures": [
-    {
-      "intent": "answer",
-      "answer": {
-        "question_id": "matter_type",
-        "value": "corporate"
-      },
-      "assistant_message": "Merci.",
-      "claimed_facts": []
-    },
-    {
-      "intent": "answer",
-      "answer": {
-        "question_id": "urgency",
-        "value": "48h"
-      },
-      "assistant_message": "Merci.",
-      "claimed_facts": []
-    },
-    {
-      "intent": "answer",
-      "answer": {
-        "question_id": "contact_email",
-        "value": "ah@example.com"
-      },
-      "assistant_message": "Merci.",
-      "claimed_facts": []
-    }
-  ],
+  "turns": [],
+  "llm_fixtures": [],
   "expect": {
-    "terminal_state": "ClosedComplete",
-    "alert_event": "hot_lead",
+    "terminal_state": "ClosedDegraded",
+    "alert_event": null,
     "after_hours_notice": true,
     "must_not_contain": [],
     "must_refuse_advice": false

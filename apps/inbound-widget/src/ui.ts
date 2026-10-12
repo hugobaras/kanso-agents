@@ -7,6 +7,7 @@ export type ChatUi = {
   open: () => void;
   close: () => void;
   setBusy: (busy: boolean) => void;
+  setAfterHours: (blocked: boolean, bannerText?: string) => void;
   appendMessage: (role: "user" | "assistant" | "system", text: string) => void;
   setChoices: (options: ChoiceOption[] | null) => void;
   onSubmit: (handler: (text: string) => void) => void;
@@ -40,6 +41,14 @@ export function mountChatUi(config: WidgetConfig): ChatUi {
       display: block; margin-top: 4px; font-size: 11px; opacity: .85;
       font-family: ui-sans-serif, system-ui, sans-serif;
     }
+    .kanso-after-hours {
+      display: none; padding: 8px 12px; font-size: 12px; line-height: 1.4;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      background: #1a2740; color: #f5f6f8;
+    }
+    .kanso-after-hours.visible { display: block; }
+    .kanso-root.after-hours .kanso-form { opacity: .55; pointer-events: none; }
+    .kanso-root.after-hours .kanso-choices { display: none !important; }
     .kanso-messages {
       flex: 1; overflow-y: auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 10px;
       font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; line-height: 1.45;
@@ -92,6 +101,10 @@ export function mountChatUi(config: WidgetConfig): ChatUi {
   header.className = "kanso-header";
   header.innerHTML = `${escapeHtml(config.title)}<span class="kanso-ai-badge">Assistant automatisé · pas un humain</span>`;
 
+  const afterHoursBanner = document.createElement("div");
+  afterHoursBanner.className = "kanso-after-hours";
+  afterHoursBanner.setAttribute("role", "status");
+
   const messages = document.createElement("div");
   messages.className = "kanso-messages";
 
@@ -112,12 +125,13 @@ export function mountChatUi(config: WidgetConfig): ChatUi {
   send.textContent = "Envoyer";
 
   form.append(input, send);
-  panel.append(header, messages, choices, form);
+  panel.append(header, afterHoursBanner, messages, choices, form);
   root.append(bubble, panel);
   document.body.appendChild(root);
 
   let submitHandler: ((text: string) => void) | null = null;
   let busy = false;
+  let afterHours = false;
 
   bubble.addEventListener("click", () => {
     panel.classList.toggle("open");
@@ -125,7 +139,7 @@ export function mountChatUi(config: WidgetConfig): ChatUi {
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const text = input.value.trim();
-    if (!text || busy) return;
+    if (!text || busy || afterHours) return;
     input.value = "";
     submitHandler?.(text);
   });
@@ -160,11 +174,25 @@ export function mountChatUi(config: WidgetConfig): ChatUi {
     close: () => panel.classList.remove("open"),
     setBusy: (next) => {
       busy = next;
-      send.disabled = next;
-      input.disabled = next;
+      send.disabled = next || afterHours;
+      input.disabled = next || afterHours;
       choices.querySelectorAll("button").forEach((b) => {
-        (b as HTMLButtonElement).disabled = next;
+        (b as HTMLButtonElement).disabled = next || afterHours;
       });
+    },
+    setAfterHours: (blocked, bannerText) => {
+      afterHours = blocked;
+      root.classList.toggle("after-hours", blocked);
+      afterHoursBanner.classList.toggle("visible", blocked);
+      afterHoursBanner.textContent =
+        bannerText ??
+        "Hors horaires d'ouverture — conversation indisponible.";
+      send.disabled = busy || blocked;
+      input.disabled = busy || blocked;
+      input.placeholder = blocked
+        ? "Indisponible hors horaires…"
+        : "Votre message…";
+      if (blocked) renderChoices(null);
     },
     appendMessage: (role, text) => {
       const el = document.createElement("div");
