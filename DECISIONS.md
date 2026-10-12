@@ -468,10 +468,28 @@ Sources : docs publiques OpenAI, Anthropic, Mistral. Non contractuel ; revalider
 
 ---
 
+## 2026-10-12 — Phase 19 D2A M7 light
+
+### Décisions
+
+| ID | Décision | Détail | Source | Statut |
+|----|----------|--------|--------|--------|
+| D-125 | Niveau M7 | Pack `pnpm m7` + checklist ; seuils 85/15 stretch | Phase 19 Q1 = 1 | Validée |
+| D-126 | Smoke upload | Non — corpus eval only | Phase 19 Q2 = 3 | Validée |
+| D-127 | Extract | Mock / heuristique | Phase 19 Q3 défaut = 1 | Validée |
+| D-128 | Après M7 | Pause phases ; focus humain | Phase 19 Q4 = 1 | Validée |
+
+### Lien livrable
+
+- [docs/phase-19-d2a-m7-light.md](docs/phase-19-d2a-m7-light.md)
+- [docs/p19-execution.md](docs/p19-execution.md)
+
+---
+
 ## Suite
 
-Phases 0–18 livrées (usage portail).  
-Proposer **phase 19 D2A M7 light** (D-124). Bloquants humains : DPA, OVH, rota, SMTP.
+Phases 0–19 livrées — **GO_M7_LIGHT** (+ stretch mock GO).  
+**Pause produit** (D-128). Focus humain : DPA signé, OVH, rota, SMTP.
 
 ### 2026-10-10 — Exécution P0 (en cours)
 

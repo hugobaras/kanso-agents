@@ -17,6 +17,7 @@
     "smoke:portal": "bash scripts/smoke-portal.sh",
     "onboard:partner": "bash scripts/onboard-partner.sh",
     "m5": "bash scripts/m5-go-nogo.sh",
+    "m7": "bash scripts/m7-d2a-go.sh",
     "pilote:freeze": "bash scripts/freeze-pilote.sh"
   },
   "devDependencies": {
