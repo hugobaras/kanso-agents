@@ -22,7 +22,11 @@ import {
 } from "@kanso/llm";
 import { getPool, requireTenantId } from "@kanso/tenancy";
 import { dispatchInboundAlert } from "./alerts.js";
-import { listDemoOps, recordDemoTurn } from "./demo-ops.js";
+import {
+  listDemoOps,
+  patchLatestAlert,
+  recordDemoTurn,
+} from "./demo-ops.js";
 import { mountDocumentRoutes } from "./documents.js";
 import { syncInboundIntegrations } from "./integrations.js";
 import { resolveRag } from "./rag.js";
@@ -228,6 +232,19 @@ export function createApp(deps: AppDeps = {}) {
 
     const expected = resolveExpectedQuestion(config, turn.session);
 
+    if (turn.alertEvent && integrations) {
+      patchLatestAlert(sessionId, { integrations });
+    }
+
+    const score =
+      turn.session.scoreFinal ?? turn.session.scoreCurrent;
+    const band =
+      score >= config.scoring.thresholds.hot
+        ? "hot"
+        : score >= config.scoring.thresholds.warm
+          ? "warm"
+          : "cold";
+
     recordDemoTurn({
       tenant_id: tenantId,
       session_id: turn.session.id,
@@ -246,6 +263,8 @@ export function createApp(deps: AppDeps = {}) {
       state: turn.session.state,
       score_current: turn.session.scoreCurrent,
       score_final: turn.session.scoreFinal,
+      score_band: band,
+      score_thresholds: config.scoring.thresholds,
       answers: turn.session.answers,
       intent: turn.intent,
       alert_event: turn.alertEvent ?? null,

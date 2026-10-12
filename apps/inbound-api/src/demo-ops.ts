@@ -31,9 +31,23 @@ export type DemoAlertEvent = {
   delivered: boolean;
   title: string;
   body: string;
+  integrations?: unknown;
 };
 
-type DemoEvent = DemoTurnEvent | DemoAlertEvent;
+export type DemoDocumentEvent = {
+  at: string;
+  kind: "document";
+  tenant_id: string;
+  job_id: string;
+  status: string;
+  step: string;
+  filename?: string;
+  document_type?: string | null;
+  remote_id?: string | null;
+  last_error?: string | null;
+};
+
+type DemoEvent = DemoTurnEvent | DemoAlertEvent | DemoDocumentEvent;
 
 const MAX = 80;
 const events: DemoEvent[] = [];
@@ -46,6 +60,35 @@ export function recordDemoTurn(e: Omit<DemoTurnEvent, "at" | "kind">) {
 export function recordDemoAlert(e: Omit<DemoAlertEvent, "at" | "kind">) {
   events.unshift({ ...e, at: new Date().toISOString(), kind: "alert" });
   if (events.length > MAX) events.length = MAX;
+}
+
+export function recordDemoDocument(e: Omit<DemoDocumentEvent, "at" | "kind">) {
+  events.unshift({ ...e, at: new Date().toISOString(), kind: "document" });
+  if (events.length > MAX) events.length = MAX;
+}
+
+export function patchDemoDocument(
+  jobId: string,
+  patch: Partial<Omit<DemoDocumentEvent, "at" | "kind" | "job_id" | "tenant_id">>,
+) {
+  const idx = events.findIndex(
+    (e) => e.kind === "document" && e.job_id === jobId,
+  );
+  if (idx >= 0 && events[idx]?.kind === "document") {
+    events[idx] = { ...events[idx], ...patch };
+  }
+}
+
+export function patchLatestAlert(
+  sessionId: string,
+  patch: Partial<Pick<DemoAlertEvent, "integrations" | "delivered" | "mode">>,
+) {
+  const idx = events.findIndex(
+    (e) => e.kind === "alert" && e.session_id === sessionId,
+  );
+  if (idx >= 0 && events[idx]?.kind === "alert") {
+    events[idx] = { ...events[idx], ...patch };
+  }
 }
 
 export function listDemoOps(limit = 40): DemoEvent[] {

@@ -19,10 +19,13 @@ export type MessageReply = {
   assistant_message: string;
   score_current?: number;
   score_final: number | null;
+  score_band?: string;
+  score_thresholds?: { hot: number; warm: number; cold: number };
   answers?: Record<string, unknown>;
   intent?: string;
   alert_event: string | null;
   alert?: unknown;
+  integrations?: unknown;
   expected_question?: ExpectedQuestion | null;
   tenant_display_name?: string;
 };

@@ -2,6 +2,7 @@ import { parseDocumentToActionConfig } from "@kanso/config";
 import { enqueueUploadJob } from "@kanso/document-pipeline";
 import { getPool, requireTenantId } from "@kanso/tenancy";
 import type { Hono } from "hono";
+import { patchDemoDocument, recordDemoDocument } from "./demo-ops.js";
 
 async function loadPublishedDocumentConfig(tenantId: string) {
   const pool = getPool();
@@ -51,6 +52,14 @@ export function mountDocumentRoutes(app: Hono) {
       filename: body.filename,
     });
 
+    recordDemoDocument({
+      tenant_id: tenantId,
+      job_id: enqueued.jobId,
+      status: "pending",
+      step: "ingest",
+      filename: body.filename,
+    });
+
     return c.json(
       {
         job_id: enqueued.jobId,
@@ -75,6 +84,13 @@ export function mountDocumentRoutes(app: Hono) {
     );
     const row = res.rows[0];
     if (!row) return c.json({ error: "job_not_found" }, 404);
+    patchDemoDocument(jobId, {
+      status: row.status,
+      step: row.step,
+      document_type: row.document_type,
+      remote_id: row.remote_id,
+      last_error: row.last_error,
+    });
     return c.json({
       job_id: row.id,
       status: row.status,
