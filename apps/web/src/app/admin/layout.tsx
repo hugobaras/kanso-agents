@@ -31,7 +31,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <header className="sticky top-0 z-20 border-b border-line bg-ink text-paper">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4 sm:px-8">
           <Link href="/admin" className="flex items-center gap-2">
-            <LogoMark className="size-6 text-paper [&_rect]:fill-white/15" />
+            <LogoMark variant="light" className="size-7" />
             <span className="font-display font-semibold">Kanso</span>
             <Badge tone="accent">staff</Badge>
           </Link>

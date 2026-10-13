@@ -344,7 +344,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex">
         <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col gap-6 border-r border-line bg-paper px-4 py-5 lg:flex">
           <Link href="/app" className="flex items-center gap-2 px-1 text-ink">
-            <LogoMark className="size-6" />
+            <LogoMark className="size-7" />
             <span className="font-display text-lg font-semibold">Kanso</span>
           </Link>
           <WorkspaceSwitcher />
@@ -364,7 +364,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="absolute inset-0 bg-ink/30" onClick={() => setMobileOpen(false)} />
             <div className="absolute inset-y-0 left-0 flex w-72 animate-slide-up flex-col gap-6 overflow-y-auto bg-paper px-4 py-5 shadow-pop">
               <div className="flex items-center justify-between">
-                <LogoMark className="size-6 text-ink" />
+                <LogoMark className="size-7" />
                 <button onClick={() => setMobileOpen(false)} aria-label="Fermer le menu" className="rounded p-1.5 hover:bg-sunken">
                   <X className="size-5" />
                 </button>
