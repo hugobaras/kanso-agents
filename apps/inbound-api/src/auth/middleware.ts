@@ -134,9 +134,12 @@ export function assertRole(c: Context<AppEnv>, minRole: Role) {
   }
 }
 
-export function assertModule(c: Context<AppEnv>, module: "inbound" | "document_to_action") {
+export function assertModule(c: Context<AppEnv>, module: "inbound" | "document_to_action" | "portail") {
   if (!currentWorkspace(c).entitlements.modules[module]) {
-    throw forbidden("module_not_in_plan", "Ce module n'est pas inclus dans votre offre.");
+    throw forbidden(
+      "module_not_in_plan",
+      module === "portail" ? "Kanso Portail n'est pas encore activé pour votre espace." : "Ce module n'est pas inclus dans votre offre.",
+    );
   }
 }
 

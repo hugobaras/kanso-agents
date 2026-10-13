@@ -16,12 +16,14 @@ import { billingRoutes } from "./routes/app/billing.js";
 import { documentsRoutes } from "./routes/app/documents.js";
 import { integrationsRoutes } from "./routes/app/integrations.js";
 import { leadsRoutes } from "./routes/app/leads.js";
+import { portailRoutes } from "./routes/app/portail.js";
 import { overviewRoutes } from "./routes/app/overview.js";
 import { settingsRoutes } from "./routes/app/settings.js";
 import { teamRoutes } from "./routes/app/team.js";
 import { authRoutes } from "./routes/auth.js";
 import { devRoutes } from "./routes/dev.js";
 import { legacyRoutes } from "./routes/legacy.js";
+import { portailClientRoutes } from "./routes/portail-client.js";
 import { publicRoutes } from "./routes/public.js";
 import { stripeRoutes } from "./routes/stripe.js";
 import { widgetRoutes } from "./routes/widget.js";
@@ -94,6 +96,7 @@ export function createApp(deps: AppDeps = {}) {
   app.use("/api/*", loadSession);
 
   app.route("/api/public", publicRoutes(limiter, deps));
+  app.route("/api/portail", portailClientRoutes(limiter));
   app.route("/api/auth", authRoutes(limiter));
   app.route("/api/admin", adminRoutes());
   if (devToolsEnabled()) app.route("/api/dev", devRoutes());
@@ -104,6 +107,7 @@ export function createApp(deps: AppDeps = {}) {
   ws.route("/leads", leadsRoutes());
   ws.route("/assistant", assistantRoutes(limiter));
   ws.route("/documents", documentsRoutes());
+  ws.route("/portail", portailRoutes());
   ws.route("/team", teamRoutes());
   ws.route("/integrations", integrationsRoutes());
   ws.route("/billing", billingRoutes());

@@ -7,18 +7,22 @@ export type RenderedEmail = {
   text: string;
 };
 
+type Brand = { name: string; color?: string };
+
 function build(
   template: string,
   subject: string,
   heading: string,
   blocks: EmailBlock[],
   product?: string,
+  brand?: Brand,
 ): RenderedEmail {
   const { html, text } = renderEmail({
     preheader: subject,
     heading,
     blocks,
     product,
+    brand,
   });
   return { template, subject, html, text };
 }
@@ -313,6 +317,158 @@ export const templates = {
           text: "Le lien expire dans 24 heures et nécessite d'être connecté.",
         },
       ],
+    );
+  },
+
+  // ---- Kanso Portail : e-mails au nom du cabinet ------------------------------
+  portalInvite(p: { brand: Brand; clientName: string; title: string; url: string; items: string[]; message?: string | null; days: number }) {
+    return build(
+      "portal_invite",
+      `${p.brand.name} vous demande des documents`,
+      "Des documents vous sont demandés",
+      [
+        { kind: "p", text: p.clientName ? `Bonjour ${p.clientName},` : "Bonjour," },
+        { kind: "p", text: `${p.brand.name} ouvre un dossier « ${p.title} » et vous demande de déposer quelques pièces, depuis votre téléphone ou votre ordinateur.` },
+        ...(p.message ? [{ kind: "p" as const, text: p.message }] : []),
+        ...(p.items.length ? [{ kind: "muted" as const, text: `À fournir : ${p.items.slice(0, 8).join(" · ")}${p.items.length > 8 ? " …" : ""}` }] : []),
+        { kind: "button", label: "Déposer mes documents", href: p.url },
+        { kind: "muted", text: `Ce lien est personnel et valable ${p.days} jours. Vous recevrez un code à six chiffres par e-mail pour confirmer que c'est bien vous. Ne le transmettez pas.` },
+      ],
+      undefined,
+      p.brand,
+    );
+  },
+
+  portalCode(p: { brand: Brand; code: string }) {
+    return build(
+      "portal_code",
+      `Votre code de vérification : ${p.code}`,
+      "Votre code de vérification",
+      [
+        { kind: "p", text: "Saisissez ce code pour accéder à votre dossier :" },
+        { kind: "kv", rows: [["Code", p.code]] },
+        { kind: "muted", text: "Il est valable 10 minutes. Si vous n'avez rien demandé, ignorez cet e-mail." },
+      ],
+      undefined,
+      p.brand,
+    );
+  },
+
+  portalResend(p: { brand: Brand; clientName: string; title: string; url: string; days: number }) {
+    return build(
+      "portal_resend",
+      `Votre lien d'accès — ${p.title}`,
+      "Votre nouveau lien d'accès",
+      [
+        { kind: "p", text: p.clientName ? `Bonjour ${p.clientName},` : "Bonjour," },
+        { kind: "p", text: `Voici un nouveau lien pour accéder au dossier « ${p.title} ».` },
+        { kind: "button", label: "Ouvrir mon dossier", href: p.url },
+        { kind: "muted", text: `Valable ${p.days} jours. Les liens précédents ne fonctionnent plus.` },
+      ],
+      undefined,
+      p.brand,
+    );
+  },
+
+  portalReminder(p: { brand: Brand; clientName: string; title: string; url: string; missing: string[] }) {
+    return build(
+      "portal_reminder",
+      `Il manque encore des documents — ${p.title}`,
+      "Il manque encore des documents",
+      [
+        { kind: "p", text: p.clientName ? `Bonjour ${p.clientName},` : "Bonjour," },
+        { kind: "p", text: `Pour avancer sur « ${p.title} », ${p.brand.name} attend encore :` },
+        { kind: "muted", text: p.missing.slice(0, 10).join(" · ") },
+        { kind: "button", label: "Déposer mes documents", href: p.url },
+      ],
+      undefined,
+      p.brand,
+    );
+  },
+
+  portalRefusal(p: { brand: Brand; clientName: string; title: string; url: string; label: string; reason: string }) {
+    return build(
+      "portal_refusal",
+      `Un document est à refaire — ${p.title}`,
+      "Un document est à refaire",
+      [
+        { kind: "p", text: p.clientName ? `Bonjour ${p.clientName},` : "Bonjour," },
+        { kind: "p", text: `${p.brand.name} ne peut pas utiliser le document « ${p.label} ».` },
+        ...(p.reason ? [{ kind: "p" as const, text: `Motif : ${p.reason}` }] : []),
+        { kind: "button", label: "Déposer un nouveau document", href: p.url },
+      ],
+      undefined,
+      p.brand,
+    );
+  },
+
+  portalCabinetMessage(p: { brand: Brand; clientName: string; title: string; url: string; body: string }) {
+    return build(
+      "portal_message",
+      `Nouveau message — ${p.title}`,
+      "Vous avez un nouveau message",
+      [
+        { kind: "p", text: p.clientName ? `Bonjour ${p.clientName},` : "Bonjour," },
+        { kind: "p", text: `${p.brand.name} vous a écrit à propos de « ${p.title} » :` },
+        { kind: "muted", text: p.body },
+        { kind: "button", label: "Ouvrir mon dossier", href: p.url },
+      ],
+      undefined,
+      p.brand,
+    );
+  },
+
+  portalPurgeNotice(p: { brand: Brand; title: string; date: string }) {
+    return build(
+      "portal_purge_notice",
+      `Fin de conservation du dossier — ${p.title}`,
+      "Dossier bientôt supprimé",
+      [
+        { kind: "p", text: `Conformément à sa durée de conservation, les documents du dossier « ${p.title} » seront supprimés le ${p.date}.` },
+        { kind: "muted", text: "Exportez-les avant cette date si vous souhaitez les conserver." },
+      ],
+      undefined,
+      p.brand,
+    );
+  },
+
+  portalCabinetDigest(p: { workspace: string; url: string; rows: Array<[string, string]> }) {
+    return build(
+      "portal_digest",
+      `Portail — activité de la veille (${p.workspace})`,
+      "Activité sur vos dossiers",
+      [
+        { kind: "p", text: "Voici ce qui s'est passé depuis le dernier résumé :" },
+        { kind: "kv", rows: p.rows },
+        { kind: "button", label: "Ouvrir le portail", href: p.url },
+      ],
+      "Portail",
+    );
+  },
+
+  portalDossierComplete(p: { workspace: string; reference: string; title: string; client: string; url: string }) {
+    return build(
+      "portal_complete",
+      `Dossier complet — ${p.reference}`,
+      "Un dossier est complet",
+      [
+        { kind: "p", text: `${p.client || "Votre client"} a déposé toutes les pièces demandées pour « ${p.title} » (${p.reference}).` },
+        { kind: "button", label: "Vérifier les pièces", href: p.url },
+      ],
+      "Portail",
+    );
+  },
+
+  portalCabinetPurgeNotice(p: { workspace: string; reference: string; title: string; date: string; url: string }) {
+    return build(
+      "portal_cabinet_purge_notice",
+      `Suppression prochaine — ${p.reference}`,
+      "Un dossier sera supprimé",
+      [
+        { kind: "p", text: `Le dossier « ${p.title} » (${p.reference}) sera supprimé le ${p.date}, selon la durée de conservation de ${p.workspace}.` },
+        { kind: "button", label: "Exporter le dossier", href: p.url },
+      ],
+      "Portail",
     );
   },
 };
