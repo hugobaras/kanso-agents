@@ -10,9 +10,13 @@ export function CopyButton({ value, label = "Copier", className }: { value: stri
     <button
       type="button"
       onClick={async () => {
-        await navigator.clipboard.writeText(value);
-        setDone(true);
-        setTimeout(() => setDone(false), 1800);
+        try {
+          await navigator.clipboard.writeText(value);
+          setDone(true);
+          setTimeout(() => setDone(false), 1800);
+        } catch {
+          // clipboard blocked: the user can still select the text
+        }
       }}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-md border border-line-strong bg-surface px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-sunken",
@@ -25,13 +29,16 @@ export function CopyButton({ value, label = "Copier", className }: { value: stri
   );
 }
 
-export function CodeBlock({ code, className }: { code: string; className?: string }) {
+export function CodeBlock({ code, label = "HTML", className }: { code: string; label?: string; className?: string }) {
   return (
-    <div className={cn("relative rounded-lg bg-ink", className)}>
-      <pre className="overflow-x-auto px-4 py-4 pr-24 font-mono text-[12.5px] leading-6 text-[#e8e4da]">
+    <div className={cn("overflow-hidden rounded-lg bg-ink", className)}>
+      <div className="flex items-center justify-between border-b border-white/10 px-4 py-2">
+        <span className="font-mono text-[11px] uppercase tracking-wide text-paper/50">{label}</span>
+        <CopyButton value={code} className="border-white/15 bg-white/10 text-paper hover:bg-white/20" />
+      </div>
+      <pre className="overflow-x-auto px-4 py-4 font-mono text-[12.5px] leading-6 text-[#e8e4da]">
         <code>{code}</code>
       </pre>
-      <CopyButton value={code} className="absolute right-3 top-3 border-white/15 bg-white/10 text-paper hover:bg-white/20" />
     </div>
   );
 }

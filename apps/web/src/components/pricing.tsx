@@ -19,7 +19,7 @@ export function PlanCard({
   featured?: boolean;
   action: React.ReactNode;
 }) {
-  const monthly = interval === "year" ? plan.yearlyPriceCents / 12 : plan.monthlyPriceCents;
+  const monthly = Math.round(interval === "year" ? plan.yearlyPriceCents / 12 : plan.monthlyPriceCents);
   return (
     <div
       className={cn(
@@ -38,7 +38,7 @@ export function PlanCard({
       </div>
       <p className="mt-2 min-h-10 text-sm text-muted">{plan.tagline}</p>
       <p className="mt-5 flex items-baseline gap-1">
-        <span className="font-display text-4xl">{formatEur(monthly)}</span>
+        <span className="font-display text-4xl">{formatEur(monthly, { decimals: monthly % 100 !== 0 })}</span>
         <span className="text-sm text-muted">HT / mois</span>
       </p>
       <p className="mt-1 h-5 text-xs text-muted">

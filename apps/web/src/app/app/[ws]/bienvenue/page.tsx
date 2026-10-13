@@ -125,7 +125,7 @@ export default function OnboardingPage() {
     <div key="1" className="space-y-5">
       <div>
         <h2 className="font-display text-2xl">À votre image</h2>
-        <p className="mt-1 text-sm text-muted">Nom, couleur et message d&apos;accueil. L&apos;aperçu se met à jour en direct.</p>
+        <p className="mt-1 text-sm text-muted">Nom, couleur et message d&apos;accueil affichés à vos visiteurs.</p>
       </div>
       <Field label="Nom affiché">
         {(p) => <Input {...p} value={config.identity.display_name} onChange={(e) => setConfig({ ...config, identity: { ...config.identity, display_name: e.target.value } })} />}
@@ -316,7 +316,7 @@ export default function OnboardingPage() {
         ))}
       </ol>
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="animate-fade-in">{steps[step]}</div>
+        <div className="min-w-0 animate-fade-in">{steps[step]}</div>
         <div className="hidden lg:block">
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-subtle">Aperçu</p>
           <ChatPreview ws={ws} config={config} />

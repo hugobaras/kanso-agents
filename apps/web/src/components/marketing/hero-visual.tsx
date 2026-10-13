@@ -33,7 +33,7 @@ export function HeroVisual() {
           </div>
         </div>
       </div>
-      <div className="absolute -bottom-10 -right-4 w-72 rounded-xl border border-line bg-surface p-4 shadow-pop sm:-right-10">
+      <div className="absolute -bottom-24 -right-4 w-72 rounded-xl border border-line bg-surface p-4 shadow-pop sm:-right-10">
         <div className="flex items-center gap-2 text-xs text-muted">
           <Mail className="size-3.5" /> accueil@lefevre-avocats.fr
         </div>
@@ -56,7 +56,7 @@ export function HeroVisual() {
           </div>
         </dl>
       </div>
-      <div className="absolute -left-6 top-16 hidden items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs shadow-card sm:flex">
+      <div className="absolute -left-6 -top-4 hidden items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs shadow-card sm:flex">
         <Bell className="size-3.5 text-accent" /> Nouvelle demande qualifiée
       </div>
     </div>

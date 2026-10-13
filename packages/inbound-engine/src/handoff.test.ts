@@ -27,7 +27,8 @@ describe("handoff", () => {
     const msg = buildHandoffTemplate(config, session);
     expect(msg).toMatch(/Droit social/);
     expect(msg).toMatch(/Sous 7 jours/);
-    expect(msg).toMatch(/55/);
+    // The internal score is never shown to the visitor.
+    expect(msg).not.toMatch(/55/);
     expect(msg).toMatch(/sans engagement/);
   });
 
@@ -44,6 +45,7 @@ describe("handoff", () => {
         claimed_facts: [],
       },
     ]);
+    process.env.KANSO_LLM_HANDOFF = "1";
     const ok = await synthesizeHandoffMessage({ llm, config, session });
     expect(ok.source).toBe("llm");
     expect(ok.message).toMatch(/transmise/);

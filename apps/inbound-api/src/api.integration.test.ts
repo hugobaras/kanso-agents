@@ -221,6 +221,54 @@ describe.skipIf(!hasDb)("SaaS API", () => {
     expect(((await res.json()) as { error: string }).error).toBe("dpa_required");
   });
 
+  it("activates a paid plan from a signed Stripe webhook, exactly once", async () => {
+    const Stripe = (await import("stripe")).default;
+    const { setStripeClient } = await import("./services/stripe.js");
+    process.env.STRIPE_SECRET_KEY = "sk_test_dummy";
+    process.env.STRIPE_WEBHOOK_SECRET = "whsec_test_secret";
+    const real = new Stripe("sk_test_dummy");
+    const subscription = {
+      id: `sub_${suffix}`,
+      customer: `cus_${suffix}`,
+      status: "active",
+      cancel_at_period_end: false,
+      metadata: { tenant_id: wsB },
+      items: { data: [{ current_period_end: Math.floor(Date.now() / 1000) + 30 * 86400, price: { lookup_key: "kanso_cabinet_month" } }] },
+    };
+    setStripeClient({
+      webhooks: real.webhooks,
+      subscriptions: { retrieve: async () => subscription },
+    } as unknown as InstanceType<typeof Stripe>);
+
+    const event = {
+      id: `evt_${suffix}`,
+      object: "event",
+      type: "checkout.session.completed",
+      data: { object: { id: "cs_test", object: "checkout.session", subscription: subscription.id, client_reference_id: wsB } },
+    };
+    const payload = JSON.stringify(event);
+    const signature = real.webhooks.generateTestHeaderString({ payload, secret: "whsec_test_secret" });
+    const send = (sig: string) =>
+      app.request("/api/stripe/webhook", { method: "POST", headers: { "stripe-signature": sig, "content-type": "application/json" }, body: payload });
+
+    expect((await send("t=1,v1=bad")).status).toBe(400);
+    const first = await send(signature);
+    expect(first.status).toBe(200);
+    expect(((await first.json()) as { outcome: string }).outcome).toBe("processed");
+    const again = await send(signature);
+    expect(((await again.json()) as { outcome: string }).outcome).toBe("duplicate");
+
+    const overview = await call(bob, "GET", `/api/app/${wsB}`);
+    expect(overview.json.entitlements.plan).toBe("cabinet");
+    expect(overview.json.entitlements.status).toBe("active");
+    expect(overview.json.entitlements.quotas.conversations).toBe(600);
+
+    setStripeClient(null);
+    delete process.env.STRIPE_SECRET_KEY;
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+    await getPool().query(`delete from stripe_events where event_id = $1`, [event.id]);
+  });
+
   it("rate limits repeated widget session creation", async () => {
     const key = (await call(alice, "GET", `/api/app/${wsA}/assistant/install`)).json.public_key;
     const headers = { "x-kanso-key": key, origin: "https://www.cabinet-a.fr", "x-forwarded-for": `10.9.${suffix.length}.77` };
