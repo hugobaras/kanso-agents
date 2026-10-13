@@ -6,6 +6,7 @@ import { audit } from "../../auth/service.js";
 import { body } from "../../http/body.js";
 import { badRequest, HttpError, notFound } from "../../http/errors.js";
 import { clientIp } from "../../http/rate-limit.js";
+import { stripe, stripeConfigured } from "../../services/stripe.js";
 import type { AppEnv } from "../../http/types.js";
 
 /** Bump when docs/legal/dpa changes materially; customers re-accept. */
@@ -120,6 +121,13 @@ export function settingsRoutes() {
     }
     const pool = getPool();
     await pool.query(`update tenants set deleted_at = now() + interval '30 days', status = 'suspended', suspended_reason = 'deletion_requested' where tenant_id = $1`, [ws.tenantId]);
+    // Stop billing at the end of the paid period; the purge happens after the grace period.
+    const subId = ws.entitlements.subscription?.stripe_subscription_id;
+    if (subId && stripeConfigured() && ws.entitlements.status !== "canceled") {
+      await stripe().subscriptions.update(subId, { cancel_at_period_end: true }).catch((err: unknown) =>
+        console.error(JSON.stringify({ level: "error", event: "stripe_cancel_failed", message: err instanceof Error ? err.message : String(err) })),
+      );
+    }
     await pool.query(`insert into data_requests (tenant_id, kind, requested_by) values ($1, 'delete', $2)`, [
       ws.tenantId,
       currentUser(c).id,

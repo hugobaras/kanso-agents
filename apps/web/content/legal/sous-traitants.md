@@ -1,0 +1,16 @@
+---
+title: Sous-traitants ultérieurs
+updated: 2026-10-14
+---
+
+| Prestataire | Rôle | Localisation des données | Données concernées |
+|---|---|---|---|
+| OVHcloud (OVH SAS) | Hébergement de l'application et des fichiers | France | toutes |
+| Supabase (infrastructure AWS eu-west) | Base de données | Union européenne | toutes |
+| Mistral AI | Analyse des conversations et documents (API européenne) | France / UE | messages, contenu des documents |
+| Stripe Payments Europe | Paiement et facturation | Irlande (UE) | données de facturation du Client uniquement |
+| Fournisseur d'e-mail transactionnel | Envoi des alertes et e-mails de service | Union européenne | adresses e-mail, contenu des alertes |
+
+Les intégrations activées par le Client (Slack, HubSpot, Pennylane, Sellsy, Calendly, Google Agenda) sont des outils **choisis par le Client** : les données y sont transmises sur son instruction, selon les conditions de ces éditeurs.
+
+Toute modification de cette liste est notifiée aux Clients au moins 30 jours avant sa prise d'effet.

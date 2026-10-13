@@ -248,7 +248,9 @@ export function documentsRoutes() {
     c.header("Content-Type", mime);
     c.header("Content-Disposition", `inline; filename="${encodeURIComponent(row.original_filename ?? "document")}"`);
     c.header("X-Content-Type-Options", "nosniff");
-    c.header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
+    c.header("X-Frame-Options", "SAMEORIGIN");
+    // Images get a locked-down CSP; PDFs need the browser viewer (no sandbox).
+    if (mime !== "application/pdf") c.header("Content-Security-Policy", "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'");
     c.header("Cache-Control", "private, max-age=300");
     return c.body(new Uint8Array(content));
   });

@@ -61,10 +61,15 @@ export function createApp(deps: AppDeps = {}) {
     secureHeaders({
       crossOriginResourcePolicy: false,
       crossOriginOpenerPolicy: false,
-      xFrameOptions: "DENY",
+      xFrameOptions: false,
       referrerPolicy: "strict-origin-when-cross-origin",
     }),
   );
+  // DENY framing by default; the document viewer opts into SAMEORIGIN.
+  app.use("*", async (c, next) => {
+    await next();
+    if (!c.res.headers.has("X-Frame-Options")) c.res.headers.set("X-Frame-Options", "DENY");
+  });
 
   app.get("/health", async (c) => c.json(await buildHealth()));
 

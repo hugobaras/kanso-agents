@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+/*
+ * Kanso — « calme notarial ».
+ * Encre marine, papier chaud, un accent sarcelle discret. Bordures fines,
+ * peu d'ombres, pas de dégradés. Contrastes AA sur fond papier et blanc.
+ */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: var(--font-source-serif), Georgia, "Times New Roman", serif;
+
+  --color-ink: #1b2a4a;
+  --color-ink-soft: #2c3d63;
+  --color-paper: #faf8f4;
+  --color-surface: #ffffff;
+  --color-sunken: #f3efe7;
+  --color-line: #e7e2d8;
+  --color-line-strong: #d6cfc1;
+  --color-muted: #5b6576;
+  --color-subtle: #8a93a3;
+
+  --color-accent: #1f6f6b;
+  --color-accent-soft: #e5f1ef;
+  --color-accent-strong: #16524f;
+
+  --color-success: #2f6b3f;
+  --color-success-soft: #e6f2e8;
+  --color-warning: #8a5a00;
+  --color-warning-soft: #fbf1dc;
+  --color-danger: #a33a2c;
+  --color-danger-soft: #f9e7e3;
+  --color-info: #2d5b8a;
+  --color-info-soft: #e6eef7;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --shadow-card: 0 1px 2px rgb(27 42 74 / 0.04);
+  --shadow-pop: 0 8px 28px rgb(27 42 74 / 0.12), 0 1px 3px rgb(27 42 74 / 0.08);
+
+  --animate-fade-in: fade-in 160ms ease-out;
+  --animate-slide-up: slide-up 200ms ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--color-accent-soft);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 1ms !important;
+      transition-duration: 1ms !important;
+    }
+  }
+}
+
+@utility font-display {
+  font-family: var(--font-serif);
+  letter-spacing: -0.01em;
+}
+
+@layer components {
+  .prose-legal h2 {
+    @apply font-display text-xl mt-10 mb-3 text-ink;
+  }
+  .prose-legal h3 {
+    @apply font-semibold mt-6 mb-2 text-ink;
+  }
+  .prose-legal p, .prose-legal li {
+    @apply text-[15px] leading-7 text-ink/90;
+  }
+  .prose-legal ul {
+    @apply list-disc pl-5 my-3 space-y-1;
+  }
+  .prose-legal table {
+    @apply w-full text-sm my-4 border border-line;
+  }
+  .prose-legal th, .prose-legal td {
+    @apply border border-line px-3 py-2 text-left align-top;
+  }
+}

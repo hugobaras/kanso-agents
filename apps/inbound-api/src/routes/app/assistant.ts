@@ -170,6 +170,23 @@ export function assistantRoutes(limiter: RateLimiter) {
     return c.json({ ok: true, version });
   });
 
+  /** Reset the draft from a profession template (keeps identity + alerts). */
+  app.post("/template", async (c) => {
+    const ws = currentWorkspace(c);
+    assertRole(c, "admin");
+    const b = await body(c.req, z.object({ profession: z.enum(["avocat", "expert_comptable", "notaire", "autre"]) }));
+    const current = await currentDraft(ws.tenantId, ws.profession, ws.displayName);
+    const tpl = buildInboundTemplate({
+      profession: b.profession,
+      displayName: current.config.identity.display_name,
+      primaryColor: current.config.identity.branding.primary_color,
+    });
+    const config: InboundConfig = { ...tpl, identity: current.config.identity, alerts: current.config.alerts };
+    await saveDraftConfig(getPool(), { tenantId: ws.tenantId, product: "inbound", config, updatedBy: actorLabel(c) });
+    await getPool().query(`update tenants set profession = $2 where tenant_id = $1`, [ws.tenantId, b.profession]);
+    return c.json({ ok: true, config });
+  });
+
   app.post("/restore/:version", async (c) => {
     const ws = currentWorkspace(c);
     assertRole(c, "admin");
