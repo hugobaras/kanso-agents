@@ -18,6 +18,7 @@
     "@kanso/document-pipeline": "workspace:*",
     "@kanso/llm": "workspace:*",
     "@kanso/mailer": "workspace:*",
+    "@kanso/portal": "workspace:*",
     "@kanso/shared": "workspace:*",
     "@kanso/tenancy": "workspace:*"
   },

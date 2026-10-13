@@ -57,6 +57,9 @@ importers:
       '@kanso/mailer':
         specifier: workspace:*
         version: link:../../packages/mailer
+      '@kanso/portal':
+        specifier: workspace:*
+        version: link:../../packages/portal
       '@kanso/shared':
         specifier: workspace:*
         version: link:../../packages/shared
