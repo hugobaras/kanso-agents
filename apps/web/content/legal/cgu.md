@@ -5,7 +5,7 @@ updated: 2026-10-14
 
 ## 1. Objet
 
-Les présentes conditions régissent l'utilisation du service Kanso (« le Service ») édité par shbt studio SAS (« Kanso ») par les professionnels qui créent un espace (« le Client ») et les personnes qu'ils y invitent (« les Utilisateurs »).
+Les présentes conditions régissent l'utilisation du service **Kanso Assistant** (« le Service »), produit de Kanso Solutions édité par shbt studio SAS (« Kanso ») par les professionnels qui créent un espace (« le Client ») et les personnes qu'ils y invitent (« les Utilisateurs »).
 
 Le Service est réservé aux professionnels. Il comprend un assistant d'accueil automatisé intégrable sur le site du Client, un module de traitement de documents et un espace de gestion en ligne.
 

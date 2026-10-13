@@ -282,6 +282,51 @@ describe.skipIf(!hasDb)("SaaS API", () => {
     expect(mails.rows.map((m) => m.to_email)).toEqual(expect.arrayContaining(["bonjour@kanso.fr", `alice-${suffix}@example.com`]));
   });
 
+  it("accepts public forms (quote, waiting list), rejects bots and missing consent", async () => {
+    const pool = getPool();
+    const email = `visiteur-${suffix}@example.com`;
+    const quote = {
+      source: "site",
+      kind: "devis",
+      name: "Claire Test",
+      email,
+      profession: "avocat",
+      extra: { project: "refonte", current_url: "https://ancien.example", timeline: "asap", with_assistant: true },
+      consent: true,
+    };
+    const ok = await call({}, "POST", "/api/public/contact", quote, { "x-forwarded-for": `10.20.0.${suffix.length}1` });
+    expect(ok.status).toBe(200);
+    const stored = await pool.query(`select kind, source, extra from contact_requests where email = $1`, [email]);
+    expect(stored.rows).toHaveLength(1);
+    expect(stored.rows[0].extra.project).toBe("refonte");
+
+    // Same request again within a day: acknowledged but not stored twice.
+    await call({}, "POST", "/api/public/contact", quote, { "x-forwarded-for": `10.20.1.${suffix.length}1` });
+    expect((await pool.query(`select 1 from contact_requests where email = $1`, [email])).rowCount).toBe(1);
+
+    const mails = await pool.query<{ to_email: string }>(
+      `select to_email from mail_outbox where created_at > now() - interval '1 minute' and template in ('contact_ack', 'internal_request')`,
+    );
+    expect(mails.rows.map((m) => m.to_email)).toEqual(expect.arrayContaining([email, "bonjour@kanso.fr"]));
+
+    // Consent is mandatory.
+    const noConsent = await call({}, "POST", "/api/public/contact", { ...quote, email: `x-${email}`, consent: false }, { "x-forwarded-for": "10.20.2.1" });
+    expect(noConsent.status).toBe(400);
+
+    // Honeypot: silent success, nothing stored.
+    const bot = await call({}, "POST", "/api/public/contact", { ...quote, email: `bot-${email}`, website: "http://spam" }, { "x-forwarded-for": "10.20.3.1" });
+    expect(bot.status).toBe(200);
+    expect((await pool.query(`select 1 from contact_requests where email = $1`, [`bot-${email}`])).rowCount).toBe(0);
+
+    // Waiting list only for Kanso Portail; quotes only for Kanso Site.
+    const wrong = await call({}, "POST", "/api/public/contact", { ...quote, source: "solutions" }, { "x-forwarded-for": "10.20.4.1" });
+    expect(wrong.status).toBe(400);
+    const wl = await call({}, "POST", "/api/public/contact", { source: "portail", kind: "waitlist", email: `wl-${email}`, consent: true }, { "x-forwarded-for": "10.20.5.1" });
+    expect(wl.status).toBe(200);
+
+    await pool.query(`delete from contact_requests where email like $1`, [`%${email}`]);
+  });
+
   it("rate limits repeated widget session creation", async () => {
     const key = (await call(alice, "GET", `/api/app/${wsA}/assistant/install`)).json.public_key;
     const headers = { "x-kanso-key": key, origin: "https://www.cabinet-a.fr", "x-forwarded-for": `10.9.${suffix.length}.77` };

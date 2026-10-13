@@ -1,6 +1,7 @@
 import { PAID_PLANS, PLANS, TRIAL_DAYS } from "@kanso/billing";
 import type { Metadata } from "next";
 import { Faq } from "@/components/marketing/faq";
+import { siteHref } from "@/lib/sites";
 import { PricingGrid } from "@/components/marketing/pricing-grid";
 
 export const metadata: Metadata = {
@@ -67,11 +68,11 @@ export default function PricingPage() {
           <div>
             <p className="font-semibold">Besoin d&apos;un site internet ?</p>
             <p className="mt-1 text-sm text-muted">
-              Création ou refonte par Kanso Solutions, assistant intégré. Prestation sur devis, indépendante de l&apos;abonnement.
+              Kanso Site : création ou refonte sur mesure, assistant intégré. Prestation sur devis, indépendante de l&apos;abonnement.
             </p>
           </div>
-          <a href="/site-internet" className="shrink-0 text-sm font-medium text-accent hover:underline">
-            En savoir plus →
+          <a href={siteHref("site")} className="shrink-0 text-sm font-medium text-accent hover:underline">
+            Découvrir Kanso Site →
           </a>
         </div>
       </section>

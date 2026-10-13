@@ -15,12 +15,12 @@ const serif = Source_Serif_4({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001"),
   title: {
-    default: "Kanso — L'assistant d'accueil des cabinets",
-    template: "%s · Kanso",
+    default: "Kanso Assistant — L'assistant d'accueil des cabinets",
+    template: "%s · Kanso Assistant",
   },
   description:
-    "Kanso qualifie les demandes de vos futurs clients et traite vos factures fournisseurs. Pour avocats, experts-comptables et notaires. Hébergé dans l'Union européenne.",
-  icons: { icon: "/favicon.svg" },
+    "Kanso Assistant qualifie les demandes de vos futurs clients et traite vos factures fournisseurs. Pour avocats, experts-comptables et notaires. Hébergé dans l'Union européenne.",
+  icons: { icon: "/brand/favicon-assistant.svg" },
 };
 
 export const viewport: Viewport = {

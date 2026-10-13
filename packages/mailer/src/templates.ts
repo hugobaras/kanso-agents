@@ -12,8 +12,9 @@ function build(
   subject: string,
   heading: string,
   blocks: EmailBlock[],
+  product?: string,
 ): RenderedEmail {
-  const { html, text } = renderEmail({ preheader: subject, heading, blocks });
+  const { html, text } = renderEmail({ preheader: subject, heading, blocks, product });
   return { template, subject, html, text };
 }
 
@@ -138,7 +139,23 @@ export const templates = {
       { kind: "p", text: `${p.requester} (${p.workspace}) vient de faire une demande depuis son espace.` },
       { kind: "kv", rows: [["Espace", p.tenantId], ...p.rows] },
       { kind: "button", label: "Ouvrir dans le back-office", href: p.url },
-    ]);
+    ], "Solutions");
+  },
+
+  /** Acknowledgement for the public sites (contact, quote, waiting list). */
+  contactAck(p: { name: string; product: "Kanso Solutions" | "Kanso Assistant" | "Kanso Site" | "Kanso Portail"; kind: "contact" | "devis" | "waitlist" }) {
+    const hello = p.name ? `Bonjour ${p.name},` : "Bonjour,";
+    const copy = {
+      contact: "Nous avons bien reçu votre message. Un membre de l'équipe vous répond sous deux jours ouvrés.",
+      devis: "Nous avons bien reçu votre demande de devis. Un membre de l'équipe vous recontacte sous deux jours ouvrés pour en discuter, sans engagement.",
+      waitlist: "Vous êtes inscrit(e) sur la liste d'attente. Nous vous écrirons lorsque le produit s'ouvrira, et pour vous associer à sa conception si vous le souhaitez.",
+    }[p.kind];
+    const heading = p.kind === "waitlist" ? "Inscription enregistrée" : "Nous avons bien reçu votre demande";
+    return build("contact_ack", `${heading} — ${p.product}`, heading, [
+      { kind: "p", text: hello },
+      { kind: "p", text: copy },
+      { kind: "muted", text: `${p.product} est édité par Kanso Solutions (shbt studio SAS). Vos données ne servent qu'à répondre à cette demande.` },
+    ], p.product.replace("Kanso ", ""));
   },
 
   websiteRequestAck(p: { workspace: string }) {

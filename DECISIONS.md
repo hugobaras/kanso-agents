@@ -556,3 +556,23 @@ Phases 0–19 livrées — **GO_M7_LIGHT** (+ stretch mock GO).
 | H-041 | Stripe live | Compte, Stripe Tax, portail client, webhook prod ; lancer `stripe:seed` en live. |
 | H-042 | Hébergement | Les pages marketing annoncent OVHcloud + base UE : à aligner avec l'infra réellement provisionnée. |
 | H-043 | SMTP | Fournisseur UE transactionnel (`KANSO_SMTP_URL`), SPF/DKIM/DMARC sur le domaine d'envoi. |
+
+---
+
+## 2026-10-15 — Gamme et sites Kanso Solutions
+
+| ID | Décision | Détail | Statut |
+|----|----------|--------|--------|
+| D-139 | Architecture de marque | shbt studio SAS (société) → Kanso Solutions (gamme) → produits : **Kanso Assistant** (ce SaaS), **Kanso Site** (création de sites sur mesure), **Kanso Portail** (espace client). Cible : avocats, experts-comptables, notaires. | Validée (utilisateur) |
+| D-140 | Sites | Une app Next.js sert 4 sites (Solutions, Assistant, Site, Portail) ; en production un domaine par site, routé par nom d'hôte (`proxy.ts`), en local par chemin (`/sites/*`). Thème par produit (couleur d'accent), logo ensō commun, point aux couleurs du produit. | Validée |
+| D-141 | Formulaires publics | `POST /api/public/contact` (contact, devis Kanso Site, liste d'attente Kanso Portail) : consentement obligatoire, piège à robots, limite de débit, une demande par jour et par adresse, e-mail interne + accusé, conservation 3 ans (purge planifiée). Aucun cookie sur les sites vitrines. | Validée |
+| D-142 | Kanso Portail | Vitrine uniquement (aucun produit, aucune date annoncée, aperçu marqué « conceptuel »). | Validée (utilisateur) |
+| D-143 | Kanso Site | Prestation sur devis, sans prix affiché ; pas de réalisations factices ; propriété du site et délais précisés au devis. | Validée |
+
+### Actions ouvertes
+
+| ID | Sujet | À faire |
+|----|-------|---------|
+| H-044 | Noms et domaines | Recherche INPI (classes 9, 35, 42) pour « Kanso » et les trois produits ; réserver les domaines et renseigner `NEXT_PUBLIC_URL_*` / `KANSO_HOST_*`. |
+| H-045 | Offre Kanso Site | Définir formules et prix indicatifs, conditions de cession, maintenance ; sinon la page reste « sur devis ». |
+| H-046 | Textes légaux | Mentions légales et confidentialité Kanso Solutions (`apps/web/content/legal/`) : compléter SIRET, adresse, capital ; relecture juridique. |

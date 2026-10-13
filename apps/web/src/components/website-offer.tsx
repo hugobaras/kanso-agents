@@ -63,7 +63,7 @@ export function WebsiteOffer({ ws, variant = "card", className }: { ws: string; 
           <div className="min-w-0 flex-1">
             <p className="font-semibold">Pas encore de site, ou un site à rafraîchir ?</p>
             <p className="mt-1 text-sm text-muted">
-              Kanso Solutions conçoit votre site professionnel, avec l&apos;assistant déjà intégré. Sur devis, sans engagement.
+              Kanso Site conçoit le site professionnel de votre cabinet, avec l&apos;assistant déjà intégré. Sur devis, sans engagement.
             </p>
             {variant === "card" && (
               <ul className="mt-4 space-y-2">
@@ -93,7 +93,7 @@ export function WebsiteOffer({ ws, variant = "card", className }: { ws: string; 
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        title="Votre site par Kanso Solutions"
+        title="Votre site par Kanso Site"
         description="Quelques informations pour préparer l'échange. Un membre de l'équipe vous recontactera pour établir un devis."
       >
         <form onSubmit={submit} className="space-y-4">

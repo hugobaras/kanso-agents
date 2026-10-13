@@ -22,7 +22,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { LogoMark } from "@/components/logo";
+import { Logo, LogoMark } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { api, useApi, wsPath } from "@/lib/api";
 import { cn } from "@/lib/cn";
@@ -343,10 +343,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Banners />
       <div className="flex">
         <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col gap-6 border-r border-line bg-paper px-4 py-5 lg:flex">
-          <Link href="/app" className="flex items-center gap-2 px-1 text-ink">
-            <LogoMark className="size-7" />
-            <span className="font-display text-lg font-semibold">Kanso</span>
-          </Link>
+          <Logo site="assistant" href="/app" className="px-1" />
           <WorkspaceSwitcher />
           <div className="flex-1 overflow-y-auto">
             <NavLinks />

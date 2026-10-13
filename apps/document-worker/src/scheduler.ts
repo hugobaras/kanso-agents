@@ -103,6 +103,7 @@ async function cleanup(): Promise<Record<string, unknown>> {
     mail_outbox: await q(`delete from mail_outbox where created_at < now() - interval '14 days'`),
     stripe_events: await q(`delete from stripe_events where received_at < now() - interval '90 days'`),
     notifications: await q(`delete from notifications where created_at < now() - interval '180 days'`),
+    contact_requests: await q(`delete from contact_requests where created_at < now() - interval '3 years'`),
   };
 }
 

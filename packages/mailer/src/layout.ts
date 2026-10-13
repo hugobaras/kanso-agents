@@ -16,6 +16,8 @@ export type EmailBlock =
   | { kind: "muted"; text: string };
 
 export function renderEmail(opts: {
+  /** Produit affiché sous le logo (défaut : Assistant). */
+  product?: string;
   preheader: string;
   heading: string;
   blocks: EmailBlock[];
@@ -47,12 +49,12 @@ export function renderEmail(opts: {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FAF8F4;padding:32px 16px">
 <tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px">
-<tr><td style="padding:0 4px 20px;font-family:Georgia,'Source Serif 4',serif;font-size:20px;color:#1B2A4A;font-weight:600">Kanso</td></tr>
+<tr><td style="padding:0 4px 20px;font-family:Georgia,'Source Serif 4',serif;font-size:20px;color:#1B2A4A;font-weight:600">Kanso <span style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif;font-size:11px;letter-spacing:.2em;color:#1F6F6B;text-transform:uppercase;vertical-align:middle">${escapeHtml(opts.product ?? "Assistant")}</span></td></tr>
 <tr><td style="background:#ffffff;border:1px solid #E7E2D8;border-radius:12px;padding:32px">
 <h1 style="margin:0 0 20px;font-family:Georgia,'Source Serif 4',serif;font-size:22px;line-height:30px;color:#1B2A4A;font-weight:600">${escapeHtml(opts.heading)}</h1>
 ${body}
 </td></tr>
-<tr><td style="padding:20px 4px;font-size:12px;line-height:18px;color:#8A93A3">Kanso — assistants pour cabinets, hébergés dans l'Union européenne.<br>Vous recevez cet e-mail en lien avec votre compte Kanso.</td></tr>
+<tr><td style="padding:20px 4px;font-size:12px;line-height:18px;color:#8A93A3">Kanso ${escapeHtml(opts.product ?? "Assistant")}, par Kanso Solutions (shbt studio SAS) — hébergé dans l'Union européenne.<br>Vous recevez cet e-mail en lien avec votre compte ou votre demande.</td></tr>
 </table></td></tr></table></body></html>`;
 
   const text = [
@@ -70,7 +72,7 @@ ${body}
       }
     }),
     "",
-    "— Kanso",
+    "— Kanso Solutions",
   ].join("\n");
 
   return { html, text };

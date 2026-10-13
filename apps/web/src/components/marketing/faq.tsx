@@ -1,4 +1,4 @@
-const ITEMS: Array<[string, string]> = [
+export const ASSISTANT_FAQ: Array<[string, string]> = [
   [
     "L'assistant peut-il donner un conseil juridique ou comptable ?",
     "Non. Il l'indique dès le premier message, refuse poliment toute demande de conseil et propose de transmettre les coordonnées du visiteur à votre équipe. Vous restez seul juge de la suite à donner.",
@@ -25,10 +25,10 @@ const ITEMS: Array<[string, string]> = [
   ],
 ];
 
-export function Faq() {
+export function Faq({ items = ASSISTANT_FAQ }: { items?: Array<[string, string]> }) {
   return (
     <div className="mt-10 divide-y divide-line border-y border-line">
-      {ITEMS.map(([q, a]) => (
+      {items.map(([q, a]) => (
         <details key={q} className="group py-5">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[17px] font-medium">
             {q}

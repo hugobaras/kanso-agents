@@ -178,6 +178,23 @@ export function adminRoutes() {
     return c.json({ ok: true });
   });
 
+  app.get("/contacts", async (c) => {
+    const res = await getPool().query(
+      `select id, source, kind, name, email, phone, profession, organisation, message, extra, status, created_at
+       from contact_requests order by (status = 'new') desc, created_at desc limit 200`,
+    );
+    return c.json({ contacts: res.rows });
+  });
+
+  app.patch("/contacts/:id", async (c) => {
+    const b = await body(c.req, z.object({ status: z.enum(["new", "contacted", "done", "spam"]) }));
+    await getPool().query(`update contact_requests set status = $2 where id = $1::uuid`, [
+      z.string().uuid().parse(c.req.param("id")),
+      b.status,
+    ]);
+    return c.json({ ok: true });
+  });
+
   app.get("/health", async (c) => {
     const pool = getPool();
     const [beats, queue] = await Promise.all([

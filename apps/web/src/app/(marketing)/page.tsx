@@ -18,6 +18,7 @@ import Link from "next/link";
 import { HeroVisual } from "@/components/marketing/hero-visual";
 import { Faq } from "@/components/marketing/faq";
 import { ButtonLink } from "@/components/ui/button";
+import { siteHref } from "@/lib/sites";
 
 export default function HomePage() {
   return (
@@ -32,7 +33,7 @@ export default function HomePage() {
               Chaque demande de client, <span className="text-accent">qualifiée</span> avant même que vous ne décrochiez.
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-muted">
-              Kanso accueille les visiteurs de votre site, pose les bonnes questions, et vous transmet une demande résumée et
+              Kanso Assistant accueille les visiteurs de votre site, pose les bonnes questions, et vous transmet une demande résumée et
               priorisée. Il traite aussi vos factures fournisseurs. Pour avocats, experts-comptables et notaires.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -193,16 +194,16 @@ export default function HomePage() {
       <section className="mx-auto max-w-6xl px-5 pt-24">
         <div className="grid items-center gap-8 rounded-2xl border border-line bg-surface p-8 md:grid-cols-[1.4fr_1fr] md:p-10">
           <div>
-            <p className="text-sm font-medium text-accent">Kanso Solutions</p>
+            <p className="text-sm font-medium text-accent">Kanso Site</p>
             <h2 className="mt-2 font-display text-3xl">Pas encore de site internet ?</h2>
             <p className="mt-3 text-[15px] leading-7 text-muted">
-              Nous concevons votre site professionnel — sobre, rapide, conforme à la déontologie de votre profession — avec
-              l&apos;assistant Kanso déjà intégré et les pages RGPD prêtes. Refonte d&apos;un site existant également possible.
+              Kanso Site conçoit le site de votre cabinet — sobre, rapide, rédigé pour votre profession — avec Kanso Assistant déjà intégré
+              et les pages RGPD prêtes. Refonte d&apos;un site existant également possible.
             </p>
           </div>
           <div className="flex flex-col gap-3 md:items-end">
-            <ButtonLink href="/site-internet" size="lg">
-              Découvrir l&apos;offre site
+            <ButtonLink href={siteHref("site")} size="lg" variant="accent">
+              Découvrir Kanso Site
             </ButtonLink>
             <p className="text-xs text-subtle">Sur devis, sans engagement</p>
           </div>

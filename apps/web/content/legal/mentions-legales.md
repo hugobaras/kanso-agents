@@ -1,11 +1,11 @@
 ---
 title: Mentions légales
-updated: 2026-10-14
+updated: 2026-10-15
 ---
 
 ## Éditeur
 
-Le site et le service Kanso sont édités par **shbt studio SAS**, société par actions simplifiée, exploitant la marque Kanso Solutions.
+Les sites et services **Kanso Solutions** (Kanso Assistant, Kanso Site, Kanso Portail) sont édités par **shbt studio SAS**, société par actions simplifiée.
 
 - Siège social : [adresse à compléter]
 - RCS : [ville et numéro à compléter] — SIRET : [à compléter]
@@ -16,13 +16,13 @@ Le site et le service Kanso sont édités par **shbt studio SAS**, société par
 
 ## Hébergement
 
-- Application : OVH SAS, 2 rue Kellermann, 59100 Roubaix, France.
-- Base de données : hébergée dans l'Union européenne (voir la [liste des sous-traitants](/legal/sous-traitants)).
+- Applications : OVH SAS, 2 rue Kellermann, 59100 Roubaix, France.
+- Base de données : hébergée dans l'Union européenne (voir la liste des sous-traitants de Kanso Assistant).
 
 ## Propriété intellectuelle
 
-Les marques, logos, textes et éléments graphiques du site sont la propriété de shbt studio SAS. Toute reproduction sans autorisation est interdite.
+Les marques, logos, textes et éléments graphiques des sites sont la propriété de shbt studio SAS. Toute reproduction sans autorisation est interdite.
 
 ## Données personnelles
 
-Voir la [politique de confidentialité](/legal/confidentialite).
+Voir la [politique de confidentialité de Kanso Solutions](/confidentialite).

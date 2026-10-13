@@ -5,7 +5,7 @@ updated: 2026-10-14
 
 ## 1. Champ d'application
 
-Les présentes conditions s'appliquent aux abonnements au service Kanso souscrits en ligne par des professionnels. Elles complètent les [conditions générales d'utilisation](/legal/cgu).
+Les présentes conditions s'appliquent aux abonnements au service Kanso Assistant souscrits en ligne par des professionnels. Elles complètent les [conditions générales d'utilisation](/legal/cgu).
 
 ## 2. Essai gratuit
 
