@@ -16,6 +16,7 @@ import { PageSpinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { api, errorMessage, useApi, wsPath } from "@/lib/api";
 import { formatDate, formatDateTime } from "@/lib/format";
+import { siteHref } from "@/lib/sites";
 
 type Privacy = {
   dpa: { current_version: string; accepted: boolean; up_to_date: boolean; accepted_version: string | null; accepted_at: string | null; accepted_by: string | null };
@@ -82,7 +83,7 @@ export default function DataPage() {
             <CardHeader title="Accord de traitement des données" action={<Badge tone="success">Accepté</Badge>} />
             <CardBody className="text-sm text-muted">
               Version {data.dpa.accepted_version}, acceptée le {formatDateTime(data.dpa.accepted_at)} par {data.dpa.accepted_by}.{" "}
-              <a href="/legal/dpa" target="_blank" className="text-accent hover:underline">
+              <a href={siteHref("assistant", "/legal/dpa")} target="_blank" className="text-accent hover:underline">
                 Consulter
               </a>
             </CardBody>

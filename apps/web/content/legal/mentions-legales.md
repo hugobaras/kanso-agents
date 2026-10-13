@@ -5,7 +5,7 @@ updated: 2026-10-15
 
 ## Éditeur
 
-Les sites et services **Kanso Solutions** (Kanso Assistant, Kanso Site, Kanso Portail) sont édités par **shbt studio SAS**, société par actions simplifiée.
+Les sites et services **Kanso Solutions** (Kanso Assistant, Kanso Site, Kanso Portail) sont édités par **SHBT-STUDIO SAS**, société par actions simplifiée.
 
 - Siège social : [adresse à compléter]
 - RCS : [ville et numéro à compléter] — SIRET : [à compléter]
@@ -21,7 +21,7 @@ Les sites et services **Kanso Solutions** (Kanso Assistant, Kanso Site, Kanso Po
 
 ## Propriété intellectuelle
 
-Les marques, logos, textes et éléments graphiques des sites sont la propriété de shbt studio SAS. Toute reproduction sans autorisation est interdite.
+Les marques, logos, textes et éléments graphiques des sites sont la propriété de SHBT-STUDIO SAS. Toute reproduction sans autorisation est interdite.
 
 ## Données personnelles
 

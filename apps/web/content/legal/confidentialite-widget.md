@@ -7,7 +7,7 @@ Vous échangez avec un **assistant automatisé** mis en place par le cabinet don
 
 ## Qui traite vos données ?
 
-Le **cabinet** est responsable du traitement de vos données. Kanso (shbt studio SAS) agit pour son compte en tant que sous-traitant, dans le cadre d'un accord conforme à l'article 28 du RGPD.
+Le **cabinet** est responsable du traitement de vos données. Kanso (SHBT-STUDIO SAS) agit pour son compte en tant que sous-traitant, dans le cadre d'un accord conforme à l'article 28 du RGPD.
 
 ## Quelles données, pour quoi faire ?
 

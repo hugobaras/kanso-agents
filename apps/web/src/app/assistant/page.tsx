@@ -40,7 +40,7 @@ export default function HomePage() {
               <ButtonLink href="/inscription" size="lg">
                 Essayer gratuitement 14 jours <ArrowRight className="size-4" />
               </ButtonLink>
-              <ButtonLink href="/demo" size="lg" variant="secondary">
+              <ButtonLink href={siteHref("assistant", "/demo")} size="lg" variant="secondary">
                 Voir la démonstration
               </ButtonLink>
             </div>
@@ -150,9 +150,9 @@ export default function HomePage() {
         <h2 className="font-display text-4xl">Pensé pour votre profession.</h2>
         <div className="mt-10 grid gap-5 md:grid-cols-3">
           {[
-            { href: "/cas-usage/avocats", title: "Avocats", text: "Domaine du droit, urgence, particulier ou entreprise. Refus systématique de toute consultation." },
-            { href: "/cas-usage/experts-comptables", title: "Experts-comptables", text: "Création, tenue, bilan, paie. Factures fournisseurs de vos clients traitées en lot." },
-            { href: "/cas-usage/notaires", title: "Notaires", text: "Vente, succession, donation : identifiez les dossiers avec compromis signé ou date fixée." },
+            { href: siteHref("assistant", "/cas-usage/avocats"), title: "Avocats", text: "Domaine du droit, urgence, particulier ou entreprise. Refus systématique de toute consultation." },
+            { href: siteHref("assistant", "/cas-usage/experts-comptables"), title: "Experts-comptables", text: "Création, tenue, bilan, paie. Factures fournisseurs de vos clients traitées en lot." },
+            { href: siteHref("assistant", "/cas-usage/notaires"), title: "Notaires", text: "Vente, succession, donation : identifiez les dossiers avec compromis signé ou date fixée." },
           ].map((p) => (
             <Link key={p.href} href={p.href} className="group rounded-xl border border-line bg-surface p-6 transition-colors hover:border-line-strong">
               <h3 className="font-display text-2xl">{p.title}</h3>
@@ -170,7 +170,7 @@ export default function HomePage() {
           <div>
             <p className="text-sm font-medium text-accent">Confiance</p>
             <h2 className="mt-2 font-display text-4xl">Le secret professionnel n&apos;est pas une option.</h2>
-            <Link href="/securite" className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline">
+            <Link href={siteHref("assistant", "/securite")} className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline">
               Notre approche sécurité et RGPD <ArrowRight className="size-4" />
             </Link>
           </div>
@@ -223,7 +223,7 @@ export default function HomePage() {
             <ButtonLink href="/inscription" size="lg" className="bg-white text-ink hover:bg-paper">
               Créer mon espace
             </ButtonLink>
-            <ButtonLink href="/contact" size="lg" variant="ghost" className="text-white hover:bg-white/10">
+            <ButtonLink href={siteHref("solutions", "/contact")} size="lg" variant="ghost" className="text-white hover:bg-white/10">
               Parler à l&apos;équipe
             </ButtonLink>
           </div>

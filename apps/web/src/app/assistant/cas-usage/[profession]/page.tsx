@@ -2,6 +2,7 @@ import { CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ButtonLink } from "@/components/ui/button";
+import { siteHref } from "@/lib/sites";
 
 type Content = {
   profession: string;
@@ -76,7 +77,7 @@ export default async function UseCasePage({ params }: { params: Promise<{ profes
           <ButtonLink href={`/inscription?profession=${c.profession}`} size="lg">
             Essayer avec le modèle {profession.replace("-", " ")}
           </ButtonLink>
-          <ButtonLink href="/demo" size="lg" variant="secondary">
+          <ButtonLink href={siteHref("assistant", "/demo")} size="lg" variant="secondary">
             Voir la démonstration
           </ButtonLink>
         </div>

@@ -4,8 +4,8 @@
 
 ## Parties
 
-- **Responsable de traitement :** [Client / Cabinet — raison sociale, RCS, adresse]  
-- **Sous-traitant :** shbt studio SAS (marque Kanso Solutions), [adresse], [SIRET]
+- **Responsable de traitement :** [Client / Cabinet — raison sociale, RCS, adresse]
+- **Sous-traitant :** SHBT-STUDIO SAS (marque Kanso Solutions), [adresse], [SIRET]
 
 ## Objet
 
@@ -17,8 +17,8 @@ Du [date début] au [date fin] ou jusqu’à résiliation / fin de pilote, puis 
 
 ## Nature et finalité du traitement
 
-- Qualification de contacts entrants via assistant automatisé  
-- Transmission d’alertes (e-mail) aux destinataires configurés par le client  
+- Qualification de contacts entrants via assistant automatisé
+- Transmission d’alertes (e-mail) aux destinataires configurés par le client
 - Journalisation technique, audit et mesure d’usage (tokens / € estimés)
 
 ## Catégories de personnes concernées
@@ -59,8 +59,8 @@ Obligations de **moyens** uniquement — pas de garantie de résultat métier (l
 
 ## Signatures
 
-| | Responsable | Sous-traitant |
-|--|-------------|---------------|
-| Nom | | |
-| Date | | |
-| Signature | | |
+|           | Responsable | Sous-traitant |
+| --------- | ----------- | ------------- |
+| Nom       |             |               |
+| Date      |             |               |
+| Signature |             |               |

@@ -9,6 +9,7 @@ import { Checkbox, Field, Input } from "@/components/ui/form";
 import { Alert } from "@/components/ui/misc";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { siteHref } from "@/lib/sites";
 
 const PROFESSIONS = [
   { id: "avocat", label: "Avocat", Icon: Scale },
@@ -132,11 +133,11 @@ function SignupForm() {
             label={
               <>
                 J&apos;accepte les{" "}
-                <a href="/legal/cgu" target="_blank" className="text-accent underline-offset-2 hover:underline">
+                <a href={siteHref("assistant", "/legal/cgu")} target="_blank" className="text-accent underline-offset-2 hover:underline">
                   conditions d&apos;utilisation
                 </a>{" "}
                 et la{" "}
-                <a href="/legal/confidentialite" target="_blank" className="text-accent underline-offset-2 hover:underline">
+                <a href={siteHref("assistant", "/legal/confidentialite")} target="_blank" className="text-accent underline-offset-2 hover:underline">
                   politique de confidentialité
                 </a>
                 .

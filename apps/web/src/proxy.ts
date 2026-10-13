@@ -1,43 +1,64 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * 1. Routage multi-sites : en production chaque site a son domaine
- *    (KANSO_HOST_SOLUTIONS / _SITE / _PORTAIL, noms d'hôte sans schéma).
- *    Une requête sur ce domaine est réécrite vers /sites/<site>/… ; le domaine
- *    de Kanso Assistant (et tout hôte inconnu) sert la racine de l'app.
- * 2. Contrôle optimiste de session pour /app, /admin, /compte (l'autorisation
- *    réelle reste côté API à chaque appel).
+ * Routage multi-sites et contrôle de session.
+ *
+ * Chemins réels (dev et production) :
+ *   /            Kanso Solutions        /assistant/…  Kanso Assistant (vitrine)
+ *   /site/…      Kanso Site             /portail/…    Kanso Portail
+ *   /app, /admin, /compte, /connexion, /inscription… : application Kanso Assistant
+ *
+ * En production chaque site a son domaine (KANSO_HOST_SOLUTIONS / _ASSISTANT /
+ * _SITE / _PORTAIL, noms d'hôte sans schéma) : le domaine d'un site sert ses
+ * pages à la racine (réécriture vers /site, /portail, /assistant) et refuse
+ * celles des autres sites. Sans hôte reconnu (localhost), aucune réécriture.
  */
-const HOSTS: Array<[envValue: string | undefined, prefix: string]> = [
-  [process.env.KANSO_HOST_SOLUTIONS, "/sites/solutions"],
-  [process.env.KANSO_HOST_SITE, "/sites/site"],
-  [process.env.KANSO_HOST_PORTAIL, "/sites/portail"],
+type SiteId = "solutions" | "assistant" | "site" | "portail";
+
+const HOSTS: Array<[SiteId, string | undefined]> = [
+  ["solutions", process.env.KANSO_HOST_SOLUTIONS],
+  ["assistant", process.env.KANSO_HOST_ASSISTANT],
+  ["site", process.env.KANSO_HOST_SITE],
+  ["portail", process.env.KANSO_HOST_PORTAIL],
 ];
 
-const PASSTHROUGH = /^\/(_next\/|api\/|brand\/|sites\/|favicon\.svg|robots\.txt|sitemap\.xml)/;
+const ASSET = /^\/(_next\/|api\/|brand\/|favicon\.svg$|robots\.txt$|sitemap\.xml$)/;
+const APP_AREA = /^\/(app|admin|compte|connexion|inscription|mot-de-passe|mot-de-passe-oublie|verifier-email|invitation)(\/|$)/;
+const SITE_PREFIX = /^\/(assistant|site|portail)(\/|$)/;
+const AUTH_AREA = /^\/(app|admin|compte)(\/|$)/;
 
-function siteFor(host: string): string | null {
+function siteForHost(host: string): SiteId | null {
   const h = host.toLowerCase().split(":")[0]!;
-  for (const [value, prefix] of HOSTS) {
-    if (value && value.toLowerCase() === h) return prefix;
-  }
+  for (const [id, value] of HOSTS) if (value && value.toLowerCase() === h) return id;
   return null;
 }
 
+const notFound = () => new NextResponse(null, { status: 404 });
+
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+  const site = siteForHost(request.headers.get("host") ?? "");
 
-  const prefix = siteFor(request.headers.get("host") ?? "");
-  if (prefix && !PASSTHROUGH.test(pathname)) {
-    const url = request.nextUrl.clone();
-    url.pathname = `${prefix}${pathname === "/" ? "" : pathname}`;
-    return NextResponse.rewrite(url);
+  if (site && !ASSET.test(pathname)) {
+    if (site === "solutions") {
+      if (SITE_PREFIX.test(pathname) || APP_AREA.test(pathname)) return notFound();
+    } else if (site === "assistant") {
+      if (SITE_PREFIX.test(pathname)) return notFound();
+      if (!APP_AREA.test(pathname)) {
+        const url = request.nextUrl.clone();
+        url.pathname = `/assistant${pathname === "/" ? "" : pathname}`;
+        return NextResponse.rewrite(url);
+      }
+    } else {
+      if (SITE_PREFIX.test(pathname) || APP_AREA.test(pathname)) return notFound();
+      const url = request.nextUrl.clone();
+      url.pathname = `/${site}${pathname === "/" ? "" : pathname}`;
+      return NextResponse.rewrite(url);
+    }
   }
-  // Les chemins /sites/* ne sont pas exposés tels quels sur un domaine de site.
-  if (prefix && pathname.startsWith("/sites/")) return new NextResponse(null, { status: 404 });
 
-  const protectedArea = /^\/(app|admin|compte)(\/|$)/.test(pathname);
-  if (protectedArea && !request.cookies.has("kanso_session")) {
+  // Contrôle optimiste : l'autorisation réelle reste côté API à chaque appel.
+  if (AUTH_AREA.test(pathname) && !request.cookies.has("kanso_session")) {
     const url = request.nextUrl.clone();
     url.pathname = "/connexion";
     url.search = `?suite=${encodeURIComponent(pathname + search)}`;

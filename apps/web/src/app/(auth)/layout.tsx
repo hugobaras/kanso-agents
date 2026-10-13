@@ -1,17 +1,18 @@
 import { ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { siteHref } from "@/lib/sites";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1fr_480px]">
       <main className="flex flex-col px-6 py-8 sm:px-10">
-        <Logo site="assistant" href="/" />
+        <Logo site="assistant" href={siteHref("assistant")} />
         <div className="flex flex-1 items-center justify-center py-10">
           <div className="w-full max-w-[400px] animate-fade-in">{children}</div>
         </div>
         <p className="text-center text-xs text-subtle">
           Données hébergées dans l&apos;Union européenne ·{" "}
-          <a className="underline-offset-2 hover:underline" href="/legal/confidentialite">
+          <a className="underline-offset-2 hover:underline" href={siteHref("assistant", "/legal/confidentialite")}>
             Confidentialité
           </a>
         </p>

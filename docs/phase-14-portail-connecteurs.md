@@ -1,19 +1,19 @@
 # Phase 14 — Portail client : brancher / révoquer les envois
 
-**Produit :** Kanso Solutions (shbt studio SAS)  
+**Produit :** Kanso Solutions (SHBT-STUDIO SAS)  
 **Date :** 2026-10-12  
 **Statut :** livré (2026-10-12) — voir [p14-execution.md](./p14-execution.md)  
 **Prérequis :** phase 13 (tenant + secrets + alertes email/slack déjà câblés côté API)  
-**Écart D-021 :** le MVP excluait tout back-office client ; ici on ouvre **uniquement** la gestion des *destinations d’alerte* (pas la publication de scoring / questions).
+**Écart D-021 :** le MVP excluait tout back-office client ; ici on ouvre **uniquement** la gestion des _destinations d’alerte_ (pas la publication de scoring / questions).
 
 ## Décisions retenues
 
-| Sujet | Choix | Source |
-|-------|--------|--------|
-| Auth | Magic link e-mail lié à `tenant_id` | Q1 = 1 |
-| Slack MVP | Incoming Webhook collé à la main | Q2 = 1 |
+| Sujet         | Choix                                                               | Source |
+| ------------- | ------------------------------------------------------------------- | ------ |
+| Auth          | Magic link e-mail lié à `tenant_id`                                 | Q1 = 1 |
+| Slack MVP     | Incoming Webhook collé à la main                                    | Q2 = 1 |
 | Config canaux | Portail écrit secrets **et** met à jour `alerts.channels` published | Q3 = 1 |
-| Sur-mesure | Formulaire → row DB + alerte ops | Q4 = 1 |
+| Sur-mesure    | Formulaire → row DB + alerte ops                                    | Q4 = 1 |
 
 ## Constat
 
@@ -27,16 +27,16 @@ Cabinet se connecte → voit ses canaux d’alerte → active e-mail / Slack (ou
 
 ## Périmètre proposé
 
-| ID | Item |
-|----|------|
-| P14-01 | Auth portail : magic link e-mail (ou Clerk) lié à `tenant_id` + rôle `owner`/`ops` |
-| P14-02 | UI `/portal` (ou sous-domaine) : liste canaux, statut connected / disconnected / pending_custom |
+| ID     | Item                                                                                                                    |
+| ------ | ----------------------------------------------------------------------------------------------------------------------- |
+| P14-01 | Auth portail : magic link e-mail (ou Clerk) lié à `tenant_id` + rôle `owner`/`ops`                                      |
+| P14-02 | UI `/portal` (ou sous-domaine) : liste canaux, statut connected / disconnected / pending_custom                         |
 | P14-03 | **E-mail** self-serve : saisir `to` (+ optionnel SMTP) → écrit `alerts.intake_email` ; revoke = wipe secret + canal off |
-| P14-04 | **Slack** self-serve : Incoming Webhook URL (MVP) → `alerts.intake_slack` ; revoke = wipe |
-| P14-05 | Toggle enable/disable canal sans supprimer le secret (patch config published via API service) |
-| P14-06 | **Sur-mesure** : ticket (`custom_integration_requests`) + e-mail ops Kanso ; pas d’OAuth inventé |
-| P14-07 | Audit : qui a branché / révoqué (`audit_events`) |
-| P14-08 | Smoke + doc partenaire (lien portail dans pack onboard) |
+| P14-04 | **Slack** self-serve : Incoming Webhook URL (MVP) → `alerts.intake_slack` ; revoke = wipe                               |
+| P14-05 | Toggle enable/disable canal sans supprimer le secret (patch config published via API service)                           |
+| P14-06 | **Sur-mesure** : ticket (`custom_integration_requests`) + e-mail ops Kanso ; pas d’OAuth inventé                        |
+| P14-07 | Audit : qui a branché / révoqué (`audit_events`)                                                                        |
+| P14-08 | Smoke + doc partenaire (lien portail dans pack onboard)                                                                 |
 
 ## Hors périmètre (sauf Q)
 
@@ -65,24 +65,28 @@ Connecteurs d’alerte — Cabinet Durand
 
 ## Questions
 
-**Q1 — Auth**  
-1. Magic link e-mail (Supabase Auth / table `portal_users`) — recommandé  
-2. Clerk (Marketplace)  
+**Q1 — Auth**
+
+1. Magic link e-mail (Supabase Auth / table `portal_users`) — recommandé
+2. Clerk (Marketplace)
 3. Mot de passe partagé tenant (déconseillé)
 
-**Q2 — Slack MVP**  
-1. Incoming Webhook collé à la main — recommandé  
-2. OAuth Slack App dès maintenant  
+**Q2 — Slack MVP**
+
+1. Incoming Webhook collé à la main — recommandé
+2. OAuth Slack App dès maintenant
 3. Slack reporté ; e-mail + sur-mesure seulement
 
-**Q3 — Config canaux**  
-1. Portail écrit secrets **et** met à jour `alerts.channels` published  
-2. Portail écrit secrets seulement ; canaux restent figés en config CLI  
+**Q3 — Config canaux**
+
+1. Portail écrit secrets **et** met à jour `alerts.channels` published
+2. Portail écrit secrets seulement ; canaux restent figés en config CLI
 3. Canaux « catalogue » fixe (email+slack) activés par présence de secret
 
-**Q4 — Sur-mesure**  
-1. Formulaire → row DB + alerte ops console/e-mail — recommandé  
-2. Formulaire → Linear/Notion seulement  
+**Q4 — Sur-mesure**
+
+1. Formulaire → row DB + alerte ops console/e-mail — recommandé
+2. Formulaire → Linear/Notion seulement
 3. Page « contactez-nous » sans ticket structuré
 
 Exécuté — voir [p14-execution.md](./p14-execution.md).

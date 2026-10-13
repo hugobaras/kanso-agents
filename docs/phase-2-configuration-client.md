@@ -1,6 +1,6 @@
 # Phase 2 — Configuration client
 
-**Produit :** Kanso Solutions (shbt studio SAS)  
+**Produit :** Kanso Solutions (SHBT-STUDIO SAS)  
 **Date :** 2026-10-10  
 **Statut :** validé (2026-10-10)  
 **Prérequis :** [phase-1-structure-depot.md](./phase-1-structure-depot.md)
@@ -11,24 +11,24 @@ Figer le contrat de configuration de chaque produit (champs, validation, version
 
 ## Décisions retenues
 
-| Sujet | Choix | Source |
-|-------|--------|--------|
-| Format schéma | Zod source de vérité ; JSON Schema exporté | Q1 = 1 |
-| Granularité | Un document JSON versionné **par produit** | Q2 = 1 |
-| Publication prod | Associé Kanso via `admin-cli` uniquement | Q3 = 1 |
-| Inbound MVP obligatoire | Identité/disclaimer, qualification+scoring, alertes, horaires/langues/escalade | Q4 = A,B,E,F |
-| Document-to-Action MVP obligatoire | Sources, types+champs, règles validation, cible brouillon, alertes confiance | Q5 = A,B,C,D,E |
-| Hors schéma tenant MVP | Agenda (C) et CRM (D) Inbound : **optionnels typés** ; conservation docs (F) : **politique globale Kanso** (phase 6), pas par client | Découlant de Q4/Q5 |
+| Sujet                              | Choix                                                                                                                                | Source             |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| Format schéma                      | Zod source de vérité ; JSON Schema exporté                                                                                           | Q1 = 1             |
+| Granularité                        | Un document JSON versionné **par produit**                                                                                           | Q2 = 1             |
+| Publication prod                   | Associé Kanso via `admin-cli` uniquement                                                                                             | Q3 = 1             |
+| Inbound MVP obligatoire            | Identité/disclaimer, qualification+scoring, alertes, horaires/langues/escalade                                                       | Q4 = A,B,E,F       |
+| Document-to-Action MVP obligatoire | Sources, types+champs, règles validation, cible brouillon, alertes confiance                                                         | Q5 = A,B,C,D,E     |
+| Hors schéma tenant MVP             | Agenda (C) et CRM (D) Inbound : **optionnels typés** ; conservation docs (F) : **politique globale Kanso** (phase 6), pas par client | Découlant de Q4/Q5 |
 
 ## Modèle de versionnement
 
 Stockage Supabase (conceptuel) :
 
-| Table | Rôle |
-|-------|------|
-| `tenants` | `tenant_id`, nom commercial, statut (`draft` \| `active` \| `suspended`) |
+| Table            | Rôle                                                                                                                                                                                               |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tenants`        | `tenant_id`, nom commercial, statut (`draft` \| `active` \| `suspended`)                                                                                                                           |
 | `tenant_configs` | `tenant_id`, `product` (`inbound` \| `document_to_action`), `version` (int), `schema_version` (semver schéma), `config` (JSONB), `status` (`draft` \| `published`), `published_at`, `published_by` |
-| `tenant_secrets` | références chiffrées par `tenant_id` + clé logique (`slack_webhook`, `pennylane_api_key`, …) |
+| `tenant_secrets` | références chiffrées par `tenant_id` + clé logique (`slack_webhook`, `pennylane_api_key`, …)                                                                                                       |
 
 Règles :
 
@@ -44,35 +44,35 @@ Source de vérité cible : `packages/config` → `InboundConfig` (Zod). Ci-desso
 
 ### Champs
 
-| Chemin | Type | Obligatoire | Notes |
-|--------|------|-------------|-------|
-| `schema_version` | string semver | oui | ex. `"1.0.0"` |
-| `product` | `"inbound"` | oui | littéral |
-| `identity.display_name` | string | oui | nom affiché widget |
-| `identity.locale_default` | `"fr"` \| `"en"` | oui | MVP : `fr` recommandé |
-| `identity.branding.primary_color` | string hex | oui | marque blanche légère |
-| `identity.branding.logo_url` | string url \| null | non | |
-| `disclosure.ai_notice` | string | oui | texte visible : parlons à une IA |
-| `disclosure.forbidden_topics` | string[] | oui | min. juridique/comptable selon produit ; refus explicite |
-| `qualification.questions[]` | array | oui | min 1 |
-| `qualification.questions[].id` | string slug | oui | |
-| `qualification.questions[].prompt` | string | oui | |
-| `qualification.questions[].type` | `single_choice` \| `multi_choice` \| `free_text` \| `number` \| `boolean` | oui | |
-| `qualification.questions[].options` | `{id,label}[]` | si choice | |
-| `qualification.questions[].required` | boolean | oui | |
-| `scoring.weights` | record `question_id` → règles | oui | voir ci-dessous |
-| `scoring.max_score` | `100` | oui | littéral MVP |
-| `scoring.thresholds` | `{ hot, warm, cold }` nombres | oui | bornes sur score /100 |
-| `alerts.channels[]` | array | oui | min 1 |
-| `alerts.channels[].type` | `email` \| `slack` | oui | |
-| `alerts.channels[].secret_ref` | string | oui | pointeur secret |
-| `alerts.on` | `new_lead` \| `hot_lead` \| `escalation` \| `handoff` | oui | événements |
-| `operations.timezone` | string IANA | oui | ex. `Europe/Paris` |
-| `operations.business_hours` | créneaux par jour | oui | hors créneaux → message + capture contact |
-| `operations.languages` | string[] | oui | |
-| `operations.escalation` | objet | oui | mots-clés / demande humaine → alerte + fin contrôlée |
-| `integrations.calendar` | objet \| absent | non | si présent : `provider` + `secret_ref` + mapping |
-| `integrations.crm` | objet \| absent | non | si présent : `provider` + `secret_ref` + field_mapping |
+| Chemin                               | Type                                                                      | Obligatoire | Notes                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------- | ----------- | -------------------------------------------------------- |
+| `schema_version`                     | string semver                                                             | oui         | ex. `"1.0.0"`                                            |
+| `product`                            | `"inbound"`                                                               | oui         | littéral                                                 |
+| `identity.display_name`              | string                                                                    | oui         | nom affiché widget                                       |
+| `identity.locale_default`            | `"fr"` \| `"en"`                                                          | oui         | MVP : `fr` recommandé                                    |
+| `identity.branding.primary_color`    | string hex                                                                | oui         | marque blanche légère                                    |
+| `identity.branding.logo_url`         | string url \| null                                                        | non         |                                                          |
+| `disclosure.ai_notice`               | string                                                                    | oui         | texte visible : parlons à une IA                         |
+| `disclosure.forbidden_topics`        | string[]                                                                  | oui         | min. juridique/comptable selon produit ; refus explicite |
+| `qualification.questions[]`          | array                                                                     | oui         | min 1                                                    |
+| `qualification.questions[].id`       | string slug                                                               | oui         |                                                          |
+| `qualification.questions[].prompt`   | string                                                                    | oui         |                                                          |
+| `qualification.questions[].type`     | `single_choice` \| `multi_choice` \| `free_text` \| `number` \| `boolean` | oui         |                                                          |
+| `qualification.questions[].options`  | `{id,label}[]`                                                            | si choice   |                                                          |
+| `qualification.questions[].required` | boolean                                                                   | oui         |                                                          |
+| `scoring.weights`                    | record `question_id` → règles                                             | oui         | voir ci-dessous                                          |
+| `scoring.max_score`                  | `100`                                                                     | oui         | littéral MVP                                             |
+| `scoring.thresholds`                 | `{ hot, warm, cold }` nombres                                             | oui         | bornes sur score /100                                    |
+| `alerts.channels[]`                  | array                                                                     | oui         | min 1                                                    |
+| `alerts.channels[].type`             | `email` \| `slack`                                                        | oui         |                                                          |
+| `alerts.channels[].secret_ref`       | string                                                                    | oui         | pointeur secret                                          |
+| `alerts.on`                          | `new_lead` \| `hot_lead` \| `escalation` \| `handoff`                     | oui         | événements                                               |
+| `operations.timezone`                | string IANA                                                               | oui         | ex. `Europe/Paris`                                       |
+| `operations.business_hours`          | créneaux par jour                                                         | oui         | hors créneaux → message + capture contact                |
+| `operations.languages`               | string[]                                                                  | oui         |                                                          |
+| `operations.escalation`              | objet                                                                     | oui         | mots-clés / demande humaine → alerte + fin contrôlée     |
+| `integrations.calendar`              | objet \| absent                                                           | non         | si présent : `provider` + `secret_ref` + mapping         |
+| `integrations.crm`                   | objet \| absent                                                           | non         | si présent : `provider` + `secret_ref` + field_mapping   |
 
 ### Scoring (contrat)
 
@@ -86,11 +86,11 @@ weights[question_id] =
   | { kind: "free_text", points_if_non_empty }   # pas d’analyse sémantique au MVP
 ```
 
-Engagement produit : score = **indicateur de qualification configuré**, pas une promesse de conversion (*moyens, pas résultat*).
+Engagement produit : score = **indicateur de qualification configuré**, pas une promesse de conversion (_moyens, pas résultat_).
 
 ### Validations à l’publication
 
-- Disclaimer IA non vide ; `forbidden_topics` contient au minimum les entrées Kanso par défaut (juridique, comptable) — surcharge client possible en ajout, pas en suppression des défauts système (*hypothèse à vérifier* en phase 3 garde-fous).
+- Disclaimer IA non vide ; `forbidden_topics` contient au minimum les entrées Kanso par défaut (juridique, comptable) — surcharge client possible en ajout, pas en suppression des défauts système (_hypothèse à vérifier_ en phase 3 garde-fous).
 - Au moins un canal d’alerte résolu (secret existant).
 - Si `integrations.calendar` ou `integrations.crm` présents → provider dans la liste supportée + `secret_ref` valide.
 - `hot >= warm >= cold` et valeurs dans `[0,100]`.
@@ -101,27 +101,27 @@ Engagement produit : score = **indicateur de qualification configuré**, pas une
 
 ### Champs
 
-| Chemin | Type | Obligatoire | Notes |
-|--------|------|-------------|-------|
-| `schema_version` | string semver | oui | `"1.0.0"` |
-| `product` | `"document_to_action"` | oui | |
-| `sources[]` | array | oui | min 1 |
-| `sources[].type` | `email_inbox` \| `upload_web` \| `google_drive` \| `dropbox` | oui | MVP peut n’implémenter qu’un sous-ensemble (phase 4/5) |
-| `sources[].secret_ref` | string | selon type | mail / drive |
-| `sources[].options` | objet | non | ex. dossier Drive, filtre objet mail |
-| `documents.accepted_types[]` | `invoice` \| `quote` \| `delivery_note` | oui | |
-| `documents.fields_by_type` | map type → `field_id[]` | oui | champs à extraire |
-| `validation.rules[]` | array | oui | min 1 |
-| `validation.rules[].id` | string | oui | |
-| `validation.rules[].kind` | `totals_coherent` \| `duplicate_check` \| `iban_allowlist` \| `approval_threshold` \| `confidence_min` | oui | |
-| `validation.rules[].params` | objet | selon kind | ex. seuil €, liste `secret_ref` IBAN |
-| `action.target.provider` | string | oui | ex. `pennylane`, `sellsy`, `notion`, `webhook` |
-| `action.target.secret_ref` | string | oui | |
-| `action.mode` | `"draft"` \| `"final"` | oui | défaut schéma / runtime : `"draft"` |
-| `action.on_failure` | `"queue_anomaly"` | oui | littéral MVP |
-| `alerts.human_review` | objet | oui | seuils confiance + canaux (`email`/`slack` + `secret_ref`) |
-| `alerts.human_review.min_confidence` | number 0–1 | oui | sous le seuil → anomalie + alerte |
-| `alerts.human_review.channels[]` | array | oui | |
+| Chemin                               | Type                                                                                                   | Obligatoire | Notes                                                      |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------ | ----------- | ---------------------------------------------------------- |
+| `schema_version`                     | string semver                                                                                          | oui         | `"1.0.0"`                                                  |
+| `product`                            | `"document_to_action"`                                                                                 | oui         |                                                            |
+| `sources[]`                          | array                                                                                                  | oui         | min 1                                                      |
+| `sources[].type`                     | `email_inbox` \| `upload_web` \| `google_drive` \| `dropbox`                                           | oui         | MVP peut n’implémenter qu’un sous-ensemble (phase 4/5)     |
+| `sources[].secret_ref`               | string                                                                                                 | selon type  | mail / drive                                               |
+| `sources[].options`                  | objet                                                                                                  | non         | ex. dossier Drive, filtre objet mail                       |
+| `documents.accepted_types[]`         | `invoice` \| `quote` \| `delivery_note`                                                                | oui         |                                                            |
+| `documents.fields_by_type`           | map type → `field_id[]`                                                                                | oui         | champs à extraire                                          |
+| `validation.rules[]`                 | array                                                                                                  | oui         | min 1                                                      |
+| `validation.rules[].id`              | string                                                                                                 | oui         |                                                            |
+| `validation.rules[].kind`            | `totals_coherent` \| `duplicate_check` \| `iban_allowlist` \| `approval_threshold` \| `confidence_min` | oui         |                                                            |
+| `validation.rules[].params`          | objet                                                                                                  | selon kind  | ex. seuil €, liste `secret_ref` IBAN                       |
+| `action.target.provider`             | string                                                                                                 | oui         | ex. `pennylane`, `sellsy`, `notion`, `webhook`             |
+| `action.target.secret_ref`           | string                                                                                                 | oui         |                                                            |
+| `action.mode`                        | `"draft"` \| `"final"`                                                                                 | oui         | défaut schéma / runtime : `"draft"`                        |
+| `action.on_failure`                  | `"queue_anomaly"`                                                                                      | oui         | littéral MVP                                               |
+| `alerts.human_review`                | objet                                                                                                  | oui         | seuils confiance + canaux (`email`/`slack` + `secret_ref`) |
+| `alerts.human_review.min_confidence` | number 0–1                                                                                             | oui         | sous le seuil → anomalie + alerte                          |
+| `alerts.human_review.channels[]`     | array                                                                                                  | oui         |                                                            |
 
 **Non inclus dans le schéma tenant MVP (Q5 sans F) :** durées de conservation fichiers/audit → politique globale Kanso (phase 6), pas configurable client au v1.
 
@@ -129,8 +129,8 @@ Engagement produit : score = **indicateur de qualification configuré**, pas une
 
 - Au moins une source et un type de document.
 - Chaque `accepted_type` a une liste de champs non vide.
-- `action.mode` défaut recommandé `"draft"` ; `"final"` exige confirmation explicite dans `admin-cli` (*garde-fou process*).
-- Règle `duplicate_check` : stratégie `content_hash` et/ou `provider_external_id` (*détail phase 5*).
+- `action.mode` défaut recommandé `"draft"` ; `"final"` exige confirmation explicite dans `admin-cli` (_garde-fou process_).
+- Règle `duplicate_check` : stratégie `content_hash` et/ou `provider_external_id` (_détail phase 5_).
 
 ---
 
@@ -153,7 +153,11 @@ Produit publié : `inbound` uniquement.
   },
   "disclosure": {
     "ai_notice": "Vous échangez avec un assistant automatisé du Cabinet Durand. Ce n’est pas un avocat et cela ne constitue pas un conseil juridique.",
-    "forbidden_topics": ["conseil_juridique", "conseil_comptable", "diagnostic_medical"]
+    "forbidden_topics": [
+      "conseil_juridique",
+      "conseil_comptable",
+      "diagnostic_medical"
+    ]
   },
   "qualification": {
     "questions": [
@@ -230,11 +234,26 @@ Produit publié : `inbound` uniquement.
     "timezone": "Europe/Paris",
     "languages": ["fr"],
     "business_hours": {
-      "mon": [["09:00", "12:30"], ["14:00", "18:00"]],
-      "tue": [["09:00", "12:30"], ["14:00", "18:00"]],
-      "wed": [["09:00", "12:30"], ["14:00", "18:00"]],
-      "thu": [["09:00", "12:30"], ["14:00", "18:00"]],
-      "fri": [["09:00", "12:30"], ["14:00", "17:00"]],
+      "mon": [
+        ["09:00", "12:30"],
+        ["14:00", "18:00"]
+      ],
+      "tue": [
+        ["09:00", "12:30"],
+        ["14:00", "18:00"]
+      ],
+      "wed": [
+        ["09:00", "12:30"],
+        ["14:00", "18:00"]
+      ],
+      "thu": [
+        ["09:00", "12:30"],
+        ["14:00", "18:00"]
+      ],
+      "fri": [
+        ["09:00", "12:30"],
+        ["14:00", "17:00"]
+      ],
       "sat": [],
       "sun": []
     },
@@ -304,7 +323,11 @@ Produits : `document_to_action` publié ; `inbound` peut être ajouté plus tard
   },
   "validation": {
     "rules": [
-      { "id": "totals", "kind": "totals_coherent", "params": { "tolerance_eur": 0.05 } },
+      {
+        "id": "totals",
+        "kind": "totals_coherent",
+        "params": { "tolerance_eur": 0.05 }
+      },
       {
         "id": "dup",
         "kind": "duplicate_check",
@@ -379,7 +402,7 @@ flowchart TD
 8. **`activate-tenant`** — widget / adresse d’ingestion communiqués au client.
 9. **Change request** — le client envoie un brief ; Kanso republie via CLI (pas de back-office client au MVP).
 
-Durée cible process (*hypothèse à vérifier*) : &lt; 1 journée associée pour un client grille standard sans connecteur exotique.
+Durée cible process (_hypothèse à vérifier_) : &lt; 1 journée associée pour un client grille standard sans connecteur exotique.
 
 ---
 
@@ -411,12 +434,12 @@ config/schemas/
 
 ## Risques
 
-| Risque | Impact | Mitigation |
-|--------|--------|------------|
-| Schéma trop riche trop tôt | Retard livrable | Champs optionnels agenda/CRM ; un produit à la fois |
-| Publication CLI seule | Goulot associés | Acceptable pré-CA ; documenter SLA interne de mise à jour config |
-| Conservation absente du schéma client | Oubli RGPD | Politique globale obligatoire en phase 6 |
-| Score mal calibré | Fausses alertes « hot » | Exemples + phase 8 évaluation conversations |
+| Risque                                | Impact                  | Mitigation                                                       |
+| ------------------------------------- | ----------------------- | ---------------------------------------------------------------- |
+| Schéma trop riche trop tôt            | Retard livrable         | Champs optionnels agenda/CRM ; un produit à la fois              |
+| Publication CLI seule                 | Goulot associés         | Acceptable pré-CA ; documenter SLA interne de mise à jour config |
+| Conservation absente du schéma client | Oubli RGPD              | Politique globale obligatoire en phase 6                         |
+| Score mal calibré                     | Fausses alertes « hot » | Exemples + phase 8 évaluation conversations                      |
 
 ## Question de validation
 

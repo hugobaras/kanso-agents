@@ -5,7 +5,9 @@
  *   site      — Kanso Site (création de sites sur mesure)
  *   portail   — Kanso Portail (vitrine, produit en conception)
  *
- * En développement, les sites sont joignables par chemin (/sites/site…).
+ * En développement, les sites sont joignables par chemin :
+ *   /  (Solutions) · /assistant · /site · /portail
+ * (l'application d'Assistant — /app, /connexion, /inscription… — reste à la racine).
  * En production, chacun a son domaine : NEXT_PUBLIC_SITES_MODE=host et
  * NEXT_PUBLIC_URL_<SITE>=https://… ; le proxy réécrit selon l'hôte.
  */
@@ -29,7 +31,7 @@ export const SITES: Record<SiteId, SiteDef> = {
     label: "Solutions",
     tagline: "Des outils simples pour les professions du droit et du chiffre.",
     accent: { base: "#1F6F6B", soft: "#E5F1EF", strong: "#16524F" },
-    route: "/sites/solutions",
+    route: "",
   },
   assistant: {
     id: "assistant",
@@ -37,7 +39,7 @@ export const SITES: Record<SiteId, SiteDef> = {
     label: "Assistant",
     tagline: "L'assistant qui reçoit, qualifie et classe pour votre cabinet.",
     accent: { base: "#1F6F6B", soft: "#E5F1EF", strong: "#16524F" },
-    route: "",
+    route: "/assistant",
   },
   site: {
     id: "site",
@@ -45,7 +47,7 @@ export const SITES: Record<SiteId, SiteDef> = {
     label: "Site",
     tagline: "Le site internet de votre cabinet, conçu sur mesure.",
     accent: { base: "#B4532A", soft: "#F7E9E2", strong: "#8F3F1E" },
-    route: "/sites/site",
+    route: "/site",
   },
   portail: {
     id: "portail",
@@ -53,7 +55,7 @@ export const SITES: Record<SiteId, SiteDef> = {
     label: "Portail",
     tagline: "L'espace client sécurisé de votre cabinet.",
     accent: { base: "#2D5B8A", soft: "#E6EEF7", strong: "#1F4468" },
-    route: "/sites/portail",
+    route: "/portail",
   },
 };
 

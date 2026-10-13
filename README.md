@@ -1,14 +1,14 @@
 # Kanso Solutions
 
-Gamme de produits pour les professions du droit et du chiffre (avocats, experts-comptables, notaires), éditée par shbt studio SAS.
+Gamme de produits pour les professions du droit et du chiffre (avocats, experts-comptables, notaires), éditée par SHBT-STUDIO SAS.
 
-| Produit | Rôle | État |
-|---|---|---|
-| **Kanso Assistant** | Assistant d'accueil (qualification des demandes) + traitement de documents, en SaaS self-serve | Disponible |
-| **Kanso Site** | Création de sites sur mesure pour les cabinets | Vitrine + demande de devis ; prestation réalisée à la main |
-| **Kanso Portail** | Espace client sécurisé | Vitrine + liste d'attente ; produit en conception |
+| Produit             | Rôle                                                                                           | État                                                       |
+| ------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| **Kanso Assistant** | Assistant d'accueil (qualification des demandes) + traitement de documents, en SaaS self-serve | Disponible                                                 |
+| **Kanso Site**      | Création de sites sur mesure pour les cabinets                                                 | Vitrine + demande de devis ; prestation réalisée à la main |
+| **Kanso Portail**   | Espace client sécurisé                                                                         | Vitrine + liste d'attente ; produit en conception          |
 
-Une seule app Next.js (`apps/web`) sert les quatre sites : Kanso Solutions (ombrelle), Assistant, Site, Portail. En local : `/` (Assistant), `/sites/solutions`, `/sites/site`, `/sites/portail`. En production : un domaine par site, voir `.env.example`.
+Une seule app Next.js (`apps/web`) sert les quatre sites : Kanso Solutions (ombrelle), Assistant, Site, Portail. En local : `/` (Kanso Solutions), `/assistant`, `/site`, `/portail` ; l'application d'Assistant reste à la racine (`/connexion`, `/inscription`, `/app`). En production : un domaine par site, voir `.env.example`.
 
 - **Assistant d'accueil** : widget à intégrer sur le site du cabinet, qualifie les demandes (questions + score), alerte par e-mail / Slack, suivi dans l'espace.
 - **Traitement des documents** : factures et devis (PDF, scans), extraction (texte PDF ou OCR Mistral UE), contrôles (totaux, doublons, IBAN, seuil), validation humaine, brouillon Pennylane / Sellsy.
@@ -17,15 +17,15 @@ Une seule app Next.js (`apps/web`) sert les quatre sites : Kanso Solutions (ombr
 
 ## Architecture
 
-| Chemin | Rôle |
-|---|---|
-| `apps/web` | Next.js 16 : les 4 sites (Solutions, Assistant, Site, Portail), authentification, tableau de bord, back-office (`/admin`). Proxy `/api/*` → API. |
-| `apps/inbound-api` | API Hono (seul backend) : `/api/auth`, `/api/app/:workspace`, `/api/admin`, `/api/stripe/webhook`, `/v1/widget/*`, `/widget/kanso-widget.js`. |
-| `apps/inbound-widget` | Widget embarqué (Shadow DOM, ~7 Ko gzip). |
-| `apps/document-worker` | File de documents (Postgres SKIP LOCKED) + tâches planifiées. |
-| `apps/admin-cli` | Opérations : membres, staff, offres, secrets, purge. |
-| `packages/*` | `config` (schémas + modèles métier), `inbound-engine`, `document-pipeline`, `llm`, `adapters`, `tenancy`, `billing`, `mailer`, `shared`. |
-| `supabase/migrations` | Schéma Postgres (appliqué par `scripts/apply-migrations.sh`, suivi dans `schema_migrations`). |
+| Chemin                 | Rôle                                                                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apps/web`             | Next.js 16 : les 4 sites (Solutions, Assistant, Site, Portail), authentification, tableau de bord, back-office (`/admin`). Proxy `/api/*` → API. |
+| `apps/inbound-api`     | API Hono (seul backend) : `/api/auth`, `/api/app/:workspace`, `/api/admin`, `/api/stripe/webhook`, `/v1/widget/*`, `/widget/kanso-widget.js`.    |
+| `apps/inbound-widget`  | Widget embarqué (Shadow DOM, ~7 Ko gzip).                                                                                                        |
+| `apps/document-worker` | File de documents (Postgres SKIP LOCKED) + tâches planifiées.                                                                                    |
+| `apps/admin-cli`       | Opérations : membres, staff, offres, secrets, purge.                                                                                             |
+| `packages/*`           | `config` (schémas + modèles métier), `inbound-engine`, `document-pipeline`, `llm`, `adapters`, `tenancy`, `billing`, `mailer`, `shared`.         |
+| `supabase/migrations`  | Schéma Postgres (appliqué par `scripts/apply-migrations.sh`, suivi dans `schema_migrations`).                                                    |
 
 ## Démarrage local
 

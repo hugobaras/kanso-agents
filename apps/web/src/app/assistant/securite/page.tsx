@@ -2,6 +2,7 @@ import { Database, Eye, FileLock2, KeyRound, ServerCog, ShieldCheck, Timer, User
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
+import { siteHref } from "@/lib/sites";
 
 export const metadata: Metadata = {
   title: "Sécurité et RGPD",
@@ -82,7 +83,7 @@ export default function SecurityPage() {
               ["/legal/confidentialite-widget", "Information des visiteurs (widget)"],
             ].map(([href, label]) => (
               <li key={href}>
-                <Link href={href!} className="text-accent hover:underline">
+                <Link href={siteHref("assistant", href!)} className="text-accent hover:underline">
                   {label}
                 </Link>
               </li>

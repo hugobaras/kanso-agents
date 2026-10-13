@@ -1,6 +1,6 @@
 # Phase 5 — Pipeline Document-to-Action
 
-**Produit :** Kanso Solutions (shbt studio SAS)  
+**Produit :** Kanso Solutions (SHBT-STUDIO SAS)  
 **Date :** 2026-10-10  
 **Statut :** validé (2026-10-10)  
 **Prérequis :** [phase-2-configuration-client.md](./phase-2-configuration-client.md), [phase-4-adaptateurs.md](./phase-4-adaptateurs.md)
@@ -11,13 +11,13 @@ Spécifier le flux d’un document de l’ingestion à l’écriture cible (brou
 
 ## Décisions retenues
 
-| Sujet | Choix | Source |
-|-------|--------|--------|
-| Granularité job | 1 job = 1 document ; étapes = statuts | Q1 = 1 |
-| Doublons | Clés métier config + hash SHA-256 fichier | Q2 = 1 |
-| Confiance | Score **par champ** ; anomalie si champ critique &lt; seuil | Q3 = 2 |
+| Sujet                | Choix                                                       | Source |
+| -------------------- | ----------------------------------------------------------- | ------ |
+| Granularité job      | 1 job = 1 document ; étapes = statuts                       | Q1 = 1 |
+| Doublons             | Clés métier config + hash SHA-256 fichier                   | Q2 = 1 |
+| Confiance            | Score **par champ** ; anomalie si champ critique &lt; seuil | Q3 = 2 |
 | Résolution anomalies | Humain client (notif) ; statut via `admin-cli` Kanso au MVP | Q4 = 1 |
-| Audit | Une entrée par transition d’étape + décision résumée | Q5 = 1 |
+| Audit                | Une entrée par transition d’étape + décision résumée        | Q5 = 1 |
 
 ## Diagramme de flux
 
@@ -70,7 +70,7 @@ document_jobs
   created_at, updated_at, closed_at
 ```
 
-Worker : poll `status=pending AND available_at <= now()` FOR UPDATE SKIP LOCKED (*hypothèse* Postgres) ; un worker process sur l’instance OVH.
+Worker : poll `status=pending AND available_at <= now()` FOR UPDATE SKIP LOCKED (_hypothèse_ Postgres) ; un worker process sur l’instance OVH.
 
 ## Étapes
 
@@ -92,29 +92,29 @@ Actions :
 
 1. Appel LLM multimodal via `@kanso/llm` (provider abstrait) avec schéma de champs = `documents.fields_by_type` pour le type détecté ou demandé.
 2. Sortie structurée validée Zod : `{ document_type, fields, field_confidence }`.
-3. Champs absents → `null` + confiance basse, pas d’invention (*prompt + validation*).
+3. Champs absents → `null` + confiance basse, pas d’invention (_prompt + validation_).
 4. Audit `extract.completed` (résumé champs, **pas** le fichier, **pas** le prompt complet en prod).
 
 ### 3. Contrôle confiance (avant validate métier)
 
-Config : `alerts.human_review.min_confidence` (phase 2) + liste **champs critiques** par type (*hypothèse H-021* : défauts Kanso, ex. invoice → `total_ttc`, `invoice_number`, `iban` si présent dans fields_by_type).
+Config : `alerts.human_review.min_confidence` (phase 2) + liste **champs critiques** par type (_hypothèse H-021_ : défauts Kanso, ex. invoice → `total_ttc`, `invoice_number`, `iban` si présent dans fields_by_type).
 
 Règle MVP :
 
 - Si **un champ critique** a `field_confidence[field] < min_confidence` → `anomaly` raison `low_confidence`, alerte `low_confidence`, **pas** d’écriture cible.
-- Les champs non critiques sous seuil : flaggés dans `validation_results` mais n’bloquent pas seuls (*hypothèse H-022*).
+- Les champs non critiques sous seuil : flaggés dans `validation_results` mais n’bloquent pas seuls (_hypothèse H-022_).
 
 ### 4. `validate`
 
 Exécute `validation.rules[]` dans l’ordre config :
 
-| kind | Comportement |
-|------|----------------|
-| `totals_coherent` | Vérifie HT/TVA/TTC selon tolérance |
-| `duplicate_check` | Voir section Doublons |
-| `iban_allowlist` | IBAN ∈ liste (secret_ref) si IBAN présent |
+| kind                 | Comportement                                                            |
+| -------------------- | ----------------------------------------------------------------------- |
+| `totals_coherent`    | Vérifie HT/TVA/TTC selon tolérance                                      |
+| `duplicate_check`    | Voir section Doublons                                                   |
+| `iban_allowlist`     | IBAN ∈ liste (secret_ref) si IBAN présent                               |
 | `approval_threshold` | Si montant &gt; seuil → anomalie `needs_approval` (pas d’écriture auto) |
-| `confidence_min` | Filet global optionnel en plus du contrôle par champ |
+| `confidence_min`     | Filet global optionnel en plus du contrôle par champ                    |
 
 Échec règle bloquante → `anomaly` + alerte `validation_failed` (ou `duplicate_suspected`).
 
@@ -132,7 +132,7 @@ Exécute `validation.rules[]` dans l’ordre config :
 
 Deux signaux (l’un suffit à suspecter) :
 
-1. **Hash** : même `tenant_id` + `content_sha256` qu’un job `done` ou `anomaly` récent (*fenêtre* : *hypothèse* 365 j ou durée conservation phase 6).
+1. **Hash** : même `tenant_id` + `content_sha256` qu’un job `done` ou `anomaly` récent (_fenêtre_ : _hypothèse_ 365 j ou durée conservation phase 6).
 2. **Clés métier** : `duplicate_check.params.keys` — égalité normalisée (trim, case) sur jobs antérieurs du même `document_type`.
 
 Comportement : ne pas écrire ; `duplicate_of_job_id` renseigné ; anomalie + alerte `duplicate_suspected`.  
@@ -146,7 +146,7 @@ status = waiting_human
 last_error / validation_results = raison machine-readable
 ```
 
-Notification client via `AlertAdapter` (e-mail/Slack) : résumé, `job_id`, raison, **pas** de pièce jointe automatique contenant des données bancaires en clair si évitable (*hypothèse* : lien sécurisé ou ticket texte).
+Notification client via `AlertAdapter` (e-mail/Slack) : résumé, `job_id`, raison, **pas** de pièce jointe automatique contenant des données bancaires en clair si évitable (_hypothèse_ : lien sécurisé ou ticket texte).
 
 Résolution MVP :
 
@@ -173,10 +173,10 @@ Règles :
 
 ## Mode brouillon
 
-| Mode | Comportement |
-|------|----------------|
-| `draft` (défaut) | `createDraft` ; humain valide dans l’outil cible |
-| `final` | Refusé par le worker sauf config explicite + secret de feature process Kanso (*garde-fou*) |
+| Mode             | Comportement                                                                               |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| `draft` (défaut) | `createDraft` ; humain valide dans l’outil cible                                           |
+| `final`          | Refusé par le worker sauf config explicite + secret de feature process Kanso (_garde-fou_) |
 
 ## Liens config (rappel)
 
@@ -185,26 +185,26 @@ Conservation fichiers / audit = politique globale phase 6 (hors config tenant).
 
 ## Hors périmètre
 
-- Choix du modèle multimodal concret (abstraction + phase 8)  
-- UI de résolution client  
-- Drive/Dropbox (backlog phase 4)  
-- Checklist RGPD détaillée (phase 6)  
+- Choix du modèle multimodal concret (abstraction + phase 8)
+- UI de résolution client
+- Drive/Dropbox (backlog phase 4)
+- Checklist RGPD détaillée (phase 6)
 
 ## Ce qui reste incertain
 
 - Liste exacte des champs critiques par `document_type` (défauts H-021)
 - Fenêtre de dédoublonnage vs durée de conservation
 - Contenu exact de la notification (lien vs texte) sous contrainte sécurité
-- Throughput worker unique OVH (N jobs/min) — *hypothèse* suffisant pré-pilote
+- Throughput worker unique OVH (N jobs/min) — _hypothèse_ suffisant pré-pilote
 
 ## Risques
 
-| Risque | Impact | Mitigation |
-|--------|--------|------------|
-| Faux positifs doublons | Anomalies inutiles | Normalisation clés + revue CLI `requeue` |
-| Faux négatifs confiance | Mauvais brouillon | Champs critiques stricts ; draft only |
-| Anomalies sans suivi client | File qui grossit | Alerte + process commercial « revue quotidienne » |
-| Coût LLM extraction | Budget tokens | Phase 8 métrique €/doc ; modèle économique hors infra 50 € |
+| Risque                      | Impact             | Mitigation                                                 |
+| --------------------------- | ------------------ | ---------------------------------------------------------- |
+| Faux positifs doublons      | Anomalies inutiles | Normalisation clés + revue CLI `requeue`                   |
+| Faux négatifs confiance     | Mauvais brouillon  | Champs critiques stricts ; draft only                      |
+| Anomalies sans suivi client | File qui grossit   | Alerte + process commercial « revue quotidienne »          |
+| Coût LLM extraction         | Budget tokens      | Phase 8 métrique €/doc ; modèle économique hors infra 50 € |
 
 ## Question de validation
 

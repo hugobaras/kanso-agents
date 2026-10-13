@@ -1,6 +1,6 @@
 # Phase 1 — Structure du dépôt
 
-**Produit :** Kanso Solutions (shbt studio SAS)  
+**Produit :** Kanso Solutions (SHBT-STUDIO SAS)  
 **Date :** 2026-10-10  
 **Statut :** validé (2026-10-10)  
 **Prérequis :** [phase-0-cadrage.md](./phase-0-cadrage.md)
@@ -11,13 +11,13 @@ Définir l’arborescence du mono-dépôt TypeScript, les conventions de nommage
 
 ## Décisions retenues
 
-| Sujet | Choix | Source |
-|-------|--------|--------|
-| Outil monorepo | pnpm workspaces + Turborepo | Q1 = 1 |
-| Configs client | Table Supabase + exemples / schémas dans le repo | Q2 = 2 |
+| Sujet              | Choix                                                                     | Source |
+| ------------------ | ------------------------------------------------------------------------- | ------ |
+| Outil monorepo     | pnpm workspaces + Turborepo                                               | Q1 = 1 |
+| Configs client     | Table Supabase + exemples / schémas dans le repo                          | Q2 = 2 |
 | Secrets par tenant | Chiffrés côté Supabase (Vault ou colonne chiffrée) ; clés maîtres sur OVH | Q3 = 1 |
-| Environnements | `local` + `prod` ; `staging` au premier client pilote | Q4 = 3 |
-| CI GitHub Actions | lint + typecheck + unit tests sur chaque PR | Q5 = 1 |
+| Environnements     | `local` + `prod` ; `staging` au premier client pilote                     | Q4 = 3 |
+| CI GitHub Actions  | lint + typecheck + unit tests sur chaque PR                               | Q5 = 1 |
 
 ## Arborescence commentée
 
@@ -65,34 +65,34 @@ kanso/                          # racine mono-dépôt
 
 ### Rôles des apps
 
-| App | Responsabilité |
-|-----|----------------|
-| `inbound-api` | Webhooks / REST widget, charge config tenant, appelle `inbound-engine` |
-| `inbound-widget` | UI conversationnelle marque blanche ; parle uniquement à `inbound-api` |
-| `document-worker` | Poll `jobs`, exécute `document-pipeline`, écrit cibles via adapters |
-| `admin-cli` | Opérations humaines : créer tenant, publier version de config, smoke test |
+| App               | Responsabilité                                                            |
+| ----------------- | ------------------------------------------------------------------------- |
+| `inbound-api`     | Webhooks / REST widget, charge config tenant, appelle `inbound-engine`    |
+| `inbound-widget`  | UI conversationnelle marque blanche ; parle uniquement à `inbound-api`    |
+| `document-worker` | Poll `jobs`, exécute `document-pipeline`, écrit cibles via adapters       |
+| `admin-cli`       | Opérations humaines : créer tenant, publier version de config, smoke test |
 
 ### Rôles des packages
 
-| Package | Responsabilité |
-|---------|----------------|
-| `config` | Valider et versionner les schémas ; pas de secrets |
-| `tenancy` | `tenant_id` partout ; lecture config active depuis Supabase |
-| `llm` | Interface unique + validation sorties structurées |
-| `adapters` | Contrats + implémentations ; erreurs / retry (phase 4) |
-| `inbound-engine` / `document-pipeline` | Logique métier testable sans HTTP ni Docker |
+| Package                                | Responsabilité                                              |
+| -------------------------------------- | ----------------------------------------------------------- |
+| `config`                               | Valider et versionner les schémas ; pas de secrets          |
+| `tenancy`                              | `tenant_id` partout ; lecture config active depuis Supabase |
+| `llm`                                  | Interface unique + validation sorties structurées           |
+| `adapters`                             | Contrats + implémentations ; erreurs / retry (phase 4)      |
+| `inbound-engine` / `document-pipeline` | Logique métier testable sans HTTP ni Docker                 |
 
 ## Conventions de nommage
 
-| Élément | Convention | Exemple |
-|---------|------------|---------|
-| Packages | `@kanso/<name>` | `@kanso/llm` |
-| Apps (dossiers) | kebab-case | `inbound-api` |
-| `tenant_id` | slug minuscule stable | `cabinet-dupont` |
-| Versions de config | entier monotone par tenant + produit | `config_version = 3` |
-| Variables d’env globales | `KANSO_*` | `KANSO_ENV=local` |
-| Tables SQL | snake_case pluriel | `tenant_configs` |
-| Fichiers exemples | `<produit>.<profil>.example.json` | `inbound.avocats.example.json` |
+| Élément                  | Convention                           | Exemple                        |
+| ------------------------ | ------------------------------------ | ------------------------------ |
+| Packages                 | `@kanso/<name>`                      | `@kanso/llm`                   |
+| Apps (dossiers)          | kebab-case                           | `inbound-api`                  |
+| `tenant_id`              | slug minuscule stable                | `cabinet-dupont`               |
+| Versions de config       | entier monotone par tenant + produit | `config_version = 3`           |
+| Variables d’env globales | `KANSO_*`                            | `KANSO_ENV=local`              |
+| Tables SQL               | snake_case pluriel                   | `tenant_configs`               |
+| Fichiers exemples        | `<produit>.<profil>.example.json`    | `inbound.avocats.example.json` |
 
 ## Configuration et secrets
 
@@ -110,15 +110,15 @@ Règles :
 2. Config métier versionnée en base (`tenant_configs`) ; le repo ne contient que schémas + exemples.
 3. Secrets tenant : Supabase Vault ou colonne chiffrée ; déchiffrement avec clé(s) maître(s) uniquement sur OVH (`KANSO_MASTER_KEY` ou équivalent).
 4. `.env` local dérivé de `.env.example` ; `.env*` client interdit au commit (gitignore).
-5. *Hypothèse à vérifier :* disponibilité et limites de Supabase Vault sur le plan choisi ; sinon colonne `bytea` / pgcrypto avec même modèle de clés.
+5. _Hypothèse à vérifier :_ disponibilité et limites de Supabase Vault sur le plan choisi ; sinon colonne `bytea` / pgcrypto avec même modèle de clés.
 
 ## Environnements
 
-| Env | Usage | Infra |
-|-----|--------|-------|
-| `local` | Dev associés | Docker Compose + projet Supabase local ou branche de dev |
-| `prod` | Clients réels | VPS OVH + projet Supabase UE |
-| `staging` | **Reporté** au premier client pilote | Miroir allégé de prod (*hypothèse à vérifier* : coût dans budget &lt; 50 €) |
+| Env       | Usage                                | Infra                                                                       |
+| --------- | ------------------------------------ | --------------------------------------------------------------------------- |
+| `local`   | Dev associés                         | Docker Compose + projet Supabase local ou branche de dev                    |
+| `prod`    | Clients réels                        | VPS OVH + projet Supabase UE                                                |
+| `staging` | **Reporté** au premier client pilote | Miroir allégé de prod (_hypothèse à vérifier_ : coût dans budget &lt; 50 €) |
 
 `KANSO_ENV` ∈ {`local`,`prod`,`staging`} ; pas d’autre environnement nommé au MVP.
 
@@ -138,7 +138,7 @@ Hors CI MVP : build/push images Docker, déploiement auto, e2e navigateur.
 ## Turborepo (périmètre MVP)
 
 Pipelines déclarés a minima : `lint`, `typecheck`, `test`, `build`.  
-Pas de remote cache payant au démarrage (*hypothèse à vérifier* : cache local suffisant pour 4 devs).
+Pas de remote cache payant au démarrage (_hypothèse à vérifier_ : cache local suffisant pour 4 devs).
 
 ## Hors périmètre de cette phase
 
@@ -156,12 +156,12 @@ Pas de remote cache payant au démarrage (*hypothèse à vérifier* : cache loca
 
 ## Risques
 
-| Risque | Impact | Mitigation |
-|--------|--------|------------|
-| Turborepo + trop de packages | Complexité avant le premier client | Packages listés ci-dessus uniquement ; pas de micro-packages inutiles |
-| Configs en base sans process de revue | Régression silencieuse chez un client | `config_version` + publication explicite via `admin-cli` |
-| Clé maître perdue / fuitée | Compromission multi-tenant | Rotation documentée (phase 6) ; pas de clé dans Git |
-| Staging absent | Surprises en prod au premier pilote | Smoke tests + exemples ; staging dès le pilote |
+| Risque                                | Impact                                | Mitigation                                                            |
+| ------------------------------------- | ------------------------------------- | --------------------------------------------------------------------- |
+| Turborepo + trop de packages          | Complexité avant le premier client    | Packages listés ci-dessus uniquement ; pas de micro-packages inutiles |
+| Configs en base sans process de revue | Régression silencieuse chez un client | `config_version` + publication explicite via `admin-cli`              |
+| Clé maître perdue / fuitée            | Compromission multi-tenant            | Rotation documentée (phase 6) ; pas de clé dans Git                   |
+| Staging absent                        | Surprises en prod au premier pilote   | Smoke tests + exemples ; staging dès le pilote                        |
 
 ## Question de validation
 

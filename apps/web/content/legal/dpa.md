@@ -9,7 +9,7 @@ Le présent accord, conclu en application de l'**article 28 du RGPD**, est accep
 ## 1. Parties et rôles
 
 - **Responsable de traitement** : le Client, titulaire de l'espace Kanso.
-- **Sous-traitant** : shbt studio SAS (Kanso Solutions).
+- **Sous-traitant** : SHBT-STUDIO SAS (Kanso Solutions).
 
 ## 2. Objet et durée
 
@@ -17,11 +17,11 @@ Kanso traite des données personnelles pour le compte du Client afin de fournir 
 
 ## 3. Nature des traitements et données
 
-| Module | Personnes concernées | Données |
-|---|---|---|
-| Assistant d'accueil | visiteurs du site du Client | messages, réponses aux questions, coordonnées fournies, métadonnées techniques (identifiant de session, origine) |
-| Documents | fournisseurs et tiers figurant sur les documents | contenu des documents (identité, montants, IBAN, références) |
-| Espace | collaborateurs du Client | nom, e-mail, journal d'actions |
+| Module              | Personnes concernées                             | Données                                                                                                          |
+| ------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| Assistant d'accueil | visiteurs du site du Client                      | messages, réponses aux questions, coordonnées fournies, métadonnées techniques (identifiant de session, origine) |
+| Documents           | fournisseurs et tiers figurant sur les documents | contenu des documents (identité, montants, IBAN, références)                                                     |
+| Espace              | collaborateurs du Client                         | nom, e-mail, journal d'actions                                                                                   |
 
 Aucune donnée de catégorie particulière (art. 9 RGPD) ne doit être sollicitée par la configuration de l'assistant. Le Client paramètre les questions sous sa responsabilité.
 

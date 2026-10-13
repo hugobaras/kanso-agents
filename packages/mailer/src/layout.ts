@@ -54,7 +54,7 @@ export function renderEmail(opts: {
 <h1 style="margin:0 0 20px;font-family:Georgia,'Source Serif 4',serif;font-size:22px;line-height:30px;color:#1B2A4A;font-weight:600">${escapeHtml(opts.heading)}</h1>
 ${body}
 </td></tr>
-<tr><td style="padding:20px 4px;font-size:12px;line-height:18px;color:#8A93A3">Kanso ${escapeHtml(opts.product ?? "Assistant")}, par Kanso Solutions (shbt studio SAS) — hébergé dans l'Union européenne.<br>Vous recevez cet e-mail en lien avec votre compte ou votre demande.</td></tr>
+<tr><td style="padding:20px 4px;font-size:12px;line-height:18px;color:#8A93A3">Kanso ${escapeHtml(opts.product ?? "Assistant")}, par Kanso Solutions (SHBT-STUDIO SAS) — hébergé dans l'Union européenne.<br>Vous recevez cet e-mail en lien avec votre compte ou votre demande.</td></tr>
 </table></td></tr></table></body></html>`;
 
   const text = [

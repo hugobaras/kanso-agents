@@ -9,6 +9,7 @@ import { Alert } from "@/components/ui/misc";
 import { PageSpinner } from "@/components/ui/spinner";
 import { api, errorMessage, useApi } from "@/lib/api";
 import type { Me } from "@/lib/types";
+import { siteHref } from "@/lib/sites";
 
 type Invite = { workspace: string; email: string; role: string; has_account: boolean };
 
@@ -98,7 +99,7 @@ export default function InvitationPage() {
             </Button>
             <p className="text-xs text-subtle">
               En continuant, vous acceptez les{" "}
-              <Link href="/legal/cgu" className="underline">
+              <Link href={siteHref("assistant", "/legal/cgu")} className="underline">
                 conditions d&apos;utilisation
               </Link>
               .

@@ -7,6 +7,7 @@ import { Card, CardBody, CardFooter, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
 import { api, errorMessage, wsPath } from "@/lib/api";
+import { siteHref } from "@/lib/sites";
 
 export const DPA_VERSION = "2026-10";
 
@@ -31,11 +32,11 @@ export function DpaCard({ ws, canAccept, onAccepted }: { ws: string; canAccept: 
           extraire les informations demandées, hébergés dans l&apos;Union européenne et supprimés après 90 jours.
         </p>
         <p>
-          <a href="/legal/dpa" target="_blank" className="font-medium text-accent hover:underline">
+          <a href={siteHref("assistant", "/legal/dpa")} target="_blank" className="font-medium text-accent hover:underline">
             Lire l&apos;accord complet (version {DPA_VERSION})
           </a>{" "}
           ·{" "}
-          <a href="/legal/sous-traitants" target="_blank" className="text-accent hover:underline">
+          <a href={siteHref("assistant", "/legal/sous-traitants")} target="_blank" className="text-accent hover:underline">
             Liste des sous-traitants
           </a>
         </p>
