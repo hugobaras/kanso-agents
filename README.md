@@ -6,7 +6,7 @@ Gamme de produits pour les professions du droit et du chiffre (avocats, experts-
 | ------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | **Kanso Assistant** | Assistant d'accueil (qualification des demandes) + traitement de documents, en SaaS self-serve | Disponible                                                 |
 | **Kanso Site**      | Création de sites sur mesure pour les cabinets                                                 | Vitrine + demande de devis ; prestation réalisée à la main |
-| **Kanso Portail**   | Espace client sécurisé                                                                         | Vitrine + liste d'attente ; produit en conception          |
+| **Kanso Portail**   | Espace client sécurisé                                                                         | Bêta fermée : dépôt de pièces chiffré, suivi de dossier (`docs/portail-v1.md`)          |
 
 Une seule app Next.js (`apps/web`) sert les quatre sites : Kanso Solutions (ombrelle), Assistant, Site, Portail. En local : `/` (Kanso Solutions), `/assistant`, `/site`, `/portail` ; l'application d'Assistant reste à la racine (`/connexion`, `/inscription`, `/app`). En production : un domaine par site, voir `.env.example`.
 
@@ -19,6 +19,7 @@ Une seule app Next.js (`apps/web`) sert les quatre sites : Kanso Solutions (ombr
 
 | Chemin                 | Rôle                                                                                                                                             |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `packages/portal`      | Kanso Portail : chiffrement enveloppe, stockage objet, antivirus (clamd), modèles de dossiers, étapes. |
 | `apps/web`             | Next.js 16 : les 4 sites (Solutions, Assistant, Site, Portail), authentification, tableau de bord, back-office (`/admin`). Proxy `/api/*` → API. |
 | `apps/inbound-api`     | API Hono (seul backend) : `/api/auth`, `/api/app/:workspace`, `/api/admin`, `/api/stripe/webhook`, `/v1/widget/*`, `/widget/kanso-widget.js`.    |
 | `apps/inbound-widget`  | Widget embarqué (Shadow DOM, ~7 Ko gzip).                                                                                                        |

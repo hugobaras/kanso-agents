@@ -25,6 +25,7 @@ const HOSTS: Array<[SiteId, string | undefined]> = [
 const ASSET = /^\/(_next\/|api\/|brand\/|favicon\.svg$|robots\.txt$|sitemap\.xml$)/;
 const APP_AREA = /^\/(app|admin|compte|connexion|inscription|mot-de-passe|mot-de-passe-oublie|verifier-email|invitation)(\/|$)/;
 const SITE_PREFIX = /^\/(assistant|site|portail)(\/|$)/;
+const ESPACE = /^\/espace(\/|$)/;
 const AUTH_AREA = /^\/(app|admin|compte)(\/|$)/;
 
 function siteForHost(host: string): SiteId | null {
@@ -40,7 +41,10 @@ export function proxy(request: NextRequest) {
   const site = siteForHost(request.headers.get("host") ?? "");
 
   if (site && !ASSET.test(pathname)) {
-    if (site === "solutions") {
+    if (ESPACE.test(pathname)) {
+      // Espace client du Portail : uniquement sur le domaine du Portail (ou en local).
+      if (site !== "portail") return notFound();
+    } else if (site === "solutions") {
       if (SITE_PREFIX.test(pathname) || APP_AREA.test(pathname)) return notFound();
     } else if (site === "assistant") {
       if (SITE_PREFIX.test(pathname)) return notFound();

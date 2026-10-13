@@ -1,12 +1,12 @@
 "use client";
 
-import { ArrowLeft, Bot, Copy, Mail, Phone, User } from "lucide-react";
+import { ArrowLeft, Bot, Copy, FolderPlus, Mail, Phone, User } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useWorkspace } from "@/components/app/workspace-context";
 import { STATUS_LABEL, TierBadge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Select, Textarea } from "@/components/ui/form";
 import { Alert, EmptyState } from "@/components/ui/misc";
@@ -47,7 +47,7 @@ const EVENT_LABEL: Record<string, string> = {
 
 export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { ws, refreshOverview } = useWorkspace();
+  const { ws, overview, refreshOverview } = useWorkspace();
   const toast = useToast();
   const { data, error, mutate } = useApi<Detail>(wsPath(ws, `/leads/${id}`));
   const team = useApi<Team>(wsPath(ws, "/team"));
@@ -91,7 +91,12 @@ export default function LeadDetailPage() {
             {lead.origin && <> · depuis {lead.origin.replace(/^https?:\/\//, "")}</>}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {overview.entitlements.modules.portail && lead.contact.email && (
+            <ButtonLink href={`/app/${ws}/portail/nouveau?lead=${lead.id}`} variant="secondary" size="sm">
+              <FolderPlus className="size-4" /> Créer un dossier
+            </ButtonLink>
+          )}
           <TierBadge tier={lead.tier} />
           <Select
             className="h-9 w-48"

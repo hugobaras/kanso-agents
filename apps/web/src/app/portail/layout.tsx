@@ -3,9 +3,9 @@ import { SiteFooter, SiteHeader } from "@/components/sites/chrome";
 import { siteHref, themeStyle } from "@/lib/sites";
 
 export const metadata: Metadata = {
-  title: { absolute: "Kanso Portail — L'espace client sécurisé de votre cabinet (bientôt)", template: "%s · Kanso Portail" },
+  title: { absolute: "Kanso Portail — L'espace client sécurisé de votre cabinet ", template: "%s · Kanso Portail" },
   description:
-    "Kanso Portail, l'espace client sécurisé des avocats, experts-comptables et notaires : dépôt de pièces, suivi de dossier, échanges. En conception — rejoignez la liste d'attente.",
+    "Kanso Portail, l'espace client sécurisé des avocats, experts-comptables et notaires : dépôt de pièces, suivi de dossier, échanges. Bêta fermée : demandez l'accès.",
   icons: { icon: "/brand/favicon-portail.svg" },
 };
 
@@ -15,11 +15,11 @@ export default function PortailLayout({ children }: { children: React.ReactNode 
       <SiteHeader
         site="portail"
         links={[
-          { href: siteHref("portail", "/#fonctions"), label: "Ce qu'il fera" },
+          { href: siteHref("portail", "/#fonctions"), label: "Fonctions" },
           { href: siteHref("portail", "/#assistant"), label: "Avec Kanso Assistant" },
           { href: siteHref("portail", "/#questions"), label: "Questions" },
         ]}
-        cta={{ href: siteHref("portail", "/#liste-attente"), label: "Liste d'attente" }}
+        cta={{ href: siteHref("portail", "/#liste-attente"), label: "Demander l'accès" }}
       />
       <main>{children}</main>
       <SiteFooter site="portail" />

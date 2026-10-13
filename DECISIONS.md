@@ -576,3 +576,30 @@ Phases 0–19 livrées — **GO_M7_LIGHT** (+ stretch mock GO).
 | H-044 | Noms et domaines | Recherche INPI (classes 9, 35, 42) pour « Kanso » et les trois produits ; réserver les domaines et renseigner `NEXT_PUBLIC_URL_*` / `KANSO_HOST_*`. |
 | H-045 | Offre Kanso Site | Définir formules et prix indicatifs, conditions de cession, maintenance ; sinon la page reste « sur devis ».                                        |
 | H-046 | Textes légaux    | Mentions légales et confidentialité Kanso Solutions (`apps/web/content/legal/`) : compléter SIRET, adresse, capital ; relecture juridique.          |
+
+---
+
+## 2026-10-16 — Kanso Portail v1 (bêta fermée)
+
+Spécification complète : `docs/portail-v1.md`.
+
+| ID    | Décision               | Détail                                                                                                                                                                                                                   | Statut                |
+| ----- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------- |
+| D-144 | Périmètre              | Récupérer des pièces auprès des clients (TPE, particuliers) et suivre le dossier ; sans compte client ; mobile d'abord. Hors v1 : signature, paiement, rendez-vous, intégrations, SMS, domaine personnalisé, 2FA cabinet. | Validée (utilisateur) |
+| D-145 | Accès client           | Lien personnel (7 jours, un par contact et par dossier) + code à 6 chiffres par e-mail (10 min, 5 essais) ; cookie de session par contact ; renvoi par le client ou le cabinet (révoque les anciens liens).             | Validée               |
+| D-146 | Sécurité des fichiers  | Chiffrement applicatif AES-256-GCM, clé par fichier enveloppée par une clé par cabinet (HKDF de `KANSO_MASTER_KEY`), AAD = cabinet+dossier+fichier ; type vérifié par signature ; antivirus clamd, dépôts refusés en production sans antivirus ; stockage S3 (OVH) obligatoire en production. | Validée               |
+| D-147 | Pas de lecture auto    | Aucune analyse du contenu en v1, hors antivirus. Évite de nouveaux sous-traitants IA sur des pièces d'identité.                                                                                                         | Validée (utilisateur) |
+| D-148 | Étapes et pièces       | À compléter → En vérification → Complet → Terminé ; étapes calculées d'après les pièces, libellés modifiables ; validation pièce par pièce, remplacement possible jusqu'à acceptation.                                  | Validée               |
+| D-149 | Conservation           | Défaut 90 jours après « Terminé », réglable ; avertissement 7 jours avant au client et au cabinet ; export ZIP ; purge = objets puis lignes (échec d'un objet = nouvel essai).                                           | Validée               |
+| D-150 | Offre                  | Pas de facturation en v1 : module `portail` ouvert par Kanso (opt-in dans `tenants.modules`), plafond de dossiers actifs (20 par défaut) ; demande d'accès depuis l'app.                                                  | Validée               |
+| D-151 | Notifications          | E-mails au nom du cabinet (nom, couleur) ; relances réglables ; résumé quotidien et alerte immédiate « dossier complet » pour le cabinet.                                                                                | Validée               |
+
+### Actions ouvertes
+
+| ID    | Sujet                 | À faire                                                                                                                                       |
+| ----- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| H-047 | Stockage objet        | Créer le bucket OVHcloud Object Storage (UE), renseigner `KANSO_S3_*`, activer le chiffrement serveur en plus du chiffrement applicatif.      |
+| H-048 | Antivirus             | Déployer clamd (`clamav` dans `compose.yml`) en production et superviser la mise à jour des signatures.                                        |
+| H-049 | Clé maître            | Procédure de sauvegarde et de rotation de `KANSO_MASTER_KEY` (sa perte rend les pièces illisibles) ; `key_version` prévu pour la rotation.    |
+| H-050 | Textes légaux Portail | Relecture juridique de `confidentialite-portail.md` et ajout du Portail au DPA / à la liste des sous-traitants.                                |
+| H-051 | Domaine du Portail    | Réserver le domaine, renseigner `KANSO_HOST_PORTAIL` et `KANSO_PORTAIL_URL` (liens e-mail), l'ajouter à `KANSO_CORS_ORIGINS`.                 |

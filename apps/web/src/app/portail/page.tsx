@@ -18,35 +18,35 @@ export default function PortailPage() {
       <section className="mx-auto grid max-w-6xl items-center gap-14 px-5 pb-24 pt-16 lg:grid-cols-[1.05fr_1fr] lg:pt-24">
         <div>
           <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-line bg-accent-soft px-3 py-1 text-xs font-medium text-accent-strong">
-            <Hourglass className="size-3.5" /> En conception — liste d&apos;attente ouverte
+            <Hourglass className="size-3.5" /> Bêta fermée — accès sur demande
           </p>
           <h1 className="font-display text-[42px] leading-[1.08] sm:text-[54px]">
             L&apos;espace client de votre cabinet, <span className="text-accent">sécurisé</span> et simple.
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-muted">
-            Kanso Portail permettra à vos clients de déposer leurs pièces et de suivre leur dossier au même endroit, plutôt que par e-mail.
-            Pour avocats, experts-comptables et notaires.
+            Avec Kanso Portail, vos clients déposent leurs pièces depuis leur téléphone, sans créer de compte, et suivent l'avancement de leur dossier,
+            plutôt que de tout envoyer par e-mail. Pour avocats, experts-comptables et notaires.
           </p>
           <p className="mt-4 max-w-xl text-sm leading-6 text-muted">
-            Le produit est en cours de conception. Nous le construisons avec les cabinets qui s'inscrivent : leurs besoins décident de ce que
-            nous développons en premier.
+            La bêta est ouverte cabinet par cabinet. Documents chiffrés, analysés par un antivirus et hébergés dans l'Union européenne ; vous choisissez
+            la durée de conservation.
           </p>
           <a
             href="#liste-attente"
             className="mt-8 inline-flex h-12 items-center rounded-lg bg-accent px-6 text-[15px] font-medium text-white hover:bg-accent-strong"
           >
-            Rejoindre la liste d&apos;attente
+            Demander l&apos;accès à la bêta
           </a>
         </div>
         <div>
           <PortalMock />
-          <p className="mt-3 text-center text-xs text-subtle">Aperçu conceptuel — non contractuel, susceptible d&apos;évoluer</p>
+          <p className="mt-3 text-center text-xs text-subtle">Aperçu — susceptible d&apos;évoluer pendant la bêta</p>
         </div>
       </section>
 
       <section id="fonctions" className="scroll-mt-20 border-y border-line bg-surface">
         <div className="mx-auto max-w-6xl px-5 py-24">
-          <p className="text-sm font-medium text-accent">Ce qu'il fera</p>
+          <p className="text-sm font-medium text-accent">Ce que fait Kanso Portail</p>
           <h2 className="mt-2 max-w-2xl font-display text-4xl">Moins d&apos;e-mails à relancer, plus de dossiers qui avancent.</h2>
           <div className="mt-12 grid gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((f) => (
@@ -60,7 +60,7 @@ export default function PortailPage() {
             ))}
           </div>
           <p className="mt-10 text-xs text-subtle">
-            Fonctions envisagées à ce stade de la conception ; le périmètre final dépendra des retours des cabinets.
+            Périmètre de la bêta : dépôt de pièces (PDF et images, 20 Mo), relances, validation pièce par pièce, messages courts, export. Signature, paiement et rendez-vous ne sont pas inclus.
           </p>
         </div>
       </section>
@@ -73,8 +73,8 @@ export default function PortailPage() {
             <Link href={siteHref("assistant")} className="font-medium text-accent hover:underline">
               Kanso Assistant
             </Link>{" "}
-            reçoit et qualifie les demandes de vos futurs clients. L'idée de Kanso Portail : qu'une demande acceptée devienne un dossier, avec son
-            espace d'échange, sans ressaisie.
+            reçoit et qualifie les demandes de vos futurs clients. Depuis une demande qualifiée, « Créer un dossier » reprend
+            les coordonnées du client : plus de ressaisie.
           </p>
         </div>
         <ol className="space-y-5">

@@ -13,6 +13,7 @@ import {
   Menu,
   Plug,
   Settings,
+  FolderLock,
   Shield,
   User,
   Users,
@@ -55,6 +56,7 @@ function useNav(): NavItem[][] {
       badge: overview.documents.pending_review || undefined,
     });
   }
+  main.push({ href: `${base}/portail`, label: ent.modules.portail ? "Portail" : "Portail (bêta)", icon: FolderLock });
   const manage: NavItem[] = [
     { href: `${base}/integrations`, label: "Intégrations", icon: Plug },
     { href: `${base}/equipe`, label: "Équipe", icon: Users },

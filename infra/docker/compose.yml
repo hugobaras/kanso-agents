@@ -29,6 +29,18 @@ services:
       db:
         condition: service_healthy
 
+  # Antivirus des dépôts Kanso Portail (clamd, port 3310). Première mise à jour des signatures : ~1 min.
+  clamav:
+    image: clamav/clamav:stable
+    ports:
+      - "3310:3310"
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+
   inbound-api:
     build:
       context: ../..
@@ -44,6 +56,8 @@ services:
       KANSO_APP_URL: http://localhost:3001
       KANSO_PUBLIC_URL: http://localhost:3000
       KANSO_STORAGE_DIR: /data/storage
+      CLAMD_HOST: clamav
+      KANSO_PORTAIL_URL: ${KANSO_PORTAIL_URL:-http://localhost:3001}
       # Platform SMTP (empty = console transport + dev outbox):
       KANSO_SMTP_URL: ${KANSO_SMTP_URL:-}
       KANSO_MAIL_FROM: ${KANSO_MAIL_FROM:-Kanso <no-reply@kanso.fr>}
