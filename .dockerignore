@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/dist-tsc
+**/.next
+**/.turbo
+.git
+.data
+tmp
+.pnpm-store
+**/*.tsbuildinfo
+.env
+.env.*
+!.env.example
+eval/**/reports

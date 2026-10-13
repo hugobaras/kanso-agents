@@ -1,7 +1,7 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # Apply supabase/migrations to DATABASE_URL (local Docker or Supabase session pooler).
 # Tracks applied files in schema_migrations so the script is safe to re-run.
-set -euo pipefail
+set -eu
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 : "${DATABASE_URL:?Set DATABASE_URL}"
 

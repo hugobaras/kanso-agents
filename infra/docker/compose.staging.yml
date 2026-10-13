@@ -11,7 +11,7 @@ services:
       KANSO_SOFT_CAP_EUR_PER_DAY: ${KANSO_SOFT_CAP_EUR_PER_DAY:-5}
       KANSO_MASTER_KEY: ${KANSO_MASTER_KEY:-local-dev-only-change-me-32chars!}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
-      MISTRAL_BASE_URL: ${MISTRAL_BASE_URL:-https://api.mistral.ai}
+      MISTRAL_BASE_URL: ${MISTRAL_BASE_URL:-https://api.eu.mistral.ai/v1}
       KANSO_MISTRAL_MODEL: ${KANSO_MISTRAL_MODEL:-ministral-8b-latest}
       KANSO_STORAGE_DIR: /data/storage
     volumes:
@@ -21,8 +21,8 @@ services:
       KANSO_ENV: staging
       KANSO_MASTER_KEY: ${KANSO_MASTER_KEY:-local-dev-only-change-me-32chars!}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
-      # Démo : extract déterministe (PDF stub) — pas de 429 / schéma cassé
-      KANSO_D2A_FORCE_MOCK: ${KANSO_D2A_FORCE_MOCK:-1}
+      # 1 = extraction hors-ligne (heuristique) même avec une clé Mistral
+      KANSO_D2A_FORCE_MOCK: ${KANSO_D2A_FORCE_MOCK:-0}
       KANSO_WORKER_BOOTSTRAP: "0"
       KANSO_WORKER_POLL: "1"
       KANSO_WORKER_ONCE: "0"

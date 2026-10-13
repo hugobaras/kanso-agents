@@ -531,3 +531,28 @@ Phases 0–19 livrées — **GO_M7_LIGHT** (+ stretch mock GO).
 | ID | Hypothèse liée P0-06 | À vérifier |
 |----|----------------------|------------|
 | H-034 | Alias `mistral-small-latest` disponible sur `api.eu.mistral.ai` | `GET /v1/models` avec la clé prod |
+
+---
+
+## 2026-10-14 — Refonte SaaS commercialisable
+
+| ID | Décision | Détail | Statut |
+|----|----------|--------|--------|
+| D-130 | Modèle de vente | Self-serve : inscription, essai 14 j sans carte, abonnements Stripe (Essentiel 49 €, Cabinet 129 €, Expert 290 € HT/mois ; annuel = 10 mois). Remplace D-021 (pas de back-office client) et D-082. | Validée (utilisateur) |
+| D-131 | Widget | Clé publique `pk_live_…` + liste d'origines par clé ; API `/v1/widget/*`. L'ancienne API `/v1/:tenantId` n'est servie qu'avec `KANSO_LEGACY_WIDGET=1`. Portail `/portal` supprimé (comptes migrés vers `users`/`memberships`). | Validée |
+| D-132 | Front | Nouvelle app `apps/web` (Next.js 16 + Tailwind 4). Hono reste le seul backend ; `/api/*` proxifié pour cookie first-party. | Validée (utilisateur) |
+| D-133 | Quotas | Compteurs mensuels atomiques (`usage_counters`). Conversation décomptée au premier message du visiteur. Aucun dépassement facturé : blocage poli. Le soft cap € reste un suivi de coût interne. | Validée |
+| D-134 | Auth | Maison : scrypt (N=2^17), cookie httpOnly `kanso_session` 30 j glissants, magic link, vérification e-mail, CSRF par Origin, rate limits Postgres. Rôles owner/admin/member vérifiés côté serveur. | Validée |
+| D-135 | Documents | Texte réel envoyé au LLM (unpdf ; OCR Mistral pour scans) ; règles pilotées par la config ; revue humaine par défaut (`require_review`) ; mode `sandbox` par défaut tant que la cible comptable n'est pas connectée. | Validée |
+| D-136 | Garde-fous LLM | Messages en texte brut, jamais de promesse de délai (remplacée par « C'est noté. »), message de clôture déterministe par défaut (`KANSO_LLM_HANDOFF=1` pour l'opt-in), score interne jamais montré au visiteur. | Validée |
+| D-137 | RGPD | DPA accepté en ligne (`dpa_acceptances`, version 2026-10), export JSON et suppression (grâce 30 j) en libre-service, tâches planifiées (rétention, purge). | Validée |
+| D-138 | Création de site | Offre Kanso Solutions « site sur devis » proposée aux cabinets sans site (onboarding, Installation, `/site-internet`) ; demande → e-mail `KANSO_SALES_EMAIL` + back-office. Prestation hors abonnement. | Validée (utilisateur) |
+
+### Hypothèses / actions humaines ouvertes
+
+| ID | Sujet | À faire |
+|----|-------|---------|
+| H-040 | Textes légaux | CGU, CGV, DPA, confidentialité, mentions (`apps/web/content/legal/`) : relecture par un avocat ; compléter SIRET / adresse / capital. |
+| H-041 | Stripe live | Compte, Stripe Tax, portail client, webhook prod ; lancer `stripe:seed` en live. |
+| H-042 | Hébergement | Les pages marketing annoncent OVHcloud + base UE : à aligner avec l'infra réellement provisionnée. |
+| H-043 | SMTP | Fournisseur UE transactionnel (`KANSO_SMTP_URL`), SPF/DKIM/DMARC sur le domaine d'envoi. |
