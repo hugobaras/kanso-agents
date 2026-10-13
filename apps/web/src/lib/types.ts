@@ -20,7 +20,7 @@ export type Entitlements = {
   active: boolean;
   trial_ends_at: string | null;
   trial_days_left: number | null;
-  modules: { inbound: boolean; document_to_action: boolean };
+  modules: { inbound: boolean; document_to_action: boolean; portail: boolean };
   quotas: { conversations: number; documents: number };
   seats: number;
   cancel_at_period_end: boolean;

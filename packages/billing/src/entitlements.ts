@@ -28,7 +28,7 @@ export type Entitlements = {
   active: boolean;
   trialEndsAt: Date | null;
   trialDaysLeft: number | null;
-  modules: { inbound: boolean; document_to_action: boolean };
+  modules: { inbound: boolean; document_to_action: boolean; portail: boolean };
   quotas: Record<Metric, number>;
   seats: number;
   subscription: SubscriptionRow | null;
@@ -39,7 +39,7 @@ const DAY_MS = 86_400_000;
 /** Pure: derive entitlements from a subscription row + tenant module flags. */
 export function computeEntitlements(
   sub: SubscriptionRow | null,
-  tenantModules: { inbound?: boolean; document_to_action?: boolean } | null,
+  tenantModules: { inbound?: boolean; document_to_action?: boolean; portail?: boolean } | null,
   now = new Date(),
 ): Entitlements {
   const planId: PlanId = sub && isPlanId(sub.plan) ? sub.plan : "trial";
@@ -63,6 +63,8 @@ export function computeEntitlements(
     inbound: plan.modules.inbound && tenantModules?.inbound !== false,
     document_to_action:
       plan.modules.document_to_action && tenantModules?.document_to_action !== false,
+    // Kanso Portail : bêta fermée, ouvert explicitement par Kanso (hors offres Stripe en v1).
+    portail: tenantModules?.portail === true,
   };
 
   return {

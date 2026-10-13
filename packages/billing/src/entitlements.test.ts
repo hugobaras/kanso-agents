@@ -52,6 +52,11 @@ describe("computeEntitlements", () => {
     expect(e.quotas.conversations).toBe(200);
   });
 
+  it("portail is opt-in, never granted by a plan alone", () => {
+    expect(computeEntitlements(sub({ plan: "expert", status: "active" }), null, now).modules.portail).toBe(false);
+    expect(computeEntitlements(sub({ plan: "expert", status: "active" }), { portail: true }, now).modules.portail).toBe(true);
+  });
+
   it("no subscription → expired", () => {
     expect(computeEntitlements(null, null, now).active).toBe(false);
   });
