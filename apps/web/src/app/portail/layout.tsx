@@ -15,6 +15,7 @@ export default function PortailLayout({ children }: { children: React.ReactNode 
       <SiteHeader
         site="portail"
         links={[
+          { href: siteHref("portail", "/#fonctionnement"), label: "Comment ça marche" },
           { href: siteHref("portail", "/#fonctions"), label: "Fonctions" },
           { href: siteHref("portail", "/#assistant"), label: "Avec Kanso Assistant" },
           { href: siteHref("portail", "/#questions"), label: "Questions" },

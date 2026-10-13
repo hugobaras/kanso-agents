@@ -261,11 +261,11 @@ export const templates = {
       devis:
         "Nous avons bien reçu votre demande de devis. Un membre de l'équipe vous recontacte sous deux jours ouvrés pour en discuter, sans engagement.",
       waitlist:
-        "Vous êtes inscrit(e) sur la liste d'attente. Nous vous écrirons lorsque le produit s'ouvrira, et pour vous associer à sa conception si vous le souhaitez.",
+        "Nous avons bien reçu votre demande d'accès à la bêta. Nous revenons vers vous sous deux jours ouvrés pour activer votre accès.",
     }[p.kind];
     const heading =
       p.kind === "waitlist"
-        ? "Inscription enregistrée"
+        ? "Demande d'accès enregistrée"
         : "Nous avons bien reçu votre demande";
     return build(
       "contact_ack",
