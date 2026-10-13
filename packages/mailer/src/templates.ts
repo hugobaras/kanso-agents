@@ -132,6 +132,22 @@ export const templates = {
     ]);
   },
 
+  /** Internal notice to the Kanso team (sales / ops). */
+  internalRequest(p: { kind: string; workspace: string; tenantId: string; requester: string; rows: Array<[string, string]>; url: string }) {
+    return build("internal_request", `[${p.kind}] ${p.workspace}`, `Nouvelle demande : ${p.kind}`, [
+      { kind: "p", text: `${p.requester} (${p.workspace}) vient de faire une demande depuis son espace.` },
+      { kind: "kv", rows: [["Espace", p.tenantId], ...p.rows] },
+      { kind: "button", label: "Ouvrir dans le back-office", href: p.url },
+    ]);
+  },
+
+  websiteRequestAck(p: { workspace: string }) {
+    return build("website_request_ack", "Votre demande de site web", "Nous avons bien reçu votre demande", [
+      { kind: "p", text: `Merci ! L'équipe Kanso Solutions revient vers vous sous deux jours ouvrés pour échanger sur le site de ${p.workspace} et vous proposer un devis.` },
+      { kind: "muted", text: "Votre assistant reste utilisable dès aujourd'hui : il sera installé sur votre nouveau site lors de sa mise en ligne." },
+    ]);
+  },
+
   exportReady(p: { workspace: string; url: string }) {
     return build("export_ready", `Export de données prêt — ${p.workspace}`, "Votre export est prêt", [
       { kind: "p", text: "L'export complet des données de votre espace est disponible." },

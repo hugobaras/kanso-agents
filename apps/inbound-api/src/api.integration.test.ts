@@ -269,6 +269,19 @@ describe.skipIf(!hasDb)("SaaS API", () => {
     await getPool().query(`delete from stripe_events where event_id = $1`, [event.id]);
   });
 
+  it("sends a website quote request to the sales team once", async () => {
+    const r = await call(alice, "POST", `/api/app/${wsA}/integrations/website-request`, { kind: "creation", timeline: "asap" });
+    expect(r.status).toBe(201);
+    const again = await call(alice, "POST", `/api/app/${wsA}/integrations/website-request`, { kind: "creation" });
+    expect(again.status).toBe(409);
+    const status = await call(alice, "GET", `/api/app/${wsA}/integrations/website-request`);
+    expect(status.json.request.status).toBe("open");
+    const mails = await getPool().query<{ to_email: string }>(
+      `select to_email from mail_outbox where template in ('internal_request', 'website_request_ack') and created_at > now() - interval '1 minute'`,
+    );
+    expect(mails.rows.map((m) => m.to_email)).toEqual(expect.arrayContaining(["bonjour@kanso.fr", `alice-${suffix}@example.com`]));
+  });
+
   it("rate limits repeated widget session creation", async () => {
     const key = (await call(alice, "GET", `/api/app/${wsA}/assistant/install`)).json.public_key;
     const headers = { "x-kanso-key": key, origin: "https://www.cabinet-a.fr", "x-forwarded-for": `10.9.${suffix.length}.77` };

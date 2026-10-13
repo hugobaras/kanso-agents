@@ -63,6 +63,17 @@ export default function PricingPage() {
           </table>
         </div>
         <p className="mt-4 text-xs text-muted">Prix hors taxes, TVA française applicable. Paiement sécurisé via Stripe.</p>
+        <div className="mt-10 flex flex-col items-start justify-between gap-4 rounded-xl border border-line bg-surface p-6 sm:flex-row sm:items-center">
+          <div>
+            <p className="font-semibold">Besoin d&apos;un site internet ?</p>
+            <p className="mt-1 text-sm text-muted">
+              Création ou refonte par Kanso Solutions, assistant intégré. Prestation sur devis, indépendante de l&apos;abonnement.
+            </p>
+          </div>
+          <a href="/site-internet" className="shrink-0 text-sm font-medium text-accent hover:underline">
+            En savoir plus →
+          </a>
+        </div>
       </section>
       <section className="mx-auto max-w-3xl px-5 pb-24">
         <h2 className="text-center font-display text-3xl">Questions fréquentes</h2>

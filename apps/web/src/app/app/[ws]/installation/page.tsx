@@ -4,6 +4,7 @@ import { CheckCircle2, Globe, KeyRound, Plus, Radio, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useWorkspace } from "@/components/app/workspace-context";
+import { WebsiteOffer } from "@/components/website-offer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardFooter, CardHeader } from "@/components/ui/card";
@@ -234,6 +235,7 @@ export default function InstallationPage() {
               </Button>
             </CardBody>
           </Card>
+          {!data.last_seen_at && <WebsiteOffer ws={ws} variant="compact" />}
           <Card>
             <CardHeader
               title={

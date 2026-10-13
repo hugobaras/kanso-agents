@@ -4,6 +4,7 @@ import { Briefcase, Calculator, Check, CheckCircle2, Landmark, Radio, Scale } fr
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChatPreview } from "@/components/assistant/chat-preview";
+import { WebsiteOffer } from "@/components/website-offer";
 import { useWorkspace } from "@/components/app/workspace-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
@@ -38,6 +39,7 @@ export default function OnboardingPage() {
   const [profession, setProfession] = useState(overview.workspace.profession ?? "avocat");
   const [recipient, setRecipient] = useState(me.user.email);
   const [site, setSite] = useState("");
+  const [noSite, setNoSite] = useState(false);
   const [busy, setBusy] = useState(false);
   const install = useApi<Install>(step >= 3 ? wsPath(ws, "/assistant/install") : null, {
     refreshInterval: (d) => (step === 4 && !d?.last_seen_at ? 5000 : 0),
@@ -225,10 +227,37 @@ export default function OnboardingPage() {
         <h2 className="font-display text-2xl">Installez-le sur votre site</h2>
         <p className="mt-1 text-sm text-muted">Collez ce code avant la balise &lt;/body&gt;, ou transmettez-le à votre prestataire.</p>
       </div>
-      {install.data ? <CodeBlock code={install.data.snippet} /> : <PageSpinner />}
-      <Field label="Adresse de votre site" hint="Seul ce site pourra afficher votre assistant." optional>
-        {(p) => <Input {...p} placeholder="https://www.mon-cabinet.fr" value={site} onChange={(e) => setSite(e.target.value)} />}
-      </Field>
+      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Avez-vous déjà un site ?">
+        {(
+          [
+            [false, "J'ai un site internet"],
+            [true, "Je n'ai pas encore de site"],
+          ] as const
+        ).map(([v, l]) => (
+          <button
+            key={l}
+            role="radio"
+            aria-checked={noSite === v}
+            onClick={() => setNoSite(v)}
+            className={cn(
+              "rounded-full border px-4 py-1.5 text-sm transition-colors",
+              noSite === v ? "border-ink bg-ink text-paper" : "border-line-strong bg-surface hover:bg-paper",
+            )}
+          >
+            {l}
+          </button>
+        ))}
+      </div>
+      {noSite ? (
+        <WebsiteOffer ws={ws} />
+      ) : (
+        <>
+          {install.data ? <CodeBlock code={install.data.snippet} /> : <PageSpinner />}
+          <Field label="Adresse de votre site" hint="Seul ce site pourra afficher votre assistant." optional>
+            {(p) => <Input {...p} placeholder="https://www.mon-cabinet.fr" value={site} onChange={(e) => setSite(e.target.value)} />}
+          </Field>
+        </>
+      )}
       <div className="flex gap-2">
         <Button variant="secondary" onClick={() => goTo(2)}>
           Retour
@@ -247,7 +276,7 @@ export default function OnboardingPage() {
             })
           }
         >
-          C&apos;est installé
+          {noSite ? "Continuer" : "C'est installé"}
         </Button>
       </div>
     </div>,
@@ -272,8 +301,12 @@ export default function OnboardingPage() {
             <div className="flex gap-3">
               <Radio className="size-6 animate-pulse text-accent" />
               <div>
-                <p className="font-medium">En attente…</p>
-                <p className="text-sm text-muted">Pas encore de site ? Vous pouvez terminer et revenir plus tard depuis Installation.</p>
+                <p className="font-medium">{noSite ? "Votre assistant est prêt" : "En attente…"}</p>
+                <p className="text-sm text-muted">
+                  {noSite
+                    ? "Il sera installé sur votre site dès sa mise en ligne. Vous pouvez déjà le tester depuis l'éditeur."
+                    : "Vous pouvez terminer et revenir plus tard depuis la page Installation."}
+                </p>
               </div>
             </div>
           )}

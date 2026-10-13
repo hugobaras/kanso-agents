@@ -16,7 +16,10 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { actorLabel, assertRole, currentUser, currentWorkspace } from "../../auth/middleware.js";
 import { audit } from "../../auth/service.js";
-import { masterKey } from "../../env.js";
+import { appUrl, masterKey } from "../../env.js";
+import { templates } from "@kanso/mailer";
+import { deliver } from "../../services/mail.js";
+import { createNotification } from "../../services/notifications.js";
 import { body } from "../../http/body.js";
 import { badRequest, HttpError, notFound } from "../../http/errors.js";
 import type { AppEnv } from "../../http/types.js";
@@ -120,6 +123,20 @@ async function updateInboundIntegration(
   if (published) {
     await publishConfig(pool, { tenantId, product: "inbound", config: mutate(parseInboundConfig(published.config)), publishedBy: actor });
   }
+}
+
+async function notifySales(opts: {
+  kind: string;
+  tenantId: string;
+  workspace: string;
+  requester: string;
+  rows: Array<[string, string]>;
+}) {
+  const to = process.env.KANSO_SALES_EMAIL ?? "bonjour@kanso.fr";
+  await deliver(
+    to,
+    templates.internalRequest({ ...opts, url: `${appUrl()}/admin/demandes` }),
+  );
 }
 
 export function integrationsRoutes() {
@@ -255,6 +272,78 @@ export function integrationsRoutes() {
       [ws.tenantId, currentUser(c).id, b.platform, b.title, b.description],
     );
     await audit(pool, { tenantId: ws.tenantId, actor: actorLabel(c), step: "custom_request", decision: "opened" });
+    await notifySales({
+      kind: "Intégration sur mesure",
+      tenantId: ws.tenantId,
+      workspace: ws.displayName,
+      requester: currentUser(c).email,
+      rows: [["Outil", b.platform], ["Objet", b.title], ["Besoin", b.description]],
+    });
+    return c.json({ ok: true, id: res.rows[0]!.id }, 201);
+  });
+
+  /** "Pas encore de site ?" — website creation offered by Kanso Solutions (sur devis). */
+  app.get("/website-request", async (c) => {
+    const ws = currentWorkspace(c);
+    const res = await getPool().query(
+      `select id, status, created_at from custom_integration_requests
+       where tenant_id = $1 and platform = 'site_web' order by created_at desc limit 1`,
+      [ws.tenantId],
+    );
+    return c.json({ request: res.rows[0] ?? null });
+  });
+
+  app.post("/website-request", async (c) => {
+    const ws = currentWorkspace(c);
+    const b = await body(
+      c.req,
+      z.object({
+        kind: z.enum(["creation", "refonte"]).default("creation"),
+        current_url: z.string().trim().max(200).optional(),
+        timeline: z.enum(["asap", "1_3_mois", "flexible"]).default("flexible"),
+        phone: z.string().trim().max(30).optional(),
+        message: z.string().trim().max(3000).optional(),
+      }),
+    );
+    const pool = getPool();
+    const open = await pool.query(
+      `select 1 from custom_integration_requests where tenant_id = $1 and platform = 'site_web' and status in ('open', 'in_progress')`,
+      [ws.tenantId],
+    );
+    if ((open.rowCount ?? 0) > 0) throw new HttpError(409, "already_requested", "Une demande de site est déjà en cours de traitement.");
+    const TIMELINE: Record<string, string> = { asap: "Au plus vite", "1_3_mois": "Dans 1 à 3 mois", flexible: "Pas de contrainte" };
+    const rows: Array<[string, string]> = [
+      ["Projet", b.kind === "refonte" ? "Refonte d'un site existant" : "Création d'un site"],
+      ["Échéance", TIMELINE[b.timeline]!],
+      ...(b.current_url ? ([["Site actuel", b.current_url]] as Array<[string, string]>) : []),
+      ...(b.phone ? ([["Téléphone", b.phone]] as Array<[string, string]>) : []),
+      ...(b.message ? ([["Message", b.message]] as Array<[string, string]>) : []),
+    ];
+    const res = await pool.query<{ id: string }>(
+      `insert into custom_integration_requests (tenant_id, user_id, platform, title, description)
+       values ($1, $2, 'site_web', $3, $4) returning id`,
+      [
+        ws.tenantId,
+        currentUser(c).id,
+        b.kind === "refonte" ? "Refonte de site web" : "Création de site web",
+        rows.map(([k, v]) => `${k} : ${v}`).join("\n"),
+      ],
+    );
+    await audit(pool, { tenantId: ws.tenantId, actor: actorLabel(c), step: "website_request", decision: "opened" });
+    await notifySales({
+      kind: b.kind === "refonte" ? "Refonte de site web" : "Création de site web",
+      tenantId: ws.tenantId,
+      workspace: ws.displayName,
+      requester: currentUser(c).email,
+      rows: [["Profession", ws.profession ?? "—"], ["Offre", ws.entitlements.plan.name], ...rows],
+    });
+    await deliver(currentUser(c).email, templates.websiteRequestAck({ workspace: ws.displayName }));
+    await createNotification({
+      tenantId: ws.tenantId,
+      type: "website:requested",
+      title: "Demande de site web envoyée",
+      body: "L'équipe Kanso Solutions revient vers vous sous deux jours ouvrés.",
+    });
     return c.json({ ok: true, id: res.rows[0]!.id }, 201);
   });
 

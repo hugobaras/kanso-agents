@@ -13,7 +13,7 @@ import type { Me } from "@/lib/types";
 const NAV = [
   { href: "/admin", label: "Vue d'ensemble" },
   { href: "/admin/cabinets", label: "Cabinets" },
-  { href: "/admin/demandes", label: "Demandes sur mesure" },
+  { href: "/admin/demandes", label: "Demandes clients" },
   { href: "/admin/sante", label: "Santé" },
 ];
 

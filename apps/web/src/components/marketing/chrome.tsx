@@ -81,6 +81,7 @@ export function MarketingFooter() {
               ["/#fonctionnement", "Fonctionnement"],
               ["/tarifs", "Tarifs"],
               ["/demo", "Démonstration"],
+              ["/site-internet", "Création de site"],
               ["/securite", "Sécurité & RGPD"],
             ],
           },

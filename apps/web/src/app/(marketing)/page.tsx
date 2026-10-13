@@ -190,6 +190,25 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl px-5 pt-24">
+        <div className="grid items-center gap-8 rounded-2xl border border-line bg-surface p-8 md:grid-cols-[1.4fr_1fr] md:p-10">
+          <div>
+            <p className="text-sm font-medium text-accent">Kanso Solutions</p>
+            <h2 className="mt-2 font-display text-3xl">Pas encore de site internet ?</h2>
+            <p className="mt-3 text-[15px] leading-7 text-muted">
+              Nous concevons votre site professionnel — sobre, rapide, conforme à la déontologie de votre profession — avec
+              l&apos;assistant Kanso déjà intégré et les pages RGPD prêtes. Refonte d&apos;un site existant également possible.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 md:items-end">
+            <ButtonLink href="/site-internet" size="lg">
+              Découvrir l&apos;offre site
+            </ButtonLink>
+            <p className="text-xs text-subtle">Sur devis, sans engagement</p>
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-3xl px-5 py-24">
         <h2 className="text-center font-display text-4xl">Questions fréquentes</h2>
         <Faq />

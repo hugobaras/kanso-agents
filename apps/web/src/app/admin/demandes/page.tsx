@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/form";
 import { EmptyState, PageHeader, Skeleton } from "@/components/ui/misc";
@@ -15,7 +16,7 @@ export default function AdminRequests() {
   if (!data) return <Skeleton className="h-64" />;
   return (
     <>
-      <PageHeader title="Demandes d'intégration sur mesure" />
+      <PageHeader title="Demandes clients" description="Intégrations sur mesure et devis de création de site." />
       {data.requests.length === 0 ? (
         <EmptyState title="Aucune demande" />
       ) : (
@@ -24,8 +25,8 @@ export default function AdminRequests() {
             <Card key={r.id} className="p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="font-medium">
-                    {r.platform} — {r.title}
+                  <p className="flex items-center gap-2 font-medium">
+                    {r.platform === "site_web" ? <Badge tone="accent">Site web — devis</Badge> : r.platform} {r.title}
                   </p>
                   <p className="text-xs text-muted">
                     {r.display_name} ({r.tenant_id}) · {formatDate(r.created_at)}
