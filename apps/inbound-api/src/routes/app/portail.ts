@@ -27,6 +27,7 @@ import { badRequest, HttpError, notFound } from "../../http/errors.js";
 import type { AppEnv } from "../../http/types.js";
 import { deliver } from "../../services/mail.js";
 import { sendLinkEmail, type ContactRow, type DossierRow } from "../../services/portail.js";
+import { portailAiRoutes } from "./portail-ai.js";
 
 const ItemInput = z.object({
   label: z.string().trim().min(1).max(160),
@@ -346,7 +347,7 @@ export function portailRoutes() {
       pool.query(`select id, author_kind, body, created_at from portal_messages where dossier_id = $1 order by created_at`, [d.id]),
       pool.query(`select stage_labels from portal_settings where tenant_id = $1`, [ws.tenantId]),
     ]);
-    const full = await pool.query(`select id, label, hint, required, status, refusal_reason, position from portal_items where dossier_id = $1 order by position, label`, [d.id]);
+    const full = await pool.query(`select id, label, hint, required, status, refusal_reason, position, ai_excluded from portal_items where dossier_id = $1 order by position, label`, [d.id]);
     await pool.query(`update portal_messages set seen_by_other_at = now() where dossier_id = $1 and author_kind = 'client' and seen_by_other_at is null`, [d.id]);
     return c.json({
       dossier: d,
@@ -368,6 +369,7 @@ export function portailRoutes() {
         client_name: z.string().trim().max(160).optional(),
         cabinet_message: z.string().trim().max(1000).nullable().optional(),
         assignee_user_id: z.string().uuid().nullable().optional(),
+        ai_excluded: z.boolean().optional(),
       }),
     );
     if (b.assignee_user_id) {
@@ -380,6 +382,11 @@ export function portailRoutes() {
          assignee_user_id = case when $6::boolean then $7::uuid else assignee_user_id end, updated_at = now() where id = $1`,
       [d.id, b.title ?? null, b.client_name ?? null, b.cabinet_message !== undefined, b.cabinet_message ?? null, b.assignee_user_id !== undefined, b.assignee_user_id ?? null],
     );
+    if (b.ai_excluded !== undefined) {
+      await getPool().query(`update portal_dossiers set ai_excluded = $2 where id = $1`, [d.id, b.ai_excluded]);
+      if (b.ai_excluded) await getPool().query(`delete from portal_file_texts where dossier_id = $1`, [d.id]);
+      await audit(getPool(), { tenantId: ws.tenantId, actor: actorLabel(c), step: "portail.ai", decision: b.ai_excluded ? "dossier_excluded" : "dossier_included", summary: { dossier: d.id } });
+    }
     return c.json({ ok: true });
   });
 
@@ -407,12 +414,15 @@ export function portailRoutes() {
     const ws = currentWorkspace(c);
     const d = await getDossier(ws.tenantId, c.req.param("id"));
     const it = await getItem(ws.tenantId, d.id, c.req.param("itemId"));
-    const b = await body(c.req, ItemInput.partial());
+    const b = await body(c.req, ItemInput.partial().extend({ ai_excluded: z.boolean().optional() }));
     await getPool().query(
       `update portal_items set label = coalesce($2, label), hint = case when $3::boolean then $4 else hint end,
-         required = coalesce($5, required), updated_at = now() where id = $1`,
-      [it.id, b.label ?? null, b.hint !== undefined, b.hint ?? null, b.required ?? null],
+         required = coalesce($5, required), ai_excluded = coalesce($6, ai_excluded), updated_at = now() where id = $1`,
+      [it.id, b.label ?? null, b.hint !== undefined, b.hint ?? null, b.required ?? null, b.ai_excluded ?? null],
     );
+    if (b.ai_excluded) {
+      await getPool().query(`delete from portal_file_texts where file_id in (select id from portal_files where item_id = $1)`, [it.id]);
+    }
     await recomputeStage(getPool(), d.id);
     return c.json({ ok: true });
   });
@@ -603,6 +613,8 @@ export function portailRoutes() {
     await audit(getPool(), { tenantId: ws.tenantId, actor: actorLabel(c), step: "portail.dossier", decision: "deleted", summary: { dossier: d.id, reference: d.reference } });
     return c.json({ ok: true });
   });
+
+  app.route("/ai", portailAiRoutes());
 
   return app;
 }

@@ -27,19 +27,21 @@ export async function consumeQuota(
   metric: Metric,
   limit: number,
   now = new Date(),
+  amount = 1,
 ): Promise<QuotaResult> {
   const period = currentPeriod(now);
-  if (limit <= 0) {
+  if (limit <= 0 || amount > limit) {
     return { ok: false, used: await readUsage(pool, tenantId, metric, period), limit };
   }
+  // All-or-nothing: a 12-page file never half-consumes the quota.
   const res = await pool.query<{ count: number }>(
     `insert into usage_counters (tenant_id, metric, period, count)
-     values ($1, $2, $3, 1)
+     values ($1, $2, $3, $5)
      on conflict (tenant_id, metric, period)
-     do update set count = usage_counters.count + 1
-     where usage_counters.count < $4
+     do update set count = usage_counters.count + $5
+     where usage_counters.count + $5 <= $4
      returning count`,
-    [tenantId, metric, period, limit],
+    [tenantId, metric, period, limit, amount],
   );
   const row = res.rows[0];
   if (row) return { ok: true, used: row.count, limit };
@@ -68,7 +70,7 @@ export async function readAllUsage(
     `select metric, count from usage_counters where tenant_id = $1 and period = $2`,
     [tenantId, period],
   );
-  const out: Record<Metric, number> = { conversations: 0, documents: 0 };
+  const out: Record<Metric, number> = { conversations: 0, documents: 0, ai_pages: 0 };
   for (const r of res.rows) out[r.metric] = r.count;
   return out;
 }

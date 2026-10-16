@@ -16,7 +16,8 @@ export type PaidPlanId = Exclude<PlanId, "trial" | "portail_trial">;
 /** Produit facturé : un espace n'a qu'un abonnement, donc un seul produit. */
 export type PlanProduct = "assistant" | "portail";
 export type BillingInterval = "month" | "year";
-export type Metric = "conversations" | "documents";
+/** ai_pages : pages de pièces Portail analysées par l'IA. */
+export type Metric = "conversations" | "documents" | "ai_pages";
 
 export type Plan = {
   id: PlanId;
@@ -45,7 +46,7 @@ export const PLANS: Record<PlanId, Plan> = {
     monthlyPriceCents: 0,
     yearlyPriceCents: 0,
     modules: { inbound: true, document_to_action: true, portail: false },
-    quotas: { conversations: 50, documents: 20 },
+    quotas: { conversations: 50, documents: 20, ai_pages: 0 },
     seats: 2,
     integrations: "standard",
     customRequests: false,
@@ -59,7 +60,7 @@ export const PLANS: Record<PlanId, Plan> = {
     monthlyPriceCents: 4900,
     yearlyPriceCents: 49000,
     modules: { inbound: true, document_to_action: false, portail: false },
-    quotas: { conversations: 200, documents: 0 },
+    quotas: { conversations: 200, documents: 0, ai_pages: 0 },
     seats: 2,
     integrations: "email",
     customRequests: false,
@@ -78,7 +79,7 @@ export const PLANS: Record<PlanId, Plan> = {
     monthlyPriceCents: 12900,
     yearlyPriceCents: 129000,
     modules: { inbound: true, document_to_action: true, portail: false },
-    quotas: { conversations: 600, documents: 150 },
+    quotas: { conversations: 600, documents: 150, ai_pages: 0 },
     seats: 5,
     integrations: "standard",
     customRequests: false,
@@ -97,7 +98,7 @@ export const PLANS: Record<PlanId, Plan> = {
     monthlyPriceCents: 29000,
     yearlyPriceCents: 290000,
     modules: { inbound: true, document_to_action: true, portail: false },
-    quotas: { conversations: 2000, documents: 800 },
+    quotas: { conversations: 2000, documents: 800, ai_pages: 0 },
     seats: 15,
     integrations: "all",
     customRequests: true,
@@ -110,13 +111,14 @@ export const PLANS: Record<PlanId, Plan> = {
   },
   portail_trial: {
     id: "portail_trial",
+    // shortcut: trial gets 30 AI pages to evaluate the Cabinet feature; set to 0 if it must stay Cabinet-only.
     product: "portail",
     name: "Essai Portail",
     tagline: "14 jours pour tester le Portail, sans carte bancaire.",
     monthlyPriceCents: 0,
     yearlyPriceCents: 0,
     modules: { inbound: false, document_to_action: false, portail: true },
-    quotas: { conversations: 0, documents: 0 },
+    quotas: { conversations: 0, documents: 0, ai_pages: 30 },
     seats: 3,
     integrations: "email",
     customRequests: false,
@@ -130,7 +132,7 @@ export const PLANS: Record<PlanId, Plan> = {
     monthlyPriceCents: 2900,
     yearlyPriceCents: 29000,
     modules: { inbound: false, document_to_action: false, portail: true },
-    quotas: { conversations: 0, documents: 0 },
+    quotas: { conversations: 0, documents: 0, ai_pages: 0 },
     seats: 3,
     integrations: "email",
     customRequests: false,
@@ -144,11 +146,11 @@ export const PLANS: Record<PlanId, Plan> = {
     monthlyPriceCents: 6900,
     yearlyPriceCents: 69000,
     modules: { inbound: false, document_to_action: false, portail: true },
-    quotas: { conversations: 0, documents: 0 },
+    quotas: { conversations: 0, documents: 0, ai_pages: 300 },
     seats: 10,
     integrations: "email",
     customRequests: false,
-    highlights: ["Tout Portail Essentiel", "Export et clôture de dossier", "10 utilisateurs"],
+    highlights: ["Tout Portail Essentiel", "Analyse IA des pièces (300 pages / mois)", "Export et clôture de dossier", "10 utilisateurs"],
   },
 };
 
