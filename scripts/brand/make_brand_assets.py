@@ -33,12 +33,9 @@ def text_path(text, size, x, y, tracking=0.0):
     return "".join(d), cursor - x - tracking
 
 
-# Brushed ensō: outer r38 @ (48,48), inner r24 @ (54,42), 28° opening at the top.
-RING = (
-    "M38.79 11.14A38 38 0 1 0 57.21 11.14L55.49 18.05"
-    "A24 24 0 1 1 41.4 21.57Z"
-)
-DOT = (48, 28, 7)
+# Brushed ensō: outer r40.5 @ (48,48), inner r27.75 @ (51.75,43.5), opening at the top right.
+RING = "M78.10 20.90A40.5 40.5 0 1 1 42.36 7.89L43.64 16.96A27.75 27.75 0 1 0 72.92 25.56Z"
+DOT = (59.81, 15.56, 5.63)
 
 INK, PAPER, TEAL, TEAL_LIGHT, TEAL_PALE = "#1B2A4A", "#FAF8F4", "#1F6F6B", "#3FA39D", "#8FC9C2"
 
