@@ -7,7 +7,7 @@ updated: 2026-10-14
 |---|---|---|---|
 | OVHcloud (OVH SAS) | Hébergement de l'application et des fichiers | France | toutes |
 | Supabase (infrastructure AWS eu-west) | Base de données | Union européenne | toutes |
-| Mistral AI | Analyse des conversations et documents (API européenne) | France / UE | messages, contenu des documents |
+| Mistral AI | Analyse des conversations et documents (API européenne) ; pièces Kanso Portail si l'analyse IA est activée, sans conservation | France / UE | messages, contenu des documents et des pièces Portail |
 | Stripe Payments Europe | Paiement et facturation | Irlande (UE) | données de facturation du Client uniquement |
 | Fournisseur d'e-mail transactionnel | Envoi des alertes et e-mails de service | Union européenne | adresses e-mail, contenu des alertes |
 

@@ -9,3 +9,5 @@
 | Checklist DPA sous-traitants | [dpa-subprocessors.md](./dpa-subprocessors.md)       |
 | Registre des traitements     | [registre-traitements.md](./registre-traitements.md) |
 | Textes commerciaux — moyens  | [textes-moyens.md](./textes-moyens.md)               |
+| Analyse IA Portail — demande à Mistral et contrôles | [demande-zdr-mistral.md](./demande-zdr-mistral.md) |
+| Avenant « Analyse IA » (publié sur le site Portail) | [../../apps/web/content/legal/avenant-ia.md](../../apps/web/content/legal/avenant-ia.md) |

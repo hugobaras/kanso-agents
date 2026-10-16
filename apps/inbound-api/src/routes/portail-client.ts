@@ -2,6 +2,7 @@ import { createHash, randomUUID, randomBytes, timingSafeEqual } from "node:crypt
 import { templates } from "@kanso/mailer";
 import {
   CODE_MINUTES,
+  aiEffective,
   MAX_PORTAL_FILE_BYTES,
   SESSION_DAYS,
   clientBaseUrl,
@@ -52,6 +53,7 @@ type Access = {
   assignee_user_id: string | null;
   expires_at: Date;
   revoked_at: Date | null;
+  ai_excluded: boolean;
 };
 
 const MAX_FILES_PER_ITEM = 10;
@@ -82,7 +84,7 @@ async function findAccess(token: string, opts: { allowExpired?: boolean } = {}):
   if (!/^[A-Za-z0-9_-]{40,64}$/.test(token)) return null;
   const r = await getPool().query<Access>(
     `select l.id as link_id, l.expires_at, l.revoked_at, c.id as contact_id, c.name as contact_name, c.email::text as contact_email,
-            d.id as dossier_id, d.tenant_id, d.title, d.reference, d.client_name, d.stage, d.cabinet_message, d.assignee_user_id
+            d.id as dossier_id, d.tenant_id, d.title, d.reference, d.client_name, d.stage, d.cabinet_message, d.assignee_user_id, d.ai_excluded
      from portal_links l join portal_contacts c on c.id = l.contact_id join portal_dossiers d on d.id = c.dossier_id
      where l.token_hash = $1`,
     [hashToken(token)],
@@ -244,7 +246,7 @@ export function portailClientRoutes(limiter: RateLimiter) {
     const pool = getPool();
     const [brand, settings, items, files, messages] = await Promise.all([
       loadBrand(pool, a.tenant_id),
-      pool.query(`select stage_labels, welcome_message, (logo is not null) as has_logo, retention_days from portal_settings where tenant_id = $1`, [a.tenant_id]),
+      pool.query(`select stage_labels, welcome_message, (logo is not null) as has_logo, retention_days, ai_enabled, ai_terms_version from portal_settings where tenant_id = $1`, [a.tenant_id]),
       pool.query(`select id, label, hint, required, status, refusal_reason from portal_items where dossier_id = $1 order by position, label`, [a.dossier_id]),
       pool.query(`select id, item_id, filename, size_bytes, created_at from portal_files where dossier_id = $1 and deleted_at is null and scan_status = 'clean' order by created_at`, [a.dossier_id]),
       pool.query(`select id, author_kind, body, created_at from portal_messages where dossier_id = $1 order by created_at`, [a.dossier_id]),
@@ -259,6 +261,8 @@ export function portailClientRoutes(limiter: RateLimiter) {
       items: items.rows.map((i) => ({ ...i, files: files.rows.filter((f) => f.item_id === i.id) })),
       messages: messages.rows,
       max_file_mb: MAX_PORTAL_FILE_BYTES / 1024 / 1024,
+      // Transparency: the client is told when the cabinet has its documents read by AI.
+      ai_analysis: aiEffective(s) && !a.ai_excluded,
     });
   });
 
