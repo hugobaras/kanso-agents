@@ -6,8 +6,8 @@
  * peu d'ombres, pas de dégradés. Contrastes AA sur fond papier et blanc.
  */
 @theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-serif: var(--font-source-serif), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
 
   --color-ink: #1b2a4a;
   --color-ink-soft: #2c3d63;

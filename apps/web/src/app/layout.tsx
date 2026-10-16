@@ -1,15 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Source_Serif_4 } from "next/font/google";
+import { Newsreader, Poppins } from "next/font/google";
 import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
 
 // next/font self-hosts the files at build time: no request to Google at runtime.
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const serif = Source_Serif_4({
+const poppins = Poppins({
   subsets: ["latin"],
-  variable: "--font-source-serif",
+  variable: "--font-poppins",
   display: "swap",
-  weight: ["400", "600"],
+  weight: ["400", "500", "600", "700"],
+});
+const serif = Newsreader({
+  subsets: ["latin"],
+  variable: "--font-newsreader",
+  display: "swap",
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -29,7 +34,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={`${inter.variable} ${serif.variable}`}>
+    <html lang="fr" className={`${poppins.variable} ${serif.variable}`}>
       <body className="min-h-dvh">
         <ToastProvider>{children}</ToastProvider>
       </body>
