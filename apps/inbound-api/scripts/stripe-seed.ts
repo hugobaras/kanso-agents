@@ -5,7 +5,7 @@
  *   STRIPE_SECRET_KEY=sk_test_… pnpm --filter @kanso/inbound-api stripe:seed
  */
 import Stripe from "stripe";
-import { lookupKey, PAID_PLANS, PLANS, type BillingInterval } from "@kanso/billing";
+import { lookupKey, ALL_PAID_PLANS, PLANS, type BillingInterval } from "@kanso/billing";
 
 const key = process.env.STRIPE_SECRET_KEY;
 if (!key) {
@@ -18,7 +18,7 @@ if (key.startsWith("sk_live_") && process.env.KANSO_STRIPE_ALLOW_LIVE !== "1") {
 }
 const stripe = new Stripe(key);
 
-async function ensureProduct(planId: (typeof PAID_PLANS)[number]): Promise<string> {
+async function ensureProduct(planId: (typeof ALL_PAID_PLANS)[number]): Promise<string> {
   const plan = PLANS[planId];
   const found = await stripe.products.search({ query: `metadata['kanso_plan']:'${planId}'` });
   if (found.data[0]) return found.data[0].id;
@@ -31,7 +31,7 @@ async function ensureProduct(planId: (typeof PAID_PLANS)[number]): Promise<strin
   return product.id;
 }
 
-async function ensurePrice(planId: (typeof PAID_PLANS)[number], productId: string, interval: BillingInterval) {
+async function ensurePrice(planId: (typeof ALL_PAID_PLANS)[number], productId: string, interval: BillingInterval) {
   const lk = lookupKey(planId, interval);
   const existing = await stripe.prices.list({ lookup_keys: [lk], limit: 1 });
   const amount = interval === "year" ? PLANS[planId].yearlyPriceCents : PLANS[planId].monthlyPriceCents;
@@ -53,7 +53,7 @@ async function ensurePrice(planId: (typeof PAID_PLANS)[number], productId: strin
   return price.id;
 }
 
-for (const planId of PAID_PLANS) {
+for (const planId of ALL_PAID_PLANS) {
   const productId = await ensureProduct(planId);
   for (const interval of ["month", "year"] as const) {
     const priceId = await ensurePrice(planId, productId, interval);

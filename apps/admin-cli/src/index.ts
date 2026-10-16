@@ -194,13 +194,13 @@ async function main() {
 
   if (cmd === "set-plan") {
     const [tenantId, plan, ...rest] = args;
-    if (!tenantId || !["trial", "essentiel", "cabinet", "expert"].includes(plan ?? "")) {
+    if (!tenantId || !["trial", "essentiel", "cabinet", "expert", "portail_trial", "portail_essentiel", "portail_cabinet"].includes(plan ?? "")) {
       usage();
       process.exit(1);
     }
     requireTenantId(tenantId);
     const statusIdx = rest.indexOf("--status");
-    const status = statusIdx >= 0 ? rest[statusIdx + 1] : plan === "trial" ? "trialing" : "active";
+    const status = statusIdx >= 0 ? rest[statusIdx + 1] : plan === "trial" || plan === "portail_trial" ? "trialing" : "active";
     const daysIdx = rest.indexOf("--trial-days");
     const days = daysIdx >= 0 ? Number(rest[daysIdx + 1]) : 14;
     const pool = getPool();
