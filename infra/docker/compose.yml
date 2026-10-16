@@ -1,4 +1,5 @@
 # Local / single-host stack. Secrets below are dev-only placeholders.
+# Ports bound to 127.0.0.1: Docker bypasses ufw, so 0.0.0.0 would expose the DB to the internet.
 services:
   db:
     image: postgres:17-alpine
@@ -7,7 +8,7 @@ services:
       POSTGRES_PASSWORD: kanso
       POSTGRES_DB: kanso
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - kanso_pg:/var/lib/postgresql/data
     healthcheck:
@@ -33,7 +34,7 @@ services:
   clamav:
     image: clamav/clamav:stable
     ports:
-      - "3310:3310"
+      - "127.0.0.1:3310:3310"
     healthcheck:
       test: ["CMD", "clamdcheck.sh"]
       interval: 30s
@@ -47,7 +48,7 @@ services:
       dockerfile: infra/docker/Dockerfile
       target: api
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment: &app_env
       KANSO_ENV: local
       PORT: "3000"
@@ -97,7 +98,7 @@ services:
         NEXT_PUBLIC_URL_SITE: ${NEXT_PUBLIC_URL_SITE:-}
         NEXT_PUBLIC_URL_PORTAIL: ${NEXT_PUBLIC_URL_PORTAIL:-}
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
     environment:
       INTERNAL_API_URL: http://inbound-api:3000
       KANSO_HOST_SOLUTIONS: ${KANSO_HOST_SOLUTIONS:-}
