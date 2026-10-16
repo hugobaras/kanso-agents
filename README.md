@@ -6,7 +6,7 @@ Gamme de produits pour les professions du droit et du chiffre (avocats, experts-
 | ------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | **Kanso Assistant** | Assistant d'accueil (qualification des demandes) + traitement de documents, en SaaS self-serve | Disponible                                                 |
 | **Kanso Site**      | Création de sites sur mesure pour les cabinets                                                 | Vitrine + demande de devis ; prestation réalisée à la main |
-| **Kanso Portail**   | Espace client sécurisé                                                                         | Bêta fermée : dépôt de pièces chiffré, suivi de dossier (`docs/portail-v1.md`)          |
+| **Kanso Portail**   | Espace client sécurisé, autonome : inscription, connexion, espace cabinet et facturation sur son propre domaine | Disponible : essai 14 jours, Portail Essentiel 29 € / Cabinet 69 € HT par mois (`docs/portail-v1.md`) |
 
 Une seule app Next.js (`apps/web`) sert les quatre sites : Kanso Solutions (ombrelle), Assistant, Site, Portail. En local : `/` (Kanso Solutions), `/assistant`, `/site`, `/portail` ; l'application d'Assistant reste à la racine (`/connexion`, `/inscription`, `/app`). En production : un domaine par site, voir `.env.example`.
 
