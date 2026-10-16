@@ -58,6 +58,7 @@ describe.skipIf(!hasDb)("Kanso Portail autonome", () => {
   const assEmail = `assistant-${suffix}@example.com`;
   let wsP = "";
   let wsA = "";
+  const extra: string[] = [];
 
   beforeAll(async () => {
     const p = await signup(pro, proEmail, "portail");
@@ -70,7 +71,7 @@ describe.skipIf(!hasDb)("Kanso Portail autonome", () => {
 
   afterAll(async () => {
     const pool = getPool();
-    await pool.query(`delete from tenants where tenant_id = any($1)`, [[wsP, wsA]]);
+    await pool.query(`delete from tenants where tenant_id = any($1)`, [[wsP, wsA, ...extra]]);
     await pool.query(`delete from users where email like $1`, [`%-${suffix}@example.com`]);
   });
 
@@ -127,6 +128,20 @@ describe.skipIf(!hasDb)("Kanso Portail autonome", () => {
     } finally {
       delete process.env.STRIPE_SECRET_KEY;
     }
+  });
+
+  it("keeps Portail dossiers out of a staff support session", async () => {
+    const staff: Jar = {};
+    const r = await signup(staff, `staff-${suffix}@example.com`);
+    await getPool().query(`update users set is_staff = true where email = $1`, [`staff-${suffix}@example.com`]);
+    extra.push(r.json.workspace);
+    const imp = await call(staff, "POST", `/api/admin/tenants/${wsP}/impersonate`);
+    expect(imp.status).toBe(200);
+    expect((await call(staff, "GET", `/api/app/${wsP}/portail/settings`)).status).toBe(200);
+    const blocked = await call(staff, "GET", `/api/app/${wsP}/portail/dossiers/00000000-0000-0000-0000-000000000000`);
+    expect(blocked.status).toBe(403);
+    expect(blocked.json.error).toBe("support_restricted");
+    expect((await call(staff, "POST", `/api/app/${wsP}/billing/portal`)).json.error).toBe("support_restricted");
   });
 
   it("activates Portail Cabinet from a signed Stripe webhook", async () => {

@@ -3,7 +3,7 @@ import { getPool } from "@kanso/tenancy";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
-import { csrfGuard, loadSession, requireUser, requireWorkspace } from "./auth/middleware.js";
+import { csrfGuard, loadSession, requireUser, requireWorkspace, supportGuard } from "./auth/middleware.js";
 import { resolveCorsOrigin } from "./cors-origins.js";
 import { devToolsEnabled, legacyWidgetEnabled } from "./env.js";
 import { buildHealth } from "./health.js";
@@ -102,7 +102,7 @@ export function createApp(deps: AppDeps = {}) {
   if (devToolsEnabled()) app.route("/api/dev", devRoutes());
 
   const ws = new Hono<AppEnv>();
-  ws.use("*", requireUser, csrfGuard, requireWorkspace("member"));
+  ws.use("*", requireUser, csrfGuard, requireWorkspace("member"), supportGuard);
   ws.route("/", overviewRoutes());
   ws.route("/leads", leadsRoutes());
   ws.route("/assistant", assistantRoutes(limiter));
