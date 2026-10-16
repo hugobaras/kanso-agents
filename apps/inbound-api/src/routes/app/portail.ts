@@ -19,7 +19,7 @@ import { getPool } from "@kanso/tenancy";
 import { zipSync } from "fflate";
 import { Hono } from "hono";
 import { z } from "zod";
-import { actorLabel, assertModule, assertRole, currentUser, currentWorkspace } from "../../auth/middleware.js";
+import { actorLabel, assertActive, assertModule, assertRole, currentUser, currentWorkspace } from "../../auth/middleware.js";
 import { audit } from "../../auth/service.js";
 import { masterKey } from "../../env.js";
 import { body } from "../../http/body.js";
@@ -81,6 +81,11 @@ export function portailRoutes() {
   const app = new Hono<AppEnv>();
   app.use("*", async (c, next) => {
     assertModule(c, "portail");
+    // Sans abonnement actif : lecture, export, clôture et suppression seulement (le cabinet récupère ses pièces).
+    const m = c.req.method;
+    const p = c.req.path.replace(/\/$/, "");
+    const allowed = (m === "DELETE" && /\/dossiers\/[^/]+$/.test(p)) || (m === "POST" && /\/dossiers\/[^/]+\/close$/.test(p));
+    if (m !== "GET" && !allowed) assertActive(c);
     await next();
   });
 
