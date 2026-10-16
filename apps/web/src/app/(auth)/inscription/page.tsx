@@ -9,6 +9,7 @@ import { Checkbox, Field, Input } from "@/components/ui/form";
 import { Alert } from "@/components/ui/misc";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { useAuthProduct, withProduct } from "@/lib/product";
 import { siteHref } from "@/lib/sites";
 
 const PROFESSIONS = [
@@ -20,6 +21,7 @@ const PROFESSIONS = [
 
 function SignupForm() {
   const router = useRouter();
+  const product = useAuthProduct();
   const params = useSearchParams();
   const initial = PROFESSIONS.find((p) => p.id === params.get("profession"))?.id ?? "avocat";
   const [form, setForm] = useState({
@@ -45,8 +47,8 @@ function SignupForm() {
     }
     setLoading(true);
     try {
-      const r = await api<{ workspace: string }>("/api/auth/signup", { body: form });
-      router.replace(`/app/${r.workspace}/bienvenue`);
+      const r = await api<{ workspace: string }>("/api/auth/signup", { body: { ...form, product } });
+      router.replace(product === "portail" ? `/app/${r.workspace}/portail` : `/app/${r.workspace}/bienvenue`);
     } catch (err) {
       if (err instanceof ApiError && err.details) {
         setFieldErrors(Object.fromEntries(err.details.map((d) => [d.path, d.message])));
@@ -60,10 +62,10 @@ function SignupForm() {
 
   return (
     <div>
-      <h1 className="font-display text-3xl">Créez votre espace</h1>
+      <h1 className="font-display text-3xl">{product === "portail" ? "Créez votre espace Portail" : "Créez votre espace"}</h1>
       <p className="mt-2 text-sm text-muted">
         14 jours d&apos;essai complet, sans carte bancaire. Déjà inscrit ?{" "}
-        <Link href="/connexion" className="font-medium text-accent hover:underline">
+        <Link href={withProduct(product, "/connexion")} className="font-medium text-accent hover:underline">
           Se connecter
         </Link>
       </p>

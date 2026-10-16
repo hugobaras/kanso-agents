@@ -12,6 +12,9 @@ import { NextResponse, type NextRequest } from "next/server";
  * _SITE / _PORTAIL, noms d'hôte sans schéma) : le domaine d'un site sert ses
  * pages à la racine (réécriture vers /site, /portail, /assistant) et refuse
  * celles des autres sites. Sans hôte reconnu (localhost), aucune réécriture.
+ * Le Portail est autonome : son domaine sert aussi l'authentification et
+ * l'espace cabinet (/app, /connexion, /inscription…), comme l'Assistant.
+ * L'en-tête x-kanso-product indique au rendu quel produit habille l'authentification.
  */
 type SiteId = "solutions" | "assistant" | "site" | "portail";
 
@@ -53,6 +56,8 @@ export function proxy(request: NextRequest) {
         url.pathname = `/assistant${pathname === "/" ? "" : pathname}`;
         return NextResponse.rewrite(url);
       }
+    } else if (site === "portail" && APP_AREA.test(pathname)) {
+      // Espace cabinet et authentification du Portail : servis tels quels.
     } else {
       if (SITE_PREFIX.test(pathname) || APP_AREA.test(pathname)) return notFound();
       const url = request.nextUrl.clone();
@@ -61,6 +66,10 @@ export function proxy(request: NextRequest) {
     }
   }
 
+  const portailAuth = site === "portail" || request.nextUrl.searchParams.get("produit") === "portail";
+  const headers = new Headers(request.headers);
+  headers.set("x-kanso-product", portailAuth ? "portail" : "assistant");
+
   // Contrôle optimiste : l'autorisation réelle reste côté API à chaque appel.
   if (AUTH_AREA.test(pathname) && !request.cookies.has("kanso_session")) {
     const url = request.nextUrl.clone();
@@ -68,7 +77,7 @@ export function proxy(request: NextRequest) {
     url.search = `?suite=${encodeURIComponent(pathname + search)}`;
     return NextResponse.redirect(url);
   }
-  return NextResponse.next();
+  return NextResponse.next({ request: { headers } });
 }
 
 export const config = {

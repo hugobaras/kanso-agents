@@ -63,6 +63,7 @@ export default function SettingsPage() {
           )}
         </Card>
 
+        {ent.product !== "portail" && (
         <Card>
           <CardHeader title="Modules" description="Désactivez un module que vous n'utilisez pas : il disparaît de l'interface." />
           <CardBody className="divide-y divide-line py-0">
@@ -90,6 +91,7 @@ export default function SettingsPage() {
             })}
           </CardBody>
         </Card>
+        )}
 
         <Link href={`/app/${ws}/parametres/donnees`} className="group block">
           <Card className="transition-colors group-hover:border-line-strong">

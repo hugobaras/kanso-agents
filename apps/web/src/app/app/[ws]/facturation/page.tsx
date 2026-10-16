@@ -53,7 +53,7 @@ function BillingInner() {
   if (!data) return <PageSpinner />;
   const ent = data.entitlements;
   const st = STATUS[ent.status];
-  const paid = ent.plan !== "trial" && ent.status !== "canceled";
+  const paid = !ent.plan.endsWith("trial") && ent.plan !== "trial" && ent.status !== "canceled";
 
   async function go(path: string, body?: unknown, key = path) {
     setBusy(key);
@@ -67,7 +67,9 @@ function BillingInner() {
   }
 
   const meters = [
-    { label: "Conversations ce mois", used: data.usage.conversations, max: ent.quotas.conversations },
+    ...(ent.quotas.conversations > 0
+      ? [{ label: "Conversations ce mois", used: data.usage.conversations, max: ent.quotas.conversations }]
+      : []),
     ...(ent.quotas.documents > 0 ? [{ label: "Documents ce mois", used: data.usage.documents, max: ent.quotas.documents }] : []),
     { label: "Utilisateurs", used: data.usage.seats, max: ent.seats },
   ];
@@ -127,7 +129,7 @@ function BillingInner() {
               plan={p}
               interval={interval}
               current={current}
-              featured={p.id === "cabinet"}
+              featured={p.id === "cabinet" || p.id === "portail_cabinet"}
               action={
                 can("owner") ? (
                   <Button
