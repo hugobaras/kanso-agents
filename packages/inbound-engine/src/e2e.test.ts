@@ -45,6 +45,7 @@ describe("inbound e2e mock", () => {
       config,
       llm,
       alerts,
+      now: new Date("2026-10-12T10:00:00Z"),
       auth: {
         provider: "email",
         tenantId: "cabinet-durand",

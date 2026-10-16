@@ -13,7 +13,8 @@ async function main() {
   );
   await persistWorkerHeartbeat({ last: "starting" });
 
-  if (process.env.KANSO_WORKER_BOOTSTRAP !== "0") {
+  // Legacy self-test of the mock pipeline (opt-in since the SaaS redesign).
+  if (process.env.KANSO_WORKER_BOOTSTRAP === "1") {
     const result = await processOnceMock();
     console.log(
       JSON.stringify({

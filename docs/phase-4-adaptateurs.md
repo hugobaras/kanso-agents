@@ -1,6 +1,6 @@
 # Phase 4 — Adaptateurs
 
-**Produit :** Kanso Solutions (shbt studio SAS)  
+**Produit :** Kanso Solutions (SHBT-STUDIO SAS)  
 **Date :** 2026-10-10  
 **Statut :** validé (2026-10-10)  
 **Prérequis :** [phase-3-moteur-inbound.md](./phase-3-moteur-inbound.md), [phase-2-configuration-client.md](./phase-2-configuration-client.md)
@@ -11,13 +11,13 @@ Définir les contrats d’interface communs (CRM, agenda, alertes, sources docum
 
 ## Décisions retenues
 
-| Sujet | Choix | Source |
-|-------|--------|--------|
-| Forme du contrat | Interfaces TS par catégorie + résultat `ok \| retryable \| fatal` | Q1 = 1 (recommandé) |
-| Retry | Exponentiel borné (3 essais) puis dead letter / anomalie | Q2 = 1 |
-| Priorité connecteurs | Grille TPE/PME FR (ci-dessous) | Q3 = 1 |
-| Secrets | Résolution `secret_ref` hors adaptateur ; client auth injecté | Q4 = 1 |
-| Rate limit | Par `tenant_id` + provider | Q5 = 2 |
+| Sujet                | Choix                                                             | Source              |
+| -------------------- | ----------------------------------------------------------------- | ------------------- |
+| Forme du contrat     | Interfaces TS par catégorie + résultat `ok \| retryable \| fatal` | Q1 = 1 (recommandé) |
+| Retry                | Exponentiel borné (3 essais) puis dead letter / anomalie          | Q2 = 1              |
+| Priorité connecteurs | Grille TPE/PME FR (ci-dessous)                                    | Q3 = 1              |
+| Secrets              | Résolution `secret_ref` hors adaptateur ; client auth injecté     | Q4 = 1              |
+| Rate limit           | Par `tenant_id` + provider                                        | Q5 = 2              |
 
 ## Architecture d’appel
 
@@ -43,7 +43,7 @@ Règles :
 
 1. Aucun adaptateur ne lit Vault / env lui-même.
 2. `AdapterRegistry` mappe `provider` string (config) → implémentation.
-3. Toute écriture externe est **idempotente** quand le provider le permet (`Idempotency-Key` ou clé métier) — *hypothèse à vérifier* par API.
+3. Toute écriture externe est **idempotente** quand le provider le permet (`Idempotency-Key` ou clé métier) — _hypothèse à vérifier_ par API.
 4. Engagement = **tentative + journal** ; pas de « sync garantie ».
 
 ## Résultat commun
@@ -62,34 +62,34 @@ AdapterContext = {
 }
 ```
 
-Classification minimale des erreurs HTTP (*hypothèse* — affiner par provider) :
+Classification minimale des erreurs HTTP (_hypothèse_ — affiner par provider) :
 
-| Signal | status |
-|--------|--------|
-| 408, 429, 500–504, réseau | `retryable` |
-| 401, 403 (après auth valide côté Kanso) | `fatal` (secret/permissions) |
-| 400, 404, 422 métier | `fatal` (payload) sauf cas documentés retryable |
+| Signal                                  | status                                          |
+| --------------------------------------- | ----------------------------------------------- |
+| 408, 429, 500–504, réseau               | `retryable`                                     |
+| 401, 403 (après auth valide côté Kanso) | `fatal` (secret/permissions)                    |
+| 400, 404, 422 métier                    | `fatal` (payload) sauf cas documentés retryable |
 
 ## Retry
 
-| Paramètre | Valeur MVP |
-|-----------|------------|
-| `max_attempts` | 3 |
-| Backoff | exponentiel : base 1s, facteur 2, jitter ±20% (*hypothèse*) |
-| Respect `retry_after_ms` / header `Retry-After` | oui si présent |
-| Après échec | Inbound → `ClosedDegraded` + log ; Document-to-Action → file anomalies (phase 5) |
-| Dead letter | table `adapter_dead_letters` (tenant_id, category, payload ref, last_error) |
+| Paramètre                                       | Valeur MVP                                                                       |
+| ----------------------------------------------- | -------------------------------------------------------------------------------- |
+| `max_attempts`                                  | 3                                                                                |
+| Backoff                                         | exponentiel : base 1s, facteur 2, jitter ±20% (_hypothèse_)                      |
+| Respect `retry_after_ms` / header `Retry-After` | oui si présent                                                                   |
+| Après échec                                     | Inbound → `ClosedDegraded` + log ; Document-to-Action → file anomalies (phase 5) |
+| Dead letter                                     | table `adapter_dead_letters` (tenant_id, category, payload ref, last_error)      |
 
 Pas de retry infini. Pas de retry sur `fatal`.
 
 ## Rate limiting
 
 - Clé : `(tenant_id, provider)`.
-- Compteur / fenêtre en Postgres (pas Redis) — *hypothèse H-017* : fenêtre glissante 1 minute suffisante.
+- Compteur / fenêtre en Postgres (pas Redis) — _hypothèse H-017_ : fenêtre glissante 1 minute suffisante.
 - Défauts globaux par provider (overridable plus tard) ; si dépassé → `retryable` avec `retry_after_ms`.
 - Un tenant ne doit pas épuiser le quota d’un autre (clés séparées).
 
-Quotas numériques exacts = *hypothèse à vérifier* selon plans API des providers choisis.
+Quotas numériques exacts = _hypothèse à vérifier_ selon plans API des providers choisis.
 
 ## Secrets / AuthContext
 
@@ -148,7 +148,7 @@ bookSlot(input: {
 ```
 
 MVP Inbound : n’appeler que si `integrations.calendar` présent (phase 2/3).  
-*Hypothèse :* Calendly expose des slots via API utilisable sous ce contrat — à valider avant implémentation rang 2.
+_Hypothèse :_ Calendly expose des slots via API utilisable sous ce contrat — à valider avant implémentation rang 2.
 
 ### 4. Sources documents — `DocumentSourceAdapter`
 
@@ -185,13 +185,13 @@ createDraft(input: {
 
 Grille TPE/PME FR. Rang 1 = premier à implémenter ; rang 2 = suivant.
 
-| Catégorie | Rang 1 | Rang 2 | Notes |
-|-----------|--------|--------|-------|
-| **Alertes** | `email` (SMTP ou API transactionnelle UE) | `slack` (incoming webhook ou Web API) | Couvre phase 2 obligatoire |
-| **CRM** | `hubspot` | `sellsy` | Sellsy aussi cible compta : packages séparés, credentials séparés |
-| **Agenda** | `google_calendar` | `calendly` | Uniquement si config `integrations.calendar` |
-| **Sources documents** | `email_inbox` | `upload_web` | Drive/Dropbox après pilote |
-| **Cibles écriture** | `pennylane` | `sellsy` | Mode `draft` par défaut |
+| Catégorie             | Rang 1                                    | Rang 2                                | Notes                                                             |
+| --------------------- | ----------------------------------------- | ------------------------------------- | ----------------------------------------------------------------- |
+| **Alertes**           | `email` (SMTP ou API transactionnelle UE) | `slack` (incoming webhook ou Web API) | Couvre phase 2 obligatoire                                        |
+| **CRM**               | `hubspot`                                 | `sellsy`                              | Sellsy aussi cible compta : packages séparés, credentials séparés |
+| **Agenda**            | `google_calendar`                         | `calendly`                            | Uniquement si config `integrations.calendar`                      |
+| **Sources documents** | `email_inbox`                             | `upload_web`                          | Drive/Dropbox après pilote                                        |
+| **Cibles écriture**   | `pennylane`                               | `sellsy`                              | Mode `draft` par défaut                                           |
 
 ### Hors rang 1–2 MVP (backlog explicite)
 
@@ -202,11 +202,11 @@ Grille TPE/PME FR. Rang 1 = premier à implémenter ; rang 2 = suivant.
 
 ### Ordre de chantier global suggéré (90 jours → phase 9)
 
-1. Alertes `email` + `slack`  
-2. Sources `email_inbox` + `upload_web`  
-3. Cible `pennylane`  
-4. CRM `hubspot`  
-5. Agenda `google_calendar`  
+1. Alertes `email` + `slack`
+2. Sources `email_inbox` + `upload_web`
+3. Cible `pennylane`
+4. CRM `hubspot`
+5. Agenda `google_calendar`
 6. Rang 2 restants (`sellsy` CRM/cible, `calendly`)
 
 ## Observabilité minimale
@@ -216,9 +216,9 @@ Compteurs coût provider hors scope détaillé (phase 6).
 
 ## Hors périmètre
 
-- Implémentation SDK / tests d’intégration réels (phase 7+)  
-- Détail file d’anomalies Document-to-Action (phase 5)  
-- DPA / localisation de chaque provider (phase 6 — *critique avant prod*)  
+- Implémentation SDK / tests d’intégration réels (phase 7+)
+- Détail file d’anomalies Document-to-Action (phase 5)
+- DPA / localisation de chaque provider (phase 6 — _critique avant prod_)
 
 ## Ce qui reste incertain
 
@@ -229,12 +229,12 @@ Compteurs coût provider hors scope détaillé (phase 6).
 
 ## Risques
 
-| Risque | Impact | Mitigation |
-|--------|--------|------------|
-| Surface 10 connecteurs | Dilution avant pilote | Respecter l’ordre global ; pilote peut n’en activer que 3–4 |
-| Sellsy double casquette | Confusion credentials | Deux `provider` keys / secret_ref distincts |
-| 429 mal gérés | Jobs bloqués | Rate limit tenant + Retry-After |
-| Provider hors UE | Non-conformité discours RGPD | Checklist phase 6 avant activation prod |
+| Risque                  | Impact                       | Mitigation                                                  |
+| ----------------------- | ---------------------------- | ----------------------------------------------------------- |
+| Surface 10 connecteurs  | Dilution avant pilote        | Respecter l’ordre global ; pilote peut n’en activer que 3–4 |
+| Sellsy double casquette | Confusion credentials        | Deux `provider` keys / secret_ref distincts                 |
+| 429 mal gérés           | Jobs bloqués                 | Rate limit tenant + Retry-After                             |
+| Provider hors UE        | Non-conformité discours RGPD | Checklist phase 6 avant activation prod                     |
 
 ## Question de validation
 

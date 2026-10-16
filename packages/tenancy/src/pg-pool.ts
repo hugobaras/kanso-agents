@@ -15,6 +15,25 @@ export function getPool(databaseUrl = process.env.DATABASE_URL): pg.Pool {
   return pool;
 }
 
+/** Run `fn` in a transaction on a dedicated client (commit / rollback handled). */
+export async function withTransaction<T>(
+  p: pg.Pool,
+  fn: (client: pg.PoolClient) => Promise<T>,
+): Promise<T> {
+  const client = await p.connect();
+  try {
+    await client.query("begin");
+    const out = await fn(client);
+    await client.query("commit");
+    return out;
+  } catch (err) {
+    await client.query("rollback").catch(() => undefined);
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 export async function withTenantLocal<T>(
   databaseUrl: string,
   tenantId: string,

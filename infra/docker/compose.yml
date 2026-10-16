@@ -1,3 +1,4 @@
+# Local / single-host stack. Secrets below are dev-only placeholders.
 services:
   db:
     image: postgres:17-alpine
@@ -9,40 +10,94 @@ services:
       - "5433:5432"
     volumes:
       - kanso_pg:/var/lib/postgresql/data
-      - ../../supabase/migrations:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kanso -d kanso"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  inbound-api:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile.api
-    ports:
-      - "3000:3000"
+  # One-shot: applies supabase/migrations (tracked in schema_migrations).
+  migrate:
+    image: postgres:17-alpine
+    entrypoint: ["sh", "/repo/scripts/apply-migrations.sh"]
     environment:
-      KANSO_ENV: local
-      PORT: "3000"
       DATABASE_URL: postgres://kanso:kanso@db:5432/kanso
-      KANSO_MASTER_KEY: local-dev-only-change-me
-      KANSO_SESSION_TTL_MINUTES: "30"
+    volumes:
+      - ../../supabase:/repo/supabase:ro
+      - ../../scripts:/repo/scripts:ro
     depends_on:
       db:
         condition: service_healthy
+
+  # Antivirus des dépôts Kanso Portail (clamd, port 3310). Première mise à jour des signatures : ~1 min.
+  clamav:
+    image: clamav/clamav:stable
+    ports:
+      - "3310:3310"
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+
+  inbound-api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+      target: api
+    ports:
+      - "3000:3000"
+    environment: &app_env
+      KANSO_ENV: local
+      PORT: "3000"
+      DATABASE_URL: postgres://kanso:kanso@db:5432/kanso
+      KANSO_MASTER_KEY: local-dev-only-change-me-32chars!
+      KANSO_APP_URL: http://localhost:3001
+      KANSO_PUBLIC_URL: http://localhost:3000
+      KANSO_STORAGE_DIR: /data/storage
+      CLAMD_HOST: clamav
+      KANSO_PORTAIL_URL: ${KANSO_PORTAIL_URL:-http://localhost:3001}
+      # Platform SMTP (empty = console transport + dev outbox):
+      KANSO_SMTP_URL: ${KANSO_SMTP_URL:-}
+      KANSO_MAIL_FROM: ${KANSO_MAIL_FROM:-Kanso <no-reply@kanso.fr>}
+      KANSO_SALES_EMAIL: ${KANSO_SALES_EMAIL:-bonjour@kanso.fr}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    volumes:
+      - kanso_storage:/data/storage
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
   document-worker:
     build:
       context: ../..
-      dockerfile: infra/docker/Dockerfile.worker
+      dockerfile: infra/docker/Dockerfile
+      target: worker
     environment:
-      KANSO_ENV: local
-      DATABASE_URL: postgres://kanso:kanso@db:5432/kanso
-      KANSO_MASTER_KEY: local-dev-only-change-me
+      <<: *app_env
+    volumes:
+      - kanso_storage:/data/storage
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+      target: web
+      args:
+        NEXT_PUBLIC_APP_URL: http://localhost:3001
+    ports:
+      - "3001:3001"
+    environment:
+      INTERNAL_API_URL: http://inbound-api:3000
+    depends_on:
+      - inbound-api
 
 volumes:
   kanso_pg:
+  kanso_storage:

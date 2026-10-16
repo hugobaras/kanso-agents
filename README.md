@@ -1,63 +1,71 @@
 # Kanso Solutions
 
-Mono-dépôt TypeScript — moteurs agentiques configurables (**Inbound** + **Document-to-Action**).
+Gamme de produits pour les professions du droit et du chiffre (avocats, experts-comptables, notaires), éditée par SHBT-STUDIO SAS.
 
-## Prérequis
+| Produit             | Rôle                                                                                           | État                                                       |
+| ------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| **Kanso Assistant** | Assistant d'accueil (qualification des demandes) + traitement de documents, en SaaS self-serve | Disponible                                                 |
+| **Kanso Site**      | Création de sites sur mesure pour les cabinets                                                 | Vitrine + demande de devis ; prestation réalisée à la main |
+| **Kanso Portail**   | Espace client sécurisé                                                                         | Bêta fermée : dépôt de pièces chiffré, suivi de dossier (`docs/portail-v1.md`)          |
 
-- Node.js 22+
-- pnpm 11+
-- Docker (Postgres local, port hôte **5433**)
+Une seule app Next.js (`apps/web`) sert les quatre sites : Kanso Solutions (ombrelle), Assistant, Site, Portail. En local : `/` (Kanso Solutions), `/assistant`, `/site`, `/portail` ; l'application d'Assistant reste à la racine (`/connexion`, `/inscription`, `/app`). En production : un domaine par site, voir `.env.example`.
 
-## Commandes
+- **Assistant d'accueil** : widget à intégrer sur le site du cabinet, qualifie les demandes (questions + score), alerte par e-mail / Slack, suivi dans l'espace.
+- **Traitement des documents** : factures et devis (PDF, scans), extraction (texte PDF ou OCR Mistral UE), contrôles (totaux, doublons, IBAN, seuil), validation humaine, brouillon Pennylane / Sellsy.
+- **Self-serve** : inscription, essai 14 jours, abonnements Stripe, équipe, intégrations, RGPD en libre-service, back-office staff.
+- **Kanso Site** : demande de devis publique, ou depuis l'espace Assistant pour les cabinets sans site.
+
+## Architecture
+
+| Chemin                 | Rôle                                                                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `packages/portal`      | Kanso Portail : chiffrement enveloppe, stockage objet, antivirus (clamd), modèles de dossiers, étapes. |
+| `apps/web`             | Next.js 16 : les 4 sites (Solutions, Assistant, Site, Portail), authentification, tableau de bord, back-office (`/admin`). Proxy `/api/*` → API. |
+| `apps/inbound-api`     | API Hono (seul backend) : `/api/auth`, `/api/app/:workspace`, `/api/admin`, `/api/stripe/webhook`, `/v1/widget/*`, `/widget/kanso-widget.js`.    |
+| `apps/inbound-widget`  | Widget embarqué (Shadow DOM, ~7 Ko gzip).                                                                                                        |
+| `apps/document-worker` | File de documents (Postgres SKIP LOCKED) + tâches planifiées.                                                                                    |
+| `apps/admin-cli`       | Opérations : membres, staff, offres, secrets, purge.                                                                                             |
+| `packages/*`           | `config` (schémas + modèles métier), `inbound-engine`, `document-pipeline`, `llm`, `adapters`, `tenancy`, `billing`, `mailer`, `shared`.         |
+| `supabase/migrations`  | Schéma Postgres (appliqué par `scripts/apply-migrations.sh`, suivi dans `schema_migrations`).                                                    |
+
+## Démarrage local
+
+Prérequis : Node 22+, pnpm 11, Docker, `psql`.
 
 ```bash
 pnpm install
-pnpm build
-pnpm test
-pnpm eval:inbound      # 30 cas Inbound mock
-pnpm eval:documents    # échantillon D2A
-pnpm eval:corpus       # ≥100 docs synthétiques lot A
-```
-
-### Upload document (file jobs)
-
-```bash
-# publier aussi la config D2A
-pnpm --filter @kanso/admin-cli exec node dist/index.js publish-config demo-tenant \
-  config/examples/document_to_action.btp.example.json
-DATABASE_URL=… KANSO_MASTER_KEY=… \
-  ./apps/inbound-api/node_modules/.bin/tsx scripts/smoke-upload.mts
-```
-
-### API + widget (local)
-
-```bash
 docker compose -f infra/docker/compose.yml up -d db
-export DATABASE_URL=postgres://kanso:kanso@127.0.0.1:5433/kanso
-export KANSO_MASTER_KEY='local-dev-only-change-me-32chars!'
-./scripts/apply-migrations.sh
-pnpm --filter @kanso/admin-cli exec node dist/index.js create-tenant demo-tenant "Demo"
-pnpm --filter @kanso/admin-cli exec node dist/index.js publish-config demo-tenant \
-  config/examples/inbound.avocats.example.json
-pnpm --filter @kanso/admin-cli exec node dist/index.js put-secret demo-tenant alerts.intake_email \
-  '{"to":"ops@example.com"}'
-pnpm --filter @kanso/inbound-widget build
-pnpm --filter @kanso/inbound-api dev
-# http://127.0.0.1:3000/demo
+cp .env.example .env.local        # puis renseigner KANSO_MASTER_KEY (≥ 32 caractères)
+DATABASE_URL=postgres://kanso:kanso@127.0.0.1:5433/kanso sh scripts/apply-migrations.sh
+pnpm build
+bash scripts/dev-api.sh           # API      http://localhost:3000
+bash scripts/dev-worker.sh        # worker + tâches planifiées
+pnpm --filter @kanso/web dev      # web      http://localhost:3001
 ```
 
-## Docs clés
+Créer un compte sur `/inscription`. Sans SMTP, les e-mails (confirmation, liens, alertes) sont visibles via `GET /api/dev/mails`.
+Accès back-office : `pnpm --filter @kanso/admin-cli exec node dist/index.js make-staff vous@exemple.fr`.
 
-| Doc | Contenu |
-|-----|---------|
-| [DECISIONS.md](DECISIONS.md) | Journal des décisions |
-| [docs/p0-execution.md](docs/p0-execution.md) | Backlog P0 |
-| [docs/p1-execution.md](docs/p1-execution.md) | Backlog P1 |
-| [docs/p2-execution.md](docs/p2-execution.md) | Backlog P2 |
-| [docs/p3-execution.md](docs/p3-execution.md) | Backlog P3 |
-| [docs/checklist-pilote.md](docs/checklist-pilote.md) | Go pilote (signatures) |
-| [docs/ops-humain.md](docs/ops-humain.md) | Actions hors agent |
+Stack complète en conteneurs :
 
-## Structure
+```bash
+docker compose -f infra/docker/compose.yml up -d --build
+```
 
-Voir [docs/phase-1-structure-depot.md](docs/phase-1-structure-depot.md).
+## Stripe (mode test)
+
+```bash
+STRIPE_SECRET_KEY=sk_test_… pnpm --filter @kanso/inbound-api stripe:seed
+stripe listen --forward-to localhost:3000/api/stripe/webhook   # → STRIPE_WEBHOOK_SECRET
+```
+
+## Tests
+
+```bash
+pnpm test                      # unitaires + intégration API (si DATABASE_URL)
+pnpm eval:inbound && pnpm eval:documents && pnpm eval:corpus
+```
+
+## Docs
+
+[DECISIONS.md](DECISIONS.md) (journal), [docs/embed-widget.md](docs/embed-widget.md) (widget), `apps/web/content/legal/` (textes légaux — brouillons à faire valider), `scripts/brand/` (génération des logos SVG).

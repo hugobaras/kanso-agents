@@ -4,6 +4,7 @@ import { parseInboundConfig, parseDocumentToActionConfig } from "@kanso/config";
 import {
   getPool,
   PostgresSecretStore,
+  publishConfig,
   requireTenantId,
   runRetentionPurge,
 } from "@kanso/tenancy";
@@ -15,7 +16,9 @@ function usage() {
   kanso-admin put-secret <tenant_id> <secret_ref> <json-credentials>
   kanso-admin publish-config <tenant_id> <path-to-config.json>
   kanso-admin set-dpa <tenant_id> --signed|--unsigned
-  kanso-admin invite-portal-user <tenant_id> <email> [--role owner|ops]
+  kanso-admin add-member <tenant_id> <email> [--role owner|admin|member]
+  kanso-admin make-staff <email> [--revoke]
+  kanso-admin set-plan <tenant_id> <trial|essentiel|cabinet|expert> [--status active|trialing] [--trial-days N]
   kanso-admin purge-retention [--dry-run|--execute]
   kanso-admin confirm-final-action <tenant_id> --i-understand-final
 `);
@@ -100,29 +103,12 @@ async function main() {
     else throw new Error("Unknown product");
 
     const pool = getPool();
-    const versionRes = await pool.query<{ version: number }>(
-      `select coalesce(max(version), 0) + 1 as version
-       from tenant_configs where tenant_id = $1 and product = $2`,
-      [tenantId, raw.product],
-    );
-    const version = versionRes.rows[0]?.version ?? 1;
-    await pool.query(
-      `update tenant_configs set status = 'draft'
-       where tenant_id = $1 and product = $2 and status = 'published'`,
-      [tenantId, raw.product],
-    );
-    await pool.query(
-      `insert into tenant_configs
-        (tenant_id, product, version, schema_version, config, status, published_at, published_by)
-       values ($1, $2, $3, $4, $5::jsonb, 'published', now(), 'admin-cli')`,
-      [
-        tenantId,
-        raw.product,
-        version,
-        raw.schema_version ?? "1.0.0",
-        JSON.stringify(raw),
-      ],
-    );
+    const version = await publishConfig(pool, {
+      tenantId,
+      product: raw.product as "inbound" | "document_to_action",
+      config: { ...raw, schema_version: raw.schema_version ?? "1.0.0" },
+      publishedBy: "admin-cli",
+    });
     console.log(
       JSON.stringify({ ok: true, tenantId, product: raw.product, version }),
     );
@@ -156,38 +142,81 @@ async function main() {
     return;
   }
 
-  if (cmd === "invite-portal-user") {
+  if (cmd === "add-member") {
     const [tenantId, email, ...rest] = args;
-    if (!tenantId || !email) {
+    if (!tenantId || !email?.includes("@")) {
       usage();
       process.exit(1);
     }
     requireTenantId(tenantId);
-    let role: "owner" | "ops" = "owner";
-    for (let i = 0; i < rest.length; i++) {
-      if (rest[i] === "--role" && rest[i + 1]) {
-        const r = rest[++i];
-        if (r !== "owner" && r !== "ops") {
-          console.error(JSON.stringify({ ok: false, error: "invalid_role" }));
-          process.exit(1);
-        }
-        role = r;
-      }
+    const roleIdx = rest.indexOf("--role");
+    const role = roleIdx >= 0 ? rest[roleIdx + 1] : "owner";
+    if (role !== "owner" && role !== "admin" && role !== "member") {
+      console.error(JSON.stringify({ ok: false, error: "invalid_role" }));
+      process.exit(1);
     }
-    if (!email.includes("@")) {
-      console.error(JSON.stringify({ ok: false, error: "invalid_email" }));
+    const pool = getPool();
+    // Users created here sign in with a magic link (no password yet).
+    const user = await pool.query<{ id: string }>(
+      `insert into users (email, name, email_verified_at) values (lower($1), '', now())
+       on conflict (email) do update set email = excluded.email returning id`,
+      [email.trim()],
+    );
+    await pool.query(
+      `insert into memberships (tenant_id, user_id, role) values ($1, $2, $3)
+       on conflict (tenant_id, user_id) do update set role = excluded.role`,
+      [tenantId, user.rows[0]!.id, role],
+    );
+    console.log(JSON.stringify({ ok: true, tenantId, email: email.toLowerCase(), role }));
+    await pool.end();
+    return;
+  }
+
+  if (cmd === "make-staff") {
+    const [email, flag] = args;
+    if (!email?.includes("@")) {
+      usage();
       process.exit(1);
     }
     const pool = getPool();
     const res = await pool.query(
-      `insert into portal_users (tenant_id, email, role)
-       values ($1, lower($2), $3)
-       on conflict (tenant_id, email)
-       do update set role = excluded.role
-       returning id, tenant_id, email, role`,
-      [tenantId, email.trim(), role],
+      `update users set is_staff = $2 where email = lower($1) returning email, is_staff`,
+      [email.trim(), flag !== "--revoke"],
     );
-    console.log(JSON.stringify({ ok: true, user: res.rows[0] }));
+    if (!res.rows[0]) {
+      console.error(JSON.stringify({ ok: false, error: "user_not_found", hint: "Créez d'abord le compte via l'inscription." }));
+      process.exit(1);
+    }
+    console.log(JSON.stringify({ ok: true, ...res.rows[0] }));
+    await pool.end();
+    return;
+  }
+
+  if (cmd === "set-plan") {
+    const [tenantId, plan, ...rest] = args;
+    if (!tenantId || !["trial", "essentiel", "cabinet", "expert"].includes(plan ?? "")) {
+      usage();
+      process.exit(1);
+    }
+    requireTenantId(tenantId);
+    const statusIdx = rest.indexOf("--status");
+    const status = statusIdx >= 0 ? rest[statusIdx + 1] : plan === "trial" ? "trialing" : "active";
+    const daysIdx = rest.indexOf("--trial-days");
+    const days = daysIdx >= 0 ? Number(rest[daysIdx + 1]) : 14;
+    const pool = getPool();
+    await pool.query(
+      `insert into subscriptions (tenant_id, plan, status, trial_ends_at)
+       values ($1, $2, $3, case when $3 = 'trialing' then now() + ($4::text || ' days')::interval else null end)
+       on conflict (tenant_id) do update set plan = excluded.plan, status = excluded.status,
+         trial_ends_at = excluded.trial_ends_at, updated_at = now()`,
+      [tenantId, plan, status, String(days)],
+    );
+    await pool.query(
+      `insert into audit_events (tenant_id, step, decision, summary, actor, correlation_id)
+       values ($1, 'admin', 'plan_set', $2::jsonb, 'admin-cli', $3)`,
+      [tenantId, JSON.stringify({ plan, status }), `cli-plan-${Date.now()}`],
+    );
+    console.log(JSON.stringify({ ok: true, tenantId, plan, status }));
     await pool.end();
     return;
   }

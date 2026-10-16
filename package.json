@@ -14,18 +14,16 @@
     "eval:corpus": "tsx eval/documents/run-corpus.mts",
     "demo:reset": "bash scripts/demo-reset.sh",
     "smoke:partner": "bash scripts/smoke-partner-template.sh",
-    "smoke:portal": "bash scripts/smoke-portal.sh",
     "onboard:partner": "bash scripts/onboard-partner.sh",
     "m5": "bash scripts/m5-go-nogo.sh",
     "m7": "bash scripts/m7-d2a-go.sh",
-    "pilote:freeze": "bash scripts/freeze-pilote.sh"
+    "pilote:freeze": "bash scripts/freeze-pilote.sh",
+    "dev:web": "pnpm --filter @kanso/web dev",
+    "db:migrate": "sh scripts/apply-migrations.sh"
   },
   "devDependencies": {
     "turbo": "^2.5.4",
     "typescript": "^5.8.3",
     "tsx": "^4.20.3"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
   }
 }

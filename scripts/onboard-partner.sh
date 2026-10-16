@@ -116,8 +116,8 @@ pnpm --filter @kanso/admin-cli exec node dist/index.js set-dpa $TENANT --signed
 
 Portail connecteurs:
 \`\`\`
-pnpm --filter @kanso/admin-cli exec node dist/index.js invite-portal-user $TENANT ops@example.com --role owner
-open ${API_BASE}/portal
+pnpm --filter @kanso/admin-cli exec node dist/index.js add-member $TENANT ops@example.com --role owner
+open http://localhost:3001/connexion  # lien magique : /api/dev/mails
 \`\`\`
 EOF
 

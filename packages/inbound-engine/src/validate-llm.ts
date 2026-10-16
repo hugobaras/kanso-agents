@@ -9,6 +9,16 @@ import type { ExpectedQuestionPayload } from "./expected-question.js";
 const HALLUCINATION_PATTERNS =
   /\b(\d+\s*€|euros?|tarif|prix|disponible demain|je vous rappelle sous|vous avez une affaire|conseil juridique\s*:)/i;
 
+/** Commitments on delays / outcomes the firm never made (obligation de moyens). */
+const PROMISE_PATTERNS =
+  /\b(sera (trait|étudi|pris|examin)\w*|(vous )?(rappelle|recontact|répond)\w* (sous|dans|d'ici|avant|rapidement|très vite)|(nous|on|l'équipe|le cabinet) (allons|va|vont) (vous )?(rappeler|recontacter|traiter)|garanti\w*|sans faute|dès aujourd'hui)/i;
+
+export const NEUTRAL_ACK = "C'est noté.";
+
+export function containsUnsafeClaim(text: string): boolean {
+  return HALLUCINATION_PATTERNS.test(text) || PROMISE_PATTERNS.test(text);
+}
+
 export type ValidatedInboundLlm = InboundLlmOutput & {
   sanitizedMessage: string;
 };
@@ -45,7 +55,7 @@ export function validateInboundLlmAgainstConfig(
     }
   }
 
-  let sanitizedMessage = output.assistant_message.trim();
+  let sanitizedMessage = stripMarkdown(output.assistant_message);
   if (!sanitizedMessage) {
     throw new KansoError("empty assistant_message", "llm_empty_message");
   }
@@ -53,6 +63,8 @@ export function validateInboundLlmAgainstConfig(
   if (HALLUCINATION_PATTERNS.test(sanitizedMessage)) {
     sanitizedMessage =
       "Je ne peux pas indiquer de prix, délais ou faits non présents dans la configuration. Continuons la qualification.";
+  } else if (PROMISE_PATTERNS.test(sanitizedMessage)) {
+    sanitizedMessage = NEUTRAL_ACK;
   } else if (output.claimed_facts.length > 0) {
     // Soft: keep wording, drop facts (code owns truth).
     sanitizedMessage = sanitizedMessage;
@@ -63,6 +75,17 @@ export function validateInboundLlmAgainstConfig(
     claimed_facts: [],
     sanitizedMessage,
   };
+}
+
+/** Widgets render plain text: drop markdown emphasis/headings the model may add. */
+export function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/__(.+?)__/g, "$1")
+    .replace(/(^|\s)\*(\S.*?)\*(?=\s|$|[.,;:!?])/g, "$1$2")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .trim();
 }
 
 export function buildInboundSystemPrompt(
@@ -84,7 +107,10 @@ export function buildInboundSystemPrompt(
     `Topics interdits (intent advice/forbidden): ${forbidden}`,
     "Ne donne jamais de conseil juridique ou comptable.",
     "N'affirme jamais de prix, délais de rappel, disponibilités ou faits hors configuration.",
-    "Ton: naturel, concis, professionnel — évite les réponses d'un mot seules (« Merci. ») ; reformule brièvement puis enchaîne.",
+    "Ne promets jamais de délai de traitement ni de rappel : si le visiteur indique un délai, reformule son souhait (« Noté, vous souhaitez un échange sous 48 h. »).",
+    "Ton: naturel, concis, professionnel — évite les réponses d'un mot seules (« Merci. ») ; reformule brièvement.",
+    "assistant_message : UNE phrase d'accusé de réception (30 mots maximum). Ne pose AUCUNE question : le système ajoute lui-même la question suivante.",
+    "Texte brut uniquement : pas de markdown, pas de gras, pas de liste.",
     `question_id autorisés: ${questionIds}`,
   ];
 

@@ -44,9 +44,11 @@ export const InboundConfigSchema = z.object({
     display_name: z.string().min(1),
     locale_default: z.enum(["fr", "en"]),
     branding: z.object({
-      primary_color: z.string().min(1),
+      primary_color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Couleur hexadécimale attendue (#RRGGBB)"),
       logo_url: z.string().url().nullable().optional(),
     }),
+    /** Short greeting shown in the widget before the AI notice. */
+    welcome_message: z.string().max(280).optional(),
   }),
   disclosure: z.object({
     ai_notice: z.string().min(1),
@@ -85,6 +87,8 @@ export const InboundConfigSchema = z.object({
     business_hours: z.record(z.array(z.tuple([z.string(), z.string()]))),
     /** D-118: shown when blocking after-hours; optional override of default notice */
     after_hours_message: z.string().min(1).optional(),
+    /** block = D-118 (default, pilotes) ; qualify = keep qualifying, mention delayed reply. */
+    after_hours_mode: z.enum(["block", "qualify"]).optional(),
     escalation: z.object({
       user_requests_human: z.boolean(),
       keywords: z.array(z.string()),

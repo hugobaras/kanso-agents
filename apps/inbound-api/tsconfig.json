@@ -4,14 +4,42 @@
     "outDir": "dist",
     "rootDir": "src"
   },
-  "include": ["src/**/*"],
-  "exclude": ["src/**/*.test.ts"],
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "src/**/*.test.ts"
+  ],
   "references": [
-    { "path": "../../packages/shared" },
-    { "path": "../../packages/config" },
-    { "path": "../../packages/tenancy" },
-    { "path": "../../packages/adapters" },
-    { "path": "../../packages/llm" },
-    { "path": "../../packages/inbound-engine" }
+    {
+      "path": "../../packages/shared"
+    },
+    {
+      "path": "../../packages/config"
+    },
+    {
+      "path": "../../packages/tenancy"
+    },
+    {
+      "path": "../../packages/adapters"
+    },
+    {
+      "path": "../../packages/llm"
+    },
+    {
+      "path": "../../packages/inbound-engine"
+    },
+    {
+      "path": "../../packages/billing"
+    },
+    {
+      "path": "../../packages/mailer"
+    },
+    {
+      "path": "../../packages/document-pipeline"
+    },
+    {
+      "path": "../../packages/portal"
+    }
   ]
 }

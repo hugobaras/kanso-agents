@@ -1,6 +1,7 @@
 import type { InboundConfig } from "@kanso/config";
 import { HandoffMessageSchema, type LlmClient } from "@kanso/llm";
 import type { InboundSession } from "./session.js";
+import { containsUnsafeClaim, stripMarkdown } from "./validate-llm.js";
 
 /**
  * Deterministic handoff copy (D-092 template path).
@@ -29,11 +30,8 @@ export function buildHandoffTemplate(
   if (bits.length) {
     lines.push(`Récapitulatif : ${bits.join(" · ")}.`);
   }
-  if (session.scoreFinal != null) {
-    lines.push(`Score interne : ${session.scoreFinal}/${config.scoring.max_score}.`);
-  }
   lines.push(
-    "Un collaborateur vous recontactera selon leurs disponibilités (sans engagement de délai).",
+    "Un collaborateur pourra vous recontacter selon ses disponibilités, sans engagement de délai.",
   );
   return lines.join(" ");
 }
@@ -47,6 +45,9 @@ export async function synthesizeHandoffMessage(opts: {
   session: InboundSession;
 }): Promise<{ message: string; source: "llm" | "template" }> {
   const template = buildHandoffTemplate(opts.config, opts.session);
+  // The closing message is a commitment towards the visitor: deterministic by
+  // default (no invented civility, no implied follow-up). LLM wording is opt-in.
+  if (process.env.KANSO_LLM_HANDOFF !== "1") return { message: template, source: "template" };
   try {
     const answersJson = JSON.stringify(opts.session.answers);
     const { data } = await opts.llm.completeStructured({
@@ -54,10 +55,10 @@ export async function synthesizeHandoffMessage(opts: {
         "Tu rédiges le message de clôture d'un assistant de qualification (pas un humain).",
         `Cabinet: ${opts.config.identity.display_name}`,
         "Contraintes: pas de conseil juridique, pas de prix, pas de délai de rappel promis, pas de faits inventés.",
+        "N'utilise ni Monsieur ni Madame : ne suppose jamais le genre ou la civilité du visiteur.",
         "claimed_facts doit rester [].",
         "Ton: courtois, concis (2–4 phrases), confirme la transmission à l'équipe.",
         `Réponses collectées (JSON): ${answersJson}`,
-        `Score final: ${opts.session.scoreFinal ?? "n/a"}`,
       ].join("\n"),
       user: "Rédige assistant_message de handoff.",
       schema: HandoffMessageSchema,
@@ -65,8 +66,8 @@ export async function synthesizeHandoffMessage(opts: {
     if ((data.claimed_facts ?? []).length > 0) {
       return { message: template, source: "template" };
     }
-    const msg = data.assistant_message.trim();
-    if (!msg || /\b(\d+\s*€|tarif|je vous rappelle sous)\b/i.test(msg)) {
+    const msg = stripMarkdown(data.assistant_message);
+    if (!msg || containsUnsafeClaim(msg)) {
       return { message: template, source: "template" };
     }
     return { message: msg, source: "llm" };

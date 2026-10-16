@@ -1,14 +1,14 @@
 # Pack remise — design partner Kanso Inbound
 
 **Produit :** widget marque blanche · qualification · score · alerte (console ou SMTP)  
-**Éditeur :** Kanso Solutions (shbt studio SAS)
+**Éditeur :** Kanso Solutions (SHBT-STUDIO SAS)
 
 ## Ce que vous recevez
 
-1. **Tenant** isolé (`tenant_id`) + config publiée  
-2. **Snippet** à coller sur votre site (ou page stub)  
-3. **Alerte** vers votre boîte (SMTP) ou logs console en pré-prod  
-4. **DPA** modèle à signer avant données / documents clients réels  
+1. **Tenant** isolé (`tenant_id`) + config publiée
+2. **Snippet** à coller sur votre site (ou page stub)
+3. **Alerte** vers votre boîte (SMTP) ou logs console en pré-prod
+4. **DPA** modèle à signer avant données / documents clients réels
 
 ## Démarrage technique (&lt; 1 h)
 
@@ -50,10 +50,10 @@ Après invitation (`invite-portal-user`) : [http://API/portal](http://127.0.0.1:
 
 ## Liens
 
-| Doc | Rôle |
-|-----|------|
-| [dpa-design-partner.md](./legal/dpa-design-partner.md) | Modèle DPA |
-| [design-partner-brief.md](./design-partner-brief.md) | Infos à collecter |
-| [checklist-m4.md](./checklist-m4.md) | Go M4 |
-| [phase-14-portail-connecteurs.md](./phase-14-portail-connecteurs.md) | Portail client |
-| [runbooks/incident.md](./runbooks/incident.md) | Incident / rota |
+| Doc                                                                  | Rôle              |
+| -------------------------------------------------------------------- | ----------------- |
+| [dpa-design-partner.md](./legal/dpa-design-partner.md)               | Modèle DPA        |
+| [design-partner-brief.md](./design-partner-brief.md)                 | Infos à collecter |
+| [checklist-m4.md](./checklist-m4.md)                                 | Go M4             |
+| [phase-14-portail-connecteurs.md](./phase-14-portail-connecteurs.md) | Portail client    |
+| [runbooks/incident.md](./runbooks/incident.md)                       | Incident / rota   |

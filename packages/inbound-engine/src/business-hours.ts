@@ -36,3 +36,11 @@ export function resolveAfterHoursMessage(config: InboundConfig): string {
   const custom = config.operations.after_hours_message?.trim();
   return custom && custom.length > 0 ? custom : AFTER_HOURS_NOTICE;
 }
+export const AFTER_HOURS_QUALIFY_NOTICE =
+  "Le cabinet est actuellement fermé : votre demande sera traitée dès la réouverture.";
+
+/** True when the tenant blocks conversations outside business hours (D-118 default). */
+export function blocksAfterHours(config: InboundConfig, at: Date = new Date()): boolean {
+  if (config.operations.after_hours_mode === "qualify") return false;
+  return !isWithinBusinessHours(config, at);
+}

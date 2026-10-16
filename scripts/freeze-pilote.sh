@@ -65,7 +65,7 @@ doc = {
   "status": "active" if os.environ.get("ACTIVATE") == "1" else "draft",
   "api_base": os.environ["API_BASE"],
   "cors_origins_hint": os.environ.get("ORIGINS") or None,
-  "embed_preview": f"{os.environ['API_BASE']}/embed-preview?tenant={os.environ['TENANT']}",
+  "dashboard": "http://localhost:3001/app/" + os.environ['TENANT'] + "/installation",
   "snippet": (
     f'<script src="{os.environ["API_BASE"]}/widget/kanso-widget.js" '
     f'data-tenant="{os.environ["TENANT"]}" '

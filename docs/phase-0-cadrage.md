@@ -1,6 +1,6 @@
 # Phase 0 — Cadrage technique
 
-**Produit :** Kanso Solutions (shbt studio SAS)  
+**Produit :** Kanso Solutions (SHBT-STUDIO SAS)  
 **Date :** 2026-10-10  
 **Statut :** décisions de cadrage figées pour démarrer la phase 1
 
@@ -10,13 +10,13 @@ Choisir le langage, l’organisation des dépôts, l’hébergement UE, l’enve
 
 ## Décisions retenues
 
-| Sujet | Choix | Source |
-|-------|--------|--------|
-| Langage / runtime | TypeScript (Node.js) | Q1 = 1 |
-| Organisation Git | Mono-dépôt | Q2 = 1 |
-| Hébergeur compute | OVHcloud (région UE) | Q3 = 2 |
-| Budget infra hors tokens IA | &lt; 50 € / mois | Q4 = 1 |
-| Outils maîtrisés | GitHub Actions, Docker / Compose, Postgres, Supabase | Q5 = A, B, C, F |
+| Sujet                       | Choix                                                | Source          |
+| --------------------------- | ---------------------------------------------------- | --------------- |
+| Langage / runtime           | TypeScript (Node.js)                                 | Q1 = 1          |
+| Organisation Git            | Mono-dépôt                                           | Q2 = 1          |
+| Hébergeur compute           | OVHcloud (région UE)                                 | Q3 = 2          |
+| Budget infra hors tokens IA | &lt; 50 € / mois                                     | Q4 = 1          |
+| Outils maîtrisés            | GitHub Actions, Docker / Compose, Postgres, Supabase | Q5 = A, B, C, F |
 
 ## Architecture cible (rôles clairs)
 
@@ -43,14 +43,14 @@ flowchart LR
   Workers --> Storage
 ```
 
-| Couche | Choix | Rôle |
-|--------|--------|------|
-| Runtime | 1 petite instance OVH + Docker Compose | API Inbound + worker Document-to-Action |
-| Données | Supabase (région UE) | Postgres multi-tenant ; object storage documents si besoin |
+| Couche              | Choix                                       | Rôle                                                             |
+| ------------------- | ------------------------------------------- | ---------------------------------------------------------------- |
+| Runtime             | 1 petite instance OVH + Docker Compose      | API Inbound + worker Document-to-Action                          |
+| Données             | Supabase (région UE)                        | Postgres multi-tenant ; object storage documents si besoin       |
 | Secrets applicatifs | Environnement / secret store sur l’hôte OVH | Jamais dans Git ; secrets par `tenant_id` (détail phases 1 et 6) |
-| CI | GitHub Actions | Lint, typecheck, tests — pas de CD complexe en phase 0 |
-| File de jobs | Table Postgres + worker polling | Pas de Redis au MVP |
-| Modèles IA | Couche d’abstraction provider | Aucun modèle figé dans l’architecture |
+| CI                  | GitHub Actions                              | Lint, typecheck, tests — pas de CD complexe en phase 0           |
+| File de jobs        | Table Postgres + worker polling             | Pas de Redis au MVP                                              |
+| Modèles IA          | Couche d’abstraction provider               | Aucun modèle figé dans l’architecture                            |
 
 ## Justifications
 
@@ -64,11 +64,11 @@ flowchart LR
 
 Sources publiques consultées (docs fournisseurs / listes modèles). Liste non figée ; à revalider via les endpoints `models` des comptes au moment du choix produit.
 
-| Fournisseur | Constat documentaire (non exhaustif) |
-|-------------|--------------------------------------|
-| OpenAI | Familles documentées notamment GPT-6 Astra, GPT-6.1 Sol, GPT-6 Luna, GPT-5.6 ; snapshots GPT-5 historiques en dépréciation progressive |
-| Anthropic | Release notes / docs mentionnent notamment Claude Opus 5, Opus/Sonnet 4.6, Haiku 4.5 |
-| Mistral | Endpoint régional `https://api.eu.mistral.ai` ; modèles documentés notamment Large 4, Medium 3.5, Small 4, Ministral 3, OCR |
+| Fournisseur | Constat documentaire (non exhaustif)                                                                                                   |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| OpenAI      | Familles documentées notamment GPT-6 Astra, GPT-6.1 Sol, GPT-6 Luna, GPT-5.6 ; snapshots GPT-5 historiques en dépréciation progressive |
+| Anthropic   | Release notes / docs mentionnent notamment Claude Opus 5, Opus/Sonnet 4.6, Haiku 4.5                                                   |
+| Mistral     | Endpoint régional `https://api.eu.mistral.ai` ; modèles documentés notamment Large 4, Medium 3.5, Small 4, Ministral 3, OCR            |
 
 **Règle :** le code parle à une interface Kanso (`LlmClient`) ; le choix de modèle est configuration + évaluation (phases 3, 5, 8), pas une constante d’architecture.
 
@@ -98,12 +98,12 @@ Sources publiques consultées (docs fournisseurs / listes modèles). Liste non f
 
 ## Risques
 
-| Risque | Impact | Mitigation initiale |
-|--------|--------|---------------------|
-| Budget &lt; 50 € dépassé (egress, storage, 2e instance) | Coupure ou dette | Une seule instance ; storage limité ; alertes coût |
-| Deux fournisseurs (OVH + Supabase) | Deux DPA, deux surfaces d’incident | Rôles documentés ; inventaire traitements (phase 6) |
-| Pas de Redis | Contention jobs si volume docs | Postgres jobs OK au MVP ; réévaluation si file saturée |
-| Sur-investissement avant premier client | Burn runway | Périmètre minimal ; pas de HA en phase 0 |
+| Risque                                                  | Impact                             | Mitigation initiale                                    |
+| ------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------ |
+| Budget &lt; 50 € dépassé (egress, storage, 2e instance) | Coupure ou dette                   | Une seule instance ; storage limité ; alertes coût     |
+| Deux fournisseurs (OVH + Supabase)                      | Deux DPA, deux surfaces d’incident | Rôles documentés ; inventaire traitements (phase 6)    |
+| Pas de Redis                                            | Contention jobs si volume docs     | Postgres jobs OK au MVP ; réévaluation si file saturée |
+| Sur-investissement avant premier client                 | Burn runway                        | Périmètre minimal ; pas de HA en phase 0               |
 
 ## Critère de passage phase 1
 

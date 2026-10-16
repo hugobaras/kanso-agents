@@ -1,6 +1,6 @@
 # Phase 7 — Squelette de code
 
-**Produit :** Kanso Solutions (shbt studio SAS)  
+**Produit :** Kanso Solutions (SHBT-STUDIO SAS)  
 **Date :** 2026-10-10  
 **Statut :** validé (2026-10-10)  
 **Prérequis :** phases 0–6 validées
@@ -11,13 +11,13 @@ Livrer un mono-dépôt qui installe, compile, typecheck et passe les tests, avec
 
 ## Décisions retenues
 
-| Sujet | Choix | Source |
-|-------|--------|--------|
-| HTTP API | Hono | Q1 = 1 |
-| Tests | Vitest | Q2 = 1 |
-| E2E | Inbound + Document-to-Action mockés | Q3 = 1 |
+| Sujet     | Choix                                                   | Source |
+| --------- | ------------------------------------------------------- | ------ |
+| HTTP API  | Hono                                                    | Q1 = 1 |
+| Tests     | Vitest                                                  | Q2 = 1 |
+| E2E       | Inbound + Document-to-Action mockés                     | Q3 = 1 |
 | LLM tests | Mock CI ; live opt-in `KANSO_E2E_LIVE=1` (stub phase 7) | Q4 = 3 |
-| SQL | `supabase/migrations/` sans apply cloud | Q5 = 1 |
+| SQL       | `supabase/migrations/` sans apply cloud                 | Q5 = 1 |
 
 ## Contenu livré
 
@@ -48,10 +48,10 @@ Livrer un mono-dépôt qui installe, compile, typecheck et passe les tests, avec
 
 ## Risques
 
-| Risque | Impact | Mitigation |
-|--------|--------|------------|
+| Risque                           | Impact           | Mitigation                   |
+| -------------------------------- | ---------------- | ---------------------------- |
 | Squelette pris pour produit fini | Attentes clients | Docs « skeleton » explicites |
-| Tests mock trop heureux | Régression prod | Phase 8 jeux de tests réels |
+| Tests mock trop heureux          | Régression prod  | Phase 8 jeux de tests réels  |
 
 ## Question de validation
 

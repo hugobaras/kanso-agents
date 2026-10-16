@@ -8,6 +8,8 @@ export type CreateLlmClientOptions = {
   fixtures?: unknown[];
   /** Force mock even if MISTRAL_API_KEY is set (tests). */
   forceMock?: boolean;
+  /** Override the model (e.g. a larger model for document extraction). */
+  model?: string;
 };
 
 /**
@@ -29,8 +31,8 @@ export function createLlmClient(opts: CreateLlmClientOptions = {}): LlmClient {
       ...(process.env.MISTRAL_BASE_URL
         ? { baseUrl: process.env.MISTRAL_BASE_URL }
         : {}),
-      ...(process.env.KANSO_MISTRAL_MODEL
-        ? { model: process.env.KANSO_MISTRAL_MODEL }
+      ...(opts.model ?? process.env.KANSO_MISTRAL_MODEL
+        ? { model: opts.model ?? process.env.KANSO_MISTRAL_MODEL }
         : {}),
     });
   }

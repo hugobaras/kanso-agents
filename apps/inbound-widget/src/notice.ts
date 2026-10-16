@@ -1,4 +1,4 @@
-/** Visible AI disclosure helper (also enforced server-side on session start). */
-export function widgetBootstrapNotice(): string {
-  return "Vous échangez avec un assistant automatisé.";
+/** Visible AI disclosure fallback (the tenant's ai_notice is sent by the server on session start). */
+export function widgetBootstrapNotice(locale: "fr" | "en" = "fr"): string {
+  return locale === "en" ? "You are chatting with an automated assistant." : "Vous échangez avec un assistant automatisé.";
 }

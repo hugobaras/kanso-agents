@@ -1,0 +1,337 @@
+import { randomBytes } from "node:crypto";
+import { getPool } from "@kanso/tenancy";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createApp } from "./app.js";
+
+/**
+ * End-to-end API tests against a real Postgres (migrations applied).
+ * Skipped when DATABASE_URL is not set.
+ */
+const hasDb = !!process.env.DATABASE_URL;
+const APP = "http://localhost:3001";
+
+process.env.KANSO_APP_URL = APP;
+process.env.KANSO_MASTER_KEY ??= "test-master-key-at-least-32-characters!!";
+process.env.KANSO_ACCESS_LOG = "0";
+process.env.MISTRAL_API_KEY = "";
+process.env.KANSO_AUTH_RATE_LIMIT = "1000";
+
+const app = createApp({ now: () => new Date("2026-10-12T10:00:00Z") });
+const suffix = randomBytes(4).toString("hex");
+
+type Jar = { cookie?: string };
+
+async function call(
+  jar: Jar,
+  method: string,
+  path: string,
+  body?: unknown,
+  headers: Record<string, string> = {},
+) {
+  const res = await app.request(path, {
+    method,
+    headers: {
+      "content-type": "application/json",
+      origin: APP,
+      ...(jar.cookie ? { cookie: jar.cookie } : {}),
+      ...headers,
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const set = res.headers.get("set-cookie");
+  if (set) jar.cookie = set.split(";")[0];
+  const text = await res.text();
+  let json: any = null;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    json = text;
+  }
+  return { status: res.status, json, headers: res.headers };
+}
+
+async function signup(jar: Jar, name: string) {
+  const r = await call(jar, "POST", "/api/auth/signup", {
+    name: "Test User",
+    email: `${name}-${suffix}@example.com`,
+    password: "un-mot-de-passe-1",
+    workspace_name: `${name} ${suffix}`,
+    profession: "avocat",
+    accept_terms: true,
+  });
+  expect(r.status).toBe(201);
+  return r.json.workspace as string;
+}
+
+describe.skipIf(!hasDb)("SaaS API", () => {
+  const alice: Jar = {};
+  const bob: Jar = {};
+  let wsA = "";
+  let wsB = "";
+
+  beforeAll(async () => {
+    wsA = await signup(alice, "alice");
+    wsB = await signup(bob, "bob");
+  });
+
+  afterAll(async () => {
+    const pool = getPool();
+    await pool.query(`delete from tenants where tenant_id = any($1)`, [[wsA, wsB]]);
+    await pool.query(`delete from users where email like $1`, [`%-${suffix}@example.com`]);
+  });
+
+  it("rejects weak passwords and duplicate e-mails", async () => {
+    const weak = await call({}, "POST", "/api/auth/signup", {
+      name: "X Y",
+      email: `weak-${suffix}@example.com`,
+      password: "short",
+      workspace_name: "Weak",
+      profession: "notaire",
+      accept_terms: true,
+    });
+    expect(weak.status).toBe(400);
+    const dup = await call({}, "POST", "/api/auth/signup", {
+      name: "X Y",
+      email: `alice-${suffix}@example.com`,
+      password: "un-mot-de-passe-1",
+      workspace_name: "Dup",
+      profession: "notaire",
+      accept_terms: true,
+    });
+    expect(dup.status).toBe(409);
+  });
+
+  it("logs in with password and rejects bad credentials", async () => {
+    const jar: Jar = {};
+    const bad = await call(jar, "POST", "/api/auth/login", { email: `alice-${suffix}@example.com`, password: "nope-nope-1" });
+    expect(bad.status).toBe(401);
+    const ok = await call(jar, "POST", "/api/auth/login", { email: `alice-${suffix}@example.com`, password: "un-mot-de-passe-1" });
+    expect(ok.status).toBe(200);
+    expect(ok.json.workspaces).toContain(wsA);
+  });
+
+  it("requires a session and blocks cross-workspace access", async () => {
+    expect((await call({}, "GET", `/api/app/${wsA}`)).status).toBe(401);
+    expect((await call(bob, "GET", `/api/app/${wsA}`)).status).toBe(404);
+    expect((await call(alice, "GET", `/api/app/${wsA}`)).status).toBe(200);
+  });
+
+  it("enforces CSRF origin on cookie mutations", async () => {
+    const r = await call(alice, "POST", `/api/app/${wsA}/assistant/publish`, {}, { origin: "https://evil.example" });
+    expect(r.status).toBe(403);
+    expect(r.json.error).toBe("csrf_origin_mismatch");
+  });
+
+  it("never reflects foreign origins on the credentialed API", async () => {
+    const r = await call(alice, "GET", `/api/auth/me`, undefined, { origin: "https://evil.example" });
+    expect(r.headers.get("access-control-allow-origin")).toBeNull();
+  });
+
+  it("enforces roles: members cannot publish", async () => {
+    const pool = getPool();
+    const bobUser = await pool.query<{ id: string }>(`select id from users where email = $1`, [`bob-${suffix}@example.com`]);
+    await pool.query(`insert into memberships (tenant_id, user_id, role) values ($1, $2, 'member')`, [wsA, bobUser.rows[0]!.id]);
+    const r = await call(bob, "POST", `/api/app/${wsA}/assistant/publish`, {});
+    expect(r.status).toBe(403);
+    await pool.query(`delete from memberships where tenant_id = $1 and user_id = $2`, [wsA, bobUser.rows[0]!.id]);
+  });
+
+  it("runs a widget conversation into a lead, with origin allowlist", async () => {
+    expect((await call(alice, "PUT", `/api/app/${wsA}/assistant/alerts/email`, { recipients: ["alerts@example.com"] })).status).toBe(200);
+    expect((await call(alice, "POST", `/api/app/${wsA}/assistant/publish`, {})).status).toBe(200);
+    const install = await call(alice, "GET", `/api/app/${wsA}/assistant/install`);
+    const key = install.json.public_key as string;
+    expect(key).toMatch(/^pk_live_/);
+
+    await call(alice, "PUT", `/api/app/${wsA}/assistant/install/origins`, { origins: ["https://www.cabinet-a.fr"] });
+    const denied = await call({}, "POST", "/v1/widget/sessions", undefined, {
+      "x-kanso-key": key,
+      origin: "https://evil.example",
+    });
+    expect(denied.status).toBe(403);
+
+    const site = { "x-kanso-key": key, origin: "https://www.cabinet-a.fr" };
+    const start = await call({}, "POST", "/v1/widget/sessions", undefined, site);
+    expect(start.status).toBe(200);
+    const sid = start.json.session_id as string;
+    for (const text of ["Droit du travail", "Sous 48 h", "Entreprise", "Jeanne Test", "jeanne@example.com"]) {
+      const t = await call({}, "POST", `/v1/widget/sessions/${sid}/messages`, { text }, site);
+      expect(t.status).toBe(200);
+    }
+    const resume = await call({}, "GET", `/v1/widget/sessions/${sid}/messages`, undefined, site);
+    // Closed sessions are not resumable.
+    expect(resume.status).toBe(404);
+
+    const leads = await call(alice, "GET", `/api/app/${wsA}/leads`);
+    expect(leads.json.leads).toHaveLength(1);
+    expect(leads.json.leads[0].contact.email).toBe("jeanne@example.com");
+    expect(leads.json.leads[0].tier).toBe("hot");
+
+    // Other workspaces never see it.
+    const other = await call(bob, "GET", `/api/app/${wsB}/leads`);
+    expect(other.json.leads).toHaveLength(0);
+
+    const detail = await call(alice, "GET", `/api/app/${wsA}/leads/${leads.json.leads[0].id}`);
+    expect(detail.json.transcript.length).toBeGreaterThan(5);
+    const patched = await call(alice, "PATCH", `/api/app/${wsA}/leads/${leads.json.leads[0].id}`, { status: "contacted" });
+    expect(patched.status).toBe(200);
+  });
+
+  it("blocks conversations when the monthly quota is exhausted", async () => {
+    const pool = getPool();
+    await pool.query(
+      `insert into usage_counters (tenant_id, metric, period, count) values ($1, 'conversations', to_char(now() at time zone 'Europe/Paris', 'YYYY-MM'), 50)
+       on conflict (tenant_id, metric, period) do update set count = 50`,
+      [wsA],
+    );
+    await pool.query(`update widget_keys set allowed_origins = '{}' where tenant_id = $1`, [wsA]);
+    const key = (await call(alice, "GET", `/api/app/${wsA}/assistant/install`)).json.public_key;
+    const site = { "x-kanso-key": key, origin: "https://www.cabinet-a.fr" };
+    const start = await call({}, "POST", "/v1/widget/sessions", undefined, site);
+    const t = await call({}, "POST", `/v1/widget/sessions/${start.json.session_id}/messages`, { text: "Droit du travail" }, site);
+    expect(t.status).toBe(429);
+    expect(t.json.error).toBe("quota_exceeded");
+  });
+
+  it("makes the widget unavailable once the trial has expired", async () => {
+    const pool = getPool();
+    await pool.query(`update subscriptions set trial_ends_at = now() - interval '1 day' where tenant_id = $1`, [wsA]);
+    const key = (await call(alice, "GET", `/api/app/${wsA}/assistant/install`)).json.public_key;
+    const cfg = await call({}, "GET", `/v1/widget/config?key=${key}`, undefined, { origin: "https://www.cabinet-a.fr" });
+    expect(cfg.json.available).toBe(false);
+    const pub = await call(alice, "POST", `/api/app/${wsA}/assistant/publish`, {});
+    expect(pub.status).toBe(402);
+    await pool.query(`update subscriptions set trial_ends_at = now() + interval '14 days' where tenant_id = $1`, [wsA]);
+  });
+
+  it("rejects unknown and revoked widget keys", async () => {
+    const r = await call({}, "GET", `/v1/widget/config?key=pk_live_doesnotexist000`);
+    expect(r.status).toBe(401);
+  });
+
+  it("requires the DPA before document upload", async () => {
+    const form = new FormData();
+    form.set("file", new File([Buffer.from("%PDF-1.4 test")], "facture.pdf", { type: "application/pdf" }));
+    const res = await app.request(`/api/app/${wsA}/documents`, {
+      method: "POST",
+      headers: { origin: APP, cookie: alice.cookie! },
+      body: form,
+    });
+    expect(res.status).toBe(403);
+    expect(((await res.json()) as { error: string }).error).toBe("dpa_required");
+  });
+
+  it("activates a paid plan from a signed Stripe webhook, exactly once", async () => {
+    const Stripe = (await import("stripe")).default;
+    const { setStripeClient } = await import("./services/stripe.js");
+    process.env.STRIPE_SECRET_KEY = "sk_test_dummy";
+    process.env.STRIPE_WEBHOOK_SECRET = "whsec_test_secret";
+    const real = new Stripe("sk_test_dummy");
+    const subscription = {
+      id: `sub_${suffix}`,
+      customer: `cus_${suffix}`,
+      status: "active",
+      cancel_at_period_end: false,
+      metadata: { tenant_id: wsB },
+      items: { data: [{ current_period_end: Math.floor(Date.now() / 1000) + 30 * 86400, price: { lookup_key: "kanso_cabinet_month" } }] },
+    };
+    setStripeClient({
+      webhooks: real.webhooks,
+      subscriptions: { retrieve: async () => subscription },
+    } as unknown as InstanceType<typeof Stripe>);
+
+    const event = {
+      id: `evt_${suffix}`,
+      object: "event",
+      type: "checkout.session.completed",
+      data: { object: { id: "cs_test", object: "checkout.session", subscription: subscription.id, client_reference_id: wsB } },
+    };
+    const payload = JSON.stringify(event);
+    const signature = real.webhooks.generateTestHeaderString({ payload, secret: "whsec_test_secret" });
+    const send = (sig: string) =>
+      app.request("/api/stripe/webhook", { method: "POST", headers: { "stripe-signature": sig, "content-type": "application/json" }, body: payload });
+
+    expect((await send("t=1,v1=bad")).status).toBe(400);
+    const first = await send(signature);
+    expect(first.status).toBe(200);
+    expect(((await first.json()) as { outcome: string }).outcome).toBe("processed");
+    const again = await send(signature);
+    expect(((await again.json()) as { outcome: string }).outcome).toBe("duplicate");
+
+    const overview = await call(bob, "GET", `/api/app/${wsB}`);
+    expect(overview.json.entitlements.plan).toBe("cabinet");
+    expect(overview.json.entitlements.status).toBe("active");
+    expect(overview.json.entitlements.quotas.conversations).toBe(600);
+
+    setStripeClient(null);
+    delete process.env.STRIPE_SECRET_KEY;
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+    await getPool().query(`delete from stripe_events where event_id = $1`, [event.id]);
+  });
+
+  it("sends a website quote request to the sales team once", async () => {
+    const r = await call(alice, "POST", `/api/app/${wsA}/integrations/website-request`, { kind: "creation", timeline: "asap" });
+    expect(r.status).toBe(201);
+    const again = await call(alice, "POST", `/api/app/${wsA}/integrations/website-request`, { kind: "creation" });
+    expect(again.status).toBe(409);
+    const status = await call(alice, "GET", `/api/app/${wsA}/integrations/website-request`);
+    expect(status.json.request.status).toBe("open");
+    const mails = await getPool().query<{ to_email: string }>(
+      `select to_email from mail_outbox where template in ('internal_request', 'website_request_ack') and created_at > now() - interval '1 minute'`,
+    );
+    expect(mails.rows.map((m) => m.to_email)).toEqual(expect.arrayContaining(["bonjour@kanso.fr", `alice-${suffix}@example.com`]));
+  });
+
+  it("accepts public forms (quote, waiting list), rejects bots and missing consent", async () => {
+    const pool = getPool();
+    const email = `visiteur-${suffix}@example.com`;
+    const quote = {
+      source: "site",
+      kind: "devis",
+      name: "Claire Test",
+      email,
+      profession: "avocat",
+      extra: { project: "refonte", current_url: "https://ancien.example", timeline: "asap", with_assistant: true },
+      consent: true,
+    };
+    const ok = await call({}, "POST", "/api/public/contact", quote, { "x-forwarded-for": `10.20.0.${suffix.length}1` });
+    expect(ok.status).toBe(200);
+    const stored = await pool.query(`select kind, source, extra from contact_requests where email = $1`, [email]);
+    expect(stored.rows).toHaveLength(1);
+    expect(stored.rows[0].extra.project).toBe("refonte");
+
+    // Same request again within a day: acknowledged but not stored twice.
+    await call({}, "POST", "/api/public/contact", quote, { "x-forwarded-for": `10.20.1.${suffix.length}1` });
+    expect((await pool.query(`select 1 from contact_requests where email = $1`, [email])).rowCount).toBe(1);
+
+    const mails = await pool.query<{ to_email: string }>(
+      `select to_email from mail_outbox where created_at > now() - interval '1 minute' and template in ('contact_ack', 'internal_request')`,
+    );
+    expect(mails.rows.map((m) => m.to_email)).toEqual(expect.arrayContaining([email, "bonjour@kanso.fr"]));
+
+    // Consent is mandatory.
+    const noConsent = await call({}, "POST", "/api/public/contact", { ...quote, email: `x-${email}`, consent: false }, { "x-forwarded-for": "10.20.2.1" });
+    expect(noConsent.status).toBe(400);
+
+    // Honeypot: silent success, nothing stored.
+    const bot = await call({}, "POST", "/api/public/contact", { ...quote, email: `bot-${email}`, website: "http://spam" }, { "x-forwarded-for": "10.20.3.1" });
+    expect(bot.status).toBe(200);
+    expect((await pool.query(`select 1 from contact_requests where email = $1`, [`bot-${email}`])).rowCount).toBe(0);
+
+    // Waiting list only for Kanso Portail; quotes only for Kanso Site.
+    const wrong = await call({}, "POST", "/api/public/contact", { ...quote, source: "solutions" }, { "x-forwarded-for": "10.20.4.1" });
+    expect(wrong.status).toBe(400);
+    const wl = await call({}, "POST", "/api/public/contact", { source: "portail", kind: "waitlist", email: `wl-${email}`, consent: true }, { "x-forwarded-for": "10.20.5.1" });
+    expect(wl.status).toBe(200);
+
+    await pool.query(`delete from contact_requests where email like $1`, [`%${email}`]);
+  });
+
+  it("rate limits repeated widget session creation", async () => {
+    const key = (await call(alice, "GET", `/api/app/${wsA}/assistant/install`)).json.public_key;
+    const headers = { "x-kanso-key": key, origin: "https://www.cabinet-a.fr", "x-forwarded-for": `10.9.${suffix.length}.77` };
+    let last = 200;
+    for (let i = 0; i < 12; i++) last = (await call({}, "POST", "/v1/widget/sessions", undefined, headers)).status;
+    expect(last).toBe(429);
+  });
+});

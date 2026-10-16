@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 import { parseInboundConfig } from "@kanso/config";
 import { MockLlmClient } from "@kanso/llm";
 import { createSession, startQualification } from "./session.js";
+
+const WEEKDAY_MORNING = new Date("2026-10-12T10:00:00Z");
 import { orchestrateTurn } from "./orchestrate.js";
 import { validateInboundLlmAgainstConfig } from "./validate-llm.js";
 
@@ -56,7 +58,7 @@ describe("orchestrateTurn", () => {
       "cabinet-durand",
       1,
     );
-    session = startQualification(session, config).session;
+    session = startQualification(session, config, { now: WEEKDAY_MORNING }).session;
     const llm = new MockLlmClient([
       {
         intent: "answer",
@@ -82,7 +84,7 @@ describe("orchestrateTurn", () => {
       "cabinet-durand",
       1,
     );
-    session = startQualification(session, config).session;
+    session = startQualification(session, config, { now: WEEKDAY_MORNING }).session;
     const llm = new MockLlmClient([
       {
         intent: "advice",

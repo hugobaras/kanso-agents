@@ -42,6 +42,10 @@ export const DocumentToActionConfigSchema = z.object({
     }),
     mode: z.enum(["draft", "final"]),
     on_failure: z.literal("queue_anomaly"),
+    /** Stop at pending_review until a human approves (default true). */
+    require_review: z.boolean().optional(),
+    /** Sandbox = adapters may use mocks; live = fail loudly without credentials. */
+    sandbox: z.boolean().optional(),
   }),
   alerts: z.object({
     human_review: z.object({
@@ -60,7 +64,7 @@ export const DocumentToActionConfigSchema = z.object({
             ),
           }),
         )
-        .min(1),
+        .default([]),
     }),
   }),
 });

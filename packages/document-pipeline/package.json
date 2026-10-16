@@ -23,7 +23,8 @@
     "@kanso/llm": "workspace:*",
     "@kanso/shared": "workspace:*",
     "@kanso/tenancy": "workspace:*",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "unpdf": "^1.8.1"
   },
   "devDependencies": {
     "@types/node": "^22.15.30",

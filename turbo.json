@@ -2,18 +2,43 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**",
+        ".next/**",
+        "!.next/cache/**"
+      ],
+      "passThroughEnv": [
+        "INTERNAL_API_URL",
+        "NEXT_TELEMETRY_DISABLED"
+      ],
+      "env": [
+        "NEXT_PUBLIC_APP_URL"
+      ]
     },
     "lint": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     },
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     },
     "test": {
-      "dependsOn": ["^build"],
-      "outputs": []
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [],
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "KANSO_MASTER_KEY",
+        "KANSO_RATE_LIMIT",
+        "MISTRAL_API_KEY"
+      ]
     }
   }
 }

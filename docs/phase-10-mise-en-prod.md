@@ -1,6 +1,6 @@
 # Phase 10 — Mise en prod / fondations live
 
-**Produit :** Kanso Solutions (shbt studio SAS)  
+**Produit :** Kanso Solutions (SHBT-STUDIO SAS)  
 **Date :** 2026-10-12  
 **Statut :** rédigé — en attente de **validé** pour exécution complète  
 **Prérequis :** phases 0–9 + backlogs P0–P3 code  
@@ -12,14 +12,14 @@ Passer du stack **local Docker** à un chemin **staging live** (LLM + SMTP réel
 
 ## Décisions retenues
 
-| Sujet | Choix | Source |
-|-------|--------|--------|
-| Runtime apps | Staging Docker local / ordi d’abord ; OVH ensuite | Q1 = 2 |
-| Postgres | Supabase cloud `kanso` (UE) **et** apps sur runtime (VPS plus tard) | Q2 = 3 |
-| LLM pilote | Mistral EU (`MISTRAL_API_KEY`) dès maintenant | Q3 = 1 |
-| Alertes | SMTP uniquement (OVH / Brevo UE) | Q4 = 1 |
-| Données | Tenant démo interne live **+** chasse partenaire (DPA avant données réelles) | Q5 = 3 |
-| Remote Git | GitHub | Q6 = 1 |
+| Sujet        | Choix                                                                        | Source |
+| ------------ | ---------------------------------------------------------------------------- | ------ |
+| Runtime apps | Staging Docker local / ordi d’abord ; OVH ensuite                            | Q1 = 2 |
+| Postgres     | Supabase cloud `kanso` (UE) **et** apps sur runtime (VPS plus tard)          | Q2 = 3 |
+| LLM pilote   | Mistral EU (`MISTRAL_API_KEY`) dès maintenant                                | Q3 = 1 |
+| Alertes      | SMTP uniquement (OVH / Brevo UE)                                             | Q4 = 1 |
+| Données      | Tenant démo interne live **+** chasse partenaire (DPA avant données réelles) | Q5 = 3 |
+| Remote Git   | GitHub                                                                       | Q6 = 1 |
 
 ## Architecture cible (phase 10)
 
@@ -102,11 +102,11 @@ Passer du stack **local Docker** à un chemin **staging live** (LLM + SMTP réel
 
 ## Risques
 
-| Risque | Mitigation |
-|--------|------------|
+| Risque                                  | Mitigation                                           |
+| --------------------------------------- | ---------------------------------------------------- |
 | Pas de compte Supabase / Mistral / SMTP | Doc bloquants ; continuer staging mock pour le reste |
-| Coût eval live | Sous-ensemble 3–5 cas, jamais CI |
-| Confusion démo vs partenaire | Préfixe `demo-` ; DPA gate |
+| Coût eval live                          | Sous-ensemble 3–5 cas, jamais CI                     |
+| Confusion démo vs partenaire            | Préfixe `demo-` ; DPA gate                           |
 
 ## Question de validation
 
