@@ -184,7 +184,9 @@ export class HeuristicPortailAnalyst implements PortailAnalyst {
       d.pages.forEach((p, i) => {
         for (const line of p.split("\n")) {
           const l = norm(line);
-          const score = terms.filter((t) => l.includes(t)).length;
+          const hits = terms.filter((t) => l.includes(t)).length;
+          // A "label : value" line answers better than a heading that merely repeats the words.
+          const score = hits ? hits + (/:\s*\S/.test(line) ? 1.5 : 0) : 0;
           if (score > 0 && (!best || score > best.score)) best = { score, doc: d, page: i + 1, line: line.trim() };
         }
       });
