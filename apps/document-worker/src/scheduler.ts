@@ -8,6 +8,7 @@ import {
   writeExportFile,
 } from "@kanso/tenancy";
 import { appLink, notifyAdmins, sendTo } from "./notify.js";
+import { portailAiExtract } from "./portail-ai-jobs.js";
 import { portailCleanup, portailDigest, portailReminders, portailRetention } from "./portail-jobs.js";
 
 type Job = {
@@ -132,6 +133,7 @@ export const JOBS: Job[] = [
   { name: "portail_digest", everyMs: HOUR, run: portailDigest },
   { name: "portail_retention", everyMs: 6 * HOUR, run: portailRetention },
   { name: "portail_cleanup", everyMs: DAY, run: portailCleanup },
+  { name: "portail_ai_extract", everyMs: MIN, run: portailAiExtract },
   {
     name: "retention",
     everyMs: DAY,

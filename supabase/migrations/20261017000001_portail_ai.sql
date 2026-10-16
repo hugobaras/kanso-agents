@@ -24,3 +24,7 @@ create table if not exists portal_file_texts (
 );
 create index if not exists idx_portal_file_texts_dossier on portal_file_texts (dossier_id);
 alter table portal_file_texts enable row level security;
+
+-- Quota de pages analysées par l'IA.
+alter table usage_counters drop constraint if exists usage_counters_metric_check;
+alter table usage_counters add constraint usage_counters_metric_check check (metric in ('conversations', 'documents', 'ai_pages'));

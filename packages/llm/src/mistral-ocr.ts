@@ -1,7 +1,7 @@
 import { KansoError } from "@kanso/shared";
 import type { LlmUsage } from "./types.js";
 
-export type OcrResult = { text: string; pages: number; usage: LlmUsage };
+export type OcrResult = { text: string; pages: number; pageTexts?: string[]; usage: LlmUsage };
 
 export interface OcrClient {
   ocr(content: Buffer, mime: string): Promise<OcrResult>;
@@ -48,6 +48,7 @@ export class MistralOcrClient implements OcrClient {
     const pages = json.pages ?? [];
     return {
       text: pages.map((p) => p.markdown ?? "").join("\n\n"),
+      pageTexts: pages.map((p) => (p.markdown ?? "").trim()),
       pages: json.usage_info?.pages_processed ?? pages.length,
       // OCR is billed per page; we record pages as "input tokens" ×1000 for the ledger.
       usage: {
