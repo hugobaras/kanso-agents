@@ -1,7 +1,7 @@
 import { consumeQuota, getEntitlements } from "@kanso/billing";
 import { extractDocumentText } from "@kanso/document-pipeline";
 import { MistralOcrClient, type OcrClient } from "@kanso/llm";
-import { AI_TERMS_VERSION, decryptFile, encryptPageTexts, fileAad, getStorage, tenantKek } from "@kanso/portal";
+import { AI_TERMS_VERSION, decryptFile, portailAiMode, encryptPageTexts, fileAad, getStorage, tenantKek } from "@kanso/portal";
 import { getPool } from "@kanso/tenancy";
 
 /**
@@ -9,11 +9,6 @@ import { getPool } from "@kanso/tenancy";
  * en mémoire, extraction page par page, stockage chiffré. Rien n'est écrit en clair
  * ni journalisé (seulement des identifiants et des codes d'erreur).
  */
-
-/** Mistral (OCR des scans) seulement si explicitement demandé : sinon simulation, sans appel externe. */
-export function portailAiMode(env: NodeJS.ProcessEnv = process.env): "mistral" | "simulated" {
-  return env.KANSO_PORTAIL_AI_MODE === "mistral" && !!env.MISTRAL_API_KEY ? "mistral" : "simulated";
-}
 
 function ocrClient(): OcrClient | undefined {
   return portailAiMode() === "mistral" ? new MistralOcrClient(process.env.MISTRAL_API_KEY!) : undefined;

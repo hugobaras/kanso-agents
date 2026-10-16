@@ -1,13 +1,15 @@
 import { readUsage } from "@kanso/billing";
-import { AI_TERMS_VERSION, aiEffective } from "@kanso/portal";
+import { AI_TERMS_VERSION, aiEffective, sanitizeAnswer, sanitizeCheck, sanitizeSummary } from "@kanso/portal";
 import { getPool } from "@kanso/tenancy";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { actorLabel, assertRole, currentUser, currentWorkspace } from "../../auth/middleware.js";
 import { audit } from "../../auth/service.js";
 import { body } from "../../http/body.js";
-import { badRequest, forbidden } from "../../http/errors.js";
+import { badRequest, forbidden, HttpError, notFound } from "../../http/errors.js";
+import { rateLimit, type RateLimiter } from "../../http/rate-limit.js";
 import type { AppEnv } from "../../http/types.js";
+import { loadDossierForAi, portailAnalyst } from "../../services/portail-ai.js";
 
 type AiSettings = { ai_enabled: boolean; ai_terms_version: string | null; ai_accepted_at: Date | null };
 
@@ -20,7 +22,7 @@ export async function loadAiSettings(tenantId: string): Promise<AiSettings | und
 }
 
 /** Monté sous /portail/ai : hérite des contrôles module + abonnement du Portail. */
-export function portailAiRoutes() {
+export function portailAiRoutes(limiter: RateLimiter) {
   const app = new Hono<AppEnv>();
 
   app.get("/", async (c) => {
@@ -64,5 +66,50 @@ export function portailAiRoutes() {
     return c.json({ ok: true });
   });
 
+  // ---- Analyse d'un dossier : rien n'est conservé, chaque usage est tracé (sans contenu) ----
+  const analysis = new Hono<AppEnv>();
+  analysis.use(
+    "*",
+    rateLimit(limiter, { name: "portail-ai", limit: 30, windowSec: 3600, key: (c) => `${currentWorkspace(c).tenantId}:${currentUser(c).id}` }),
+  );
+
+  async function prepare(c: Context<AppEnv>, kind: string) {
+    const ws = currentWorkspace(c);
+    if (!aiEffective(await loadAiSettings(ws.tenantId))) throw new HttpError(409, "ai_disabled", "L'analyse IA n'est pas activée pour cet espace.");
+    const id = c.req.param("id") ?? "";
+    if (!/^[0-9a-f-]{36}$/i.test(id)) throw notFound("dossier_not_found");
+    const d = await getPool().query<{ ai_excluded: boolean }>(`select ai_excluded from portal_dossiers where id = $1 and tenant_id = $2`, [id, ws.tenantId]);
+    if (!d.rows[0]) throw notFound("dossier_not_found");
+    if (d.rows[0].ai_excluded) throw new HttpError(409, "ai_excluded", "Ce dossier est exclu de l'analyse IA.");
+    const data = await loadDossierForAi(ws.tenantId, id);
+    await audit(getPool(), { tenantId: ws.tenantId, actor: actorLabel(c), step: "portail.ai", decision: kind, summary: { dossier: id, files: data.coverage.analyzed } });
+    return { ...data, ...portailAnalyst() };
+  }
+
+  const meta = (simulated: boolean, coverage: unknown) => ({
+    simulated,
+    coverage,
+    notice: "Suggestions générées automatiquement à partir des pièces : à vérifier, elles ne remplacent pas votre analyse.",
+  });
+
+  analysis.post("/dossiers/:id/summary", async (c) => {
+    const { docs, coverage, analyst, simulated } = await prepare(c, "summary");
+    const result = docs.length ? sanitizeSummary(await analyst.summarize(docs), docs) : { overview: "Aucune pièce analysée pour le moment.", pieces: [] };
+    return c.json({ ...meta(simulated, coverage), result });
+  });
+
+  analysis.post("/dossiers/:id/check", async (c) => {
+    const { docs, items, coverage, analyst, simulated } = await prepare(c, "check");
+    return c.json({ ...meta(simulated, coverage), result: sanitizeCheck(await analyst.check(items, docs), docs) });
+  });
+
+  analysis.post("/dossiers/:id/ask", async (c) => {
+    const b = await body(c.req, z.object({ question: z.string().trim().min(3).max(500) }));
+    const { docs, coverage, analyst, simulated } = await prepare(c, "ask");
+    const raw = docs.length ? await analyst.ask(b.question, docs) : { found: false, answer: "", citations: [] };
+    return c.json({ ...meta(simulated, coverage), result: sanitizeAnswer(raw, docs) });
+  });
+
+  app.route("/", analysis);
   return app;
 }

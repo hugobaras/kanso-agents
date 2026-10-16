@@ -24,6 +24,7 @@ import { audit } from "../../auth/service.js";
 import { masterKey } from "../../env.js";
 import { body } from "../../http/body.js";
 import { badRequest, HttpError, notFound } from "../../http/errors.js";
+import type { RateLimiter } from "../../http/rate-limit.js";
 import type { AppEnv } from "../../http/types.js";
 import { deliver } from "../../services/mail.js";
 import { sendLinkEmail, type ContactRow, type DossierRow } from "../../services/portail.js";
@@ -78,7 +79,7 @@ async function activeCount(tenantId: string): Promise<number> {
   return r.rows[0]?.n ?? 0;
 }
 
-export function portailRoutes() {
+export function portailRoutes(limiter: RateLimiter) {
   const app = new Hono<AppEnv>();
   app.use("*", async (c, next) => {
     assertModule(c, "portail");
@@ -614,7 +615,7 @@ export function portailRoutes() {
     return c.json({ ok: true });
   });
 
-  app.route("/ai", portailAiRoutes());
+  app.route("/ai", portailAiRoutes(limiter));
 
   return app;
 }
