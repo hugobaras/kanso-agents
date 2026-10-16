@@ -1,4 +1,5 @@
 import { templates } from "@kanso/mailer";
+import { purgeDossier } from "@kanso/portal";
 import {
   buildWorkspaceExport,
   getPool,
@@ -84,12 +85,17 @@ async function processExports(): Promise<Record<string, unknown>> {
   return { processed: claimed.rowCount ?? 0 };
 }
 
-async function purgeDeletedTenants(): Promise<Record<string, unknown>> {
+export async function purgeDeletedTenants(): Promise<Record<string, unknown>> {
   const pool = getPool();
   const res = await pool.query<{ tenant_id: string }>(
     `select tenant_id from tenants where deleted_at is not null and deleted_at <= now() limit 20`,
   );
-  for (const r of res.rows) await purgeTenant(pool, r.tenant_id);
+  for (const r of res.rows) {
+    // Portail objects live in S3 in production: delete them before the rows that locate them.
+    const dossiers = await pool.query<{ id: string }>(`select id from portal_dossiers where tenant_id = $1`, [r.tenant_id]);
+    for (const d of dossiers.rows) await purgeDossier(pool, d.id);
+    await purgeTenant(pool, r.tenant_id);
+  }
   return { purged: res.rows.length };
 }
 
