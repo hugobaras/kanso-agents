@@ -91,10 +91,19 @@ services:
       target: web
       args:
         NEXT_PUBLIC_APP_URL: http://localhost:3001
+        NEXT_PUBLIC_SITES_MODE: ${NEXT_PUBLIC_SITES_MODE:-}
+        NEXT_PUBLIC_URL_SOLUTIONS: ${NEXT_PUBLIC_URL_SOLUTIONS:-}
+        NEXT_PUBLIC_URL_ASSISTANT: ${NEXT_PUBLIC_URL_ASSISTANT:-}
+        NEXT_PUBLIC_URL_SITE: ${NEXT_PUBLIC_URL_SITE:-}
+        NEXT_PUBLIC_URL_PORTAIL: ${NEXT_PUBLIC_URL_PORTAIL:-}
     ports:
       - "3001:3001"
     environment:
       INTERNAL_API_URL: http://inbound-api:3000
+      KANSO_HOST_SOLUTIONS: ${KANSO_HOST_SOLUTIONS:-}
+      KANSO_HOST_ASSISTANT: ${KANSO_HOST_ASSISTANT:-}
+      KANSO_HOST_SITE: ${KANSO_HOST_SITE:-}
+      KANSO_HOST_PORTAIL: ${KANSO_HOST_PORTAIL:-}
     depends_on:
       - inbound-api
 
