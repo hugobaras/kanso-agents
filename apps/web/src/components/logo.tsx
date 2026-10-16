@@ -15,12 +15,12 @@ export function LogoMark({
   const light = variant === "light";
   const dot = light ? "#3FA39D" : SITES[site].accent.base;
   return (
-    <svg viewBox="0 0 96 96" className={cn("size-8 shrink-0", className)} aria-hidden>
+    <svg viewBox="0 0 256 256" className={cn("size-8 shrink-0", className)} aria-hidden>
       <path
         fill={light ? "#FAF8F4" : "#1B2A4A"}
-        d="M38.79 11.14A38 38 0 1 0 57.21 11.14L55.49 18.05A24 24 0 1 1 41.4 21.57Z"
+        d="M208.26 55.73A108 108 0 1 1 112.97 21.05L116.37 45.23A74 74 0 1 0 194.46 68.16Z"
       />
-      <circle cx="48" cy="28" r="7" fill={dot} />
+      <circle cx="159.5" cy="41.5" r="15" fill={dot} />
     </svg>
   );
 }

@@ -126,12 +126,12 @@ export default function SolutionsHome() {
         </div>
         <svg
           className="pointer-events-none absolute -right-24 top-6 hidden size-[460px] text-ink/[0.04] lg:block"
-          viewBox="0 0 96 96"
+          viewBox="0 0 256 256"
           aria-hidden
         >
           <path
             fill="currentColor"
-            d="M38.79 11.14A38 38 0 1 0 57.21 11.14L55.49 18.05A24 24 0 1 1 41.4 21.57Z"
+            d="M208.26 55.73A108 108 0 1 1 112.97 21.05L116.37 45.23A74 74 0 1 0 194.46 68.16Z"
           />
         </svg>
       </section>
