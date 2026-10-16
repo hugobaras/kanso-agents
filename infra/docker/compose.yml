@@ -101,6 +101,7 @@ services:
       - "127.0.0.1:3001:3001"
     environment:
       INTERNAL_API_URL: http://inbound-api:3000
+      KANSO_PUBLIC_URL: ${KANSO_PUBLIC_URL:-http://localhost:3000}
       KANSO_HOST_SOLUTIONS: ${KANSO_HOST_SOLUTIONS:-}
       KANSO_HOST_ASSISTANT: ${KANSO_HOST_ASSISTANT:-}
       KANSO_HOST_SITE: ${KANSO_HOST_SITE:-}
