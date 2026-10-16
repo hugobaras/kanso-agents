@@ -2,7 +2,7 @@ import { getEntitlements } from "@kanso/billing";
 import { getPool, requireTenantId } from "@kanso/tenancy";
 import type { Context, MiddlewareHandler } from "hono";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
-import { appUrl, isProd } from "../env.js";
+import { appUrl, isProd, portailUrl } from "../env.js";
 import { isLocalOrigin } from "../cors-origins.js";
 import { HttpError, forbidden } from "../http/errors.js";
 import type { AppEnv, Role, SessionUser, WorkspaceContext } from "../http/types.js";
@@ -66,7 +66,7 @@ export const csrfGuard: MiddlewareHandler<AppEnv> = async (c, next) => {
     if (c.req.header("x-kanso-internal") === "1") return next();
     throw forbidden("csrf_origin_missing");
   }
-  const allowed = [appUrl(), ...(process.env.KANSO_CORS_ORIGINS ?? "").split(",")]
+  const allowed = [appUrl(), portailUrl(), ...(process.env.KANSO_CORS_ORIGINS ?? "").split(",")]
     .map((s) => s.trim().replace(/\/$/, ""))
     .filter(Boolean);
   const norm = origin.replace(/\/$/, "");

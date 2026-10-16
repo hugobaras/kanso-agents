@@ -2,7 +2,7 @@ import { LINK_DAYS, issueLink, loadBrand, loadItems } from "@kanso/portal";
 import { templates } from "@kanso/mailer";
 import { getPool } from "@kanso/tenancy";
 import { deliver } from "./mail.js";
-import { appLink } from "./mail.js";
+import { productLink } from "./mail.js";
 
 export type DossierRow = {
   id: string;
@@ -44,7 +44,7 @@ export async function sendLinkEmail(
 }
 
 export function dossierUrl(workspace: string, id: string): string {
-  return appLink(`/app/${workspace}/portail/${id}`);
+  return productLink("portail", `/app/${workspace}/portail/${id}`);
 }
 
 /** Destinataires d'une notification cabinet : le responsable, sinon les administrateurs. */

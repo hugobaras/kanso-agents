@@ -1,4 +1,4 @@
-import { appUrl, isProd } from "./env.js";
+import { appUrl, isProd, portailUrl } from "./env.js";
 
 function normalise(origin: string): string {
   return origin.trim().replace(/\/$/, "");
@@ -19,7 +19,7 @@ export function isLocalOrigin(origin: string): boolean {
 }
 
 /**
- * Dashboard / auth API CORS (credentialed). Allowed: KANSO_APP_URL, the
+ * Dashboard / auth API CORS (credentialed). Allowed: KANSO_APP_URL, KANSO_PORTAIL_URL (own domain), the
  * comma-separated KANSO_CORS_ORIGINS, and localhost outside production.
  * Never reflects arbitrary origins. The widget API has its own per-key check.
  */
@@ -27,7 +27,7 @@ export function resolveCorsOrigin(requestOrigin: string): string | undefined {
   if (!requestOrigin) return undefined;
   const norm = normalise(requestOrigin);
   const allowed = new Set(
-    [appUrl(), ...(process.env.KANSO_CORS_ORIGINS ?? "").split(",")]
+    [appUrl(), portailUrl(), ...(process.env.KANSO_CORS_ORIGINS ?? "").split(",")]
       .map(normalise)
       .filter(Boolean),
   );

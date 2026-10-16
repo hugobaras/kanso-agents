@@ -14,7 +14,8 @@ export type Me = {
 };
 
 export type Entitlements = {
-  plan: "trial" | "essentiel" | "cabinet" | "expert";
+  plan: "trial" | "essentiel" | "cabinet" | "expert" | "portail_trial" | "portail_essentiel" | "portail_cabinet";
+  product: "assistant" | "portail";
   plan_name: string;
   status: "trialing" | "active" | "past_due" | "canceled" | "incomplete" | "expired";
   active: boolean;
@@ -67,12 +68,13 @@ export type LeadListItem = {
 };
 
 export type Plan = {
-  id: "essentiel" | "cabinet" | "expert" | "trial";
+  id: "essentiel" | "cabinet" | "expert" | "trial" | "portail_trial" | "portail_essentiel" | "portail_cabinet";
+  product: "assistant" | "portail";
   name: string;
   tagline: string;
   monthlyPriceCents: number;
   yearlyPriceCents: number;
-  modules: { inbound: boolean; document_to_action: boolean };
+  modules: { inbound: boolean; document_to_action: boolean; portail: boolean };
   quotas: { conversations: number; documents: number };
   seats: number;
   highlights: string[];

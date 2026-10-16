@@ -5,11 +5,18 @@ describe("resolveCorsOrigin", () => {
   afterEach(() => {
     delete process.env.KANSO_CORS_ORIGINS;
     delete process.env.KANSO_APP_URL;
+    delete process.env.KANSO_PORTAIL_URL;
     delete process.env.KANSO_ENV;
   });
 
   it("never reflects unknown origins", () => {
     expect(resolveCorsOrigin("https://evil.example")).toBeUndefined();
+  });
+
+  it("allows the Portail domain", () => {
+    process.env.KANSO_APP_URL = "https://app.kanso.fr";
+    process.env.KANSO_PORTAIL_URL = "https://portail.kanso.fr";
+    expect(resolveCorsOrigin("https://portail.kanso.fr")).toBe("https://portail.kanso.fr");
   });
 
   it("allows the app URL and listed origins", () => {

@@ -8,7 +8,7 @@ import { audit } from "../../auth/service.js";
 import { body } from "../../http/body.js";
 import { badRequest, HttpError, notFound } from "../../http/errors.js";
 import type { AppEnv } from "../../http/types.js";
-import { appLink, deliver } from "../../services/mail.js";
+import { deliver, productLink } from "../../services/mail.js";
 
 export function teamRoutes() {
   const app = new Hono<AppEnv>();
@@ -75,7 +75,7 @@ export function teamRoutes() {
       templates.invitation({
         workspace: ws.displayName,
         inviter: currentUser(c).name || currentUser(c).email,
-        url: appLink(`/invitation/${encodeURIComponent(raw)}`),
+        url: productLink(ws.entitlements.plan.product, `/invitation/${encodeURIComponent(raw)}`),
       }),
     );
     await audit(pool, { tenantId: ws.tenantId, actor: actorLabel(c), step: "team", decision: "invited", summary: { role: b.role } });

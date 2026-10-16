@@ -38,16 +38,25 @@ export function newWidgetPublicKey(mode: "live" | "test" = "live"): string {
 /**
  * Creates a full workspace in one transaction: tenant, owner membership,
  * 14-day trial, widget key, profession-based drafts (inbound + documents).
+ * product "portail": Portail-only workspace (no Assistant modules, no drafts).
  */
 export async function createWorkspace(
   db: PoolClient,
-  opts: { name: string; profession: Profession; ownerUserId: string; ownerEmail: string },
+  opts: { name: string; profession: Profession; ownerUserId: string; ownerEmail: string; product?: "assistant" | "portail" },
 ): Promise<{ tenantId: string }> {
   const tenantId = await uniqueSlug(db, opts.name);
+  const portailOnly = opts.product === "portail";
   await db.query(
     `insert into tenants (tenant_id, display_name, status, profession, modules)
-     values ($1, $2, 'active', $3, '{"inbound": true, "document_to_action": true}'::jsonb)`,
-    [tenantId, opts.name, opts.profession],
+     values ($1, $2, 'active', $3, $4::jsonb)`,
+    [
+      tenantId,
+      opts.name,
+      opts.profession,
+      portailOnly
+        ? '{"inbound": false, "document_to_action": false, "portail": true}'
+        : '{"inbound": true, "document_to_action": true}',
+    ],
   );
   await db.query(`insert into memberships (tenant_id, user_id, role) values ($1, $2, 'owner')`, [
     tenantId,
@@ -55,9 +64,17 @@ export async function createWorkspace(
   ]);
   await db.query(
     `insert into subscriptions (tenant_id, plan, status, trial_ends_at)
-     values ($1, 'trial', 'trialing', now() + ($2::text || ' days')::interval)`,
-    [tenantId, String(TRIAL_DAYS)],
+     values ($1, $3, 'trialing', now() + ($2::text || ' days')::interval)`,
+    [tenantId, String(TRIAL_DAYS), portailOnly ? "portail_trial" : "trial"],
   );
+  if (portailOnly) {
+    await db.query(
+      `insert into audit_events (tenant_id, step, decision, summary, actor, correlation_id)
+       values ($1, 'workspace', 'created', $2::jsonb, $3, $4)`,
+      [tenantId, JSON.stringify({ profession: opts.profession, product: "portail" }), opts.ownerEmail, `signup:${tenantId}`],
+    );
+    return { tenantId };
+  }
   await db.query(`insert into widget_keys (tenant_id, public_key, mode) values ($1, $2, 'live')`, [
     tenantId,
     newWidgetPublicKey("live"),
