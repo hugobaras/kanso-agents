@@ -1,4 +1,4 @@
-import { FileUp, Hourglass, LockKeyhole, MessagesSquare, ScrollText, ServerCog, Workflow } from "lucide-react";
+import { FileUp, LockKeyhole, MessagesSquare, ScrollText, ServerCog, Workflow } from "lucide-react";
 import { Faq } from "@/components/marketing/faq";
 import { PortalMock } from "@/components/sites/portal-mock";
 import { PublicForm } from "@/components/sites/contact-form";
@@ -17,9 +17,6 @@ export default function PortailPage() {
     <>
       <section className="mx-auto grid max-w-6xl items-center gap-14 px-5 pb-24 pt-16 lg:grid-cols-[1.05fr_1fr] lg:pt-24">
         <div>
-          <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-line bg-accent-soft px-3 py-1 text-xs font-medium text-accent-strong">
-            <Hourglass className="size-3.5" /> Bêta fermée — accès sur demande
-          </p>
           <h1 className="font-display text-[42px] leading-[1.08] sm:text-[54px]">
             L&apos;espace client de votre cabinet, <span className="text-accent">sécurisé</span> et simple.
           </h1>

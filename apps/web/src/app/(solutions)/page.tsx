@@ -2,7 +2,6 @@ import {
   ArrowRight,
   Eye,
   FileCheck2,
-  Globe2,
   Handshake,
   LayoutTemplate,
   Lock,
@@ -97,10 +96,6 @@ export default function SolutionsHome() {
     <>
       <section className="relative overflow-hidden">
         <div className="mx-auto max-w-6xl px-5 pb-24 pt-20 lg:pt-28">
-          <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs text-muted">
-            <Globe2 className="size-3.5 text-accent" /> Pour avocats,
-            experts-comptables et notaires
-          </p>
           <h1 className="max-w-4xl font-display text-[44px] leading-[1.06] sm:text-[62px]">
             Des outils simples pour les professions du{" "}
             <span className="text-accent">droit</span> et du{" "}
@@ -158,9 +153,6 @@ export default function SolutionsHome() {
                   <div className="flex items-center justify-between">
                     <span className="flex size-11 items-center justify-center rounded-xl bg-accent-soft text-accent">
                       <p.icon className="size-5" />
-                    </span>
-                    <span className="rounded-full border border-line bg-surface px-2.5 py-1 text-xs text-muted">
-                      {p.status}
                     </span>
                   </div>
                   <p className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-accent">

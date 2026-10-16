@@ -1,4 +1,4 @@
-import { Bell, Bot, Mail } from "lucide-react";
+import { Bot, Mail } from "lucide-react";
 
 /** Static illustration: a conversation on the left, what the firm receives on the right. */
 export function HeroVisual() {
@@ -55,9 +55,6 @@ export function HeroVisual() {
             <dd>julien.m@…</dd>
           </div>
         </dl>
-      </div>
-      <div className="absolute -left-6 -top-4 hidden items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs shadow-card sm:flex">
-        <Bell className="size-3.5 text-accent" /> Nouvelle demande qualifiée
       </div>
     </div>
   );

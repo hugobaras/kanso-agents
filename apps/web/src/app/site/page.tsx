@@ -1,4 +1,4 @@
-import { ArrowRight, Calculator, Gavel, Landmark, MapPin, MessagesSquare, PenLine, Rocket, Scale, SearchCheck, ShieldCheck } from "lucide-react";
+import { ArrowRight, Calculator, Gavel, Landmark, MapPin, MessagesSquare, PenLine, Scale, SearchCheck, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { Faq } from "@/components/marketing/faq";
 import { BrowserMock } from "@/components/sites/browser-mock";
@@ -44,9 +44,6 @@ export default function SitePage() {
     <>
       <section className="mx-auto grid max-w-6xl items-center gap-14 px-5 pb-24 pt-16 lg:grid-cols-[1fr_1.05fr] lg:pt-24">
         <div>
-          <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs text-muted">
-            <Rocket className="size-3.5 text-accent" /> Pour avocats, experts-comptables et notaires
-          </p>
           <h1 className="font-display text-[42px] leading-[1.08] sm:text-[54px]">
             Le site de votre cabinet, conçu pour inspirer <span className="text-accent">confiance</span>.
           </h1>

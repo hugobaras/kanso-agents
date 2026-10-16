@@ -26,9 +26,6 @@ export default function HomePage() {
       <section className="relative overflow-hidden">
         <div className="mx-auto grid max-w-6xl items-center gap-16 px-5 pb-36 pt-16 lg:grid-cols-[1.05fr_1fr] lg:pt-24">
           <div>
-            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs text-muted">
-              <ShieldCheck className="size-3.5 text-accent" /> Hébergé en France et dans l&apos;UE · IA Mistral
-            </p>
             <h1 className="font-display text-[42px] leading-[1.08] text-ink sm:text-[54px]">
               Chaque demande de client, <span className="text-accent">qualifiée</span> avant même que vous ne décrochiez.
             </h1>
