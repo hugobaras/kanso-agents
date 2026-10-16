@@ -10,6 +10,7 @@ import { badRequest, forbidden, HttpError, notFound } from "../../http/errors.js
 import { rateLimit, type RateLimiter } from "../../http/rate-limit.js";
 import type { AppEnv } from "../../http/types.js";
 import { loadDossierForAi, portailAnalyst } from "../../services/portail-ai.js";
+import { ensureSettings } from "./portail.js";
 
 type AiSettings = { ai_enabled: boolean; ai_terms_version: string | null; ai_accepted_at: Date | null };
 
@@ -43,6 +44,8 @@ export function portailAiRoutes(limiter: RateLimiter) {
     assertRole(c, "owner");
     const b = await body(c.req, z.object({ enabled: z.boolean(), accept_terms: z.string().max(40).optional() }));
     const pool = getPool();
+    // Settings rows are created lazily: without this the update below would silently match nothing.
+    await ensureSettings(ws.tenantId);
     if (b.enabled) {
       if (ws.entitlements.quotas.ai_pages <= 0) throw forbidden("ai_not_in_plan", "L'analyse IA est incluse dans l'offre Portail Cabinet.");
       if (b.accept_terms !== AI_TERMS_VERSION) throw badRequest("ai_terms_required", "Acceptez l'avenant « Analyse IA » pour activer la fonction.");

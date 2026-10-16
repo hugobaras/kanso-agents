@@ -35,6 +35,8 @@ describe("analyste simulé", () => {
   it("detects the document type", () => {
     expect(detectType(docs[0]!.pages[0]!)).toBe("Pièce d'identité");
     expect(detectType("Relevé de compte n°12")).toBe("Relevé bancaire");
+    expect(detectType("Relevés bancaires de l'exercice")).toBe("Relevé bancaire");
+    expect(detectType("Factures de ventes")).toBe("Facture");
   });
 
   it("flags a wrong document and an expired one, with citations", async () => {

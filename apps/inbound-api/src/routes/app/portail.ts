@@ -63,7 +63,7 @@ const SettingsInput = z.object({
     .optional(),
 });
 
-async function ensureSettings(tenantId: string) {
+export async function ensureSettings(tenantId: string) {
   await getPool().query(`insert into portal_settings (tenant_id) values ($1) on conflict do nothing`, [tenantId]);
 }
 

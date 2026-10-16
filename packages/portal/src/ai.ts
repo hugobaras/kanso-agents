@@ -92,12 +92,12 @@ export const NOT_FOUND = "Je ne trouve pas cette information dans les pièces an
 
 const TYPES: Array<[string, RegExp]> = [
   ["Pièce d'identité", /carte nationale d'identite|passeport|titre de sejour|\bcni\b/],
-  ["Avis d'imposition", /avis d'imposition|impot sur le revenu|revenu fiscal de reference/],
-  ["Bulletin de salaire", /bulletin de (salaire|paie)|salaire brut|net a payer/],
-  ["Relevé bancaire", /releve de compte|releve bancaire|solde (crediteur|debiteur|au)/],
-  ["Facture", /\bfacture\b/],
+  ["Avis d'imposition", /avis d'impositions?|impots? sur le revenu|revenu fiscal de reference/],
+  ["Bulletin de salaire", /bulletins? de (salaire|paie)|salaire brut|net a payer/],
+  ["Relevé bancaire", /releves? de comptes?|releves? bancaires?|solde (crediteur|debiteur|au)/],
+  ["Facture", /\bfactures?\b/],
   ["Justificatif de domicile", /justificatif de domicile|quittance de loyer|facture d'(electricite|eau|energie)/],
-  ["Contrat", /\bcontrat\b|\bbail\b/],
+  ["Contrat", /\bcontrats?\b|\bbail\b/],
   ["Extrait Kbis / statuts", /kbis|statuts de la societe|registre du commerce/],
   ["Certificat médical", /certificat medical|ordonnance|compte rendu medical/],
 ];

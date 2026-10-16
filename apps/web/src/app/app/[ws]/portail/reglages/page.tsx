@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, Trash2, Upload } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useWorkspace } from "@/components/app/workspace-context";
+import { AiSettingsCard } from "@/components/portail/ai-settings-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
@@ -191,6 +192,10 @@ export default function PortailSettingsPage() {
           </div>
         )}
       </form>
+
+      <div className="mt-6 max-w-3xl">
+        <AiSettingsCard />
+      </div>
 
       <Card className="mt-6 max-w-3xl">
         <CardHeader
