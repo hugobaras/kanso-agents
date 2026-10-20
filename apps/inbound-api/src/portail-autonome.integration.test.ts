@@ -130,6 +130,20 @@ describe.skipIf(!hasDb)("Kanso Portail autonome", () => {
     }
   });
 
+  it("lets an Assistant account open one Portail space, never a second trial of the same product", async () => {
+    const r = await call(ass, "POST", "/api/auth/workspaces", { product: "portail", workspace_name: "Cab Portail", profession: "avocat" });
+    expect(r.status).toBe(201);
+    extra.push(r.json.workspace);
+    const me = await call(ass, "GET", "/api/auth/me");
+    expect(me.json.workspaces.map((w: any) => w.product).sort()).toEqual(["assistant", "portail"]);
+    expect((await call(ass, "GET", `/api/app/${r.json.workspace}`)).json.entitlements.plan).toBe("portail_trial");
+    for (const product of ["portail", "assistant"]) {
+      const again = await call(ass, "POST", "/api/auth/workspaces", { product, workspace_name: "Encore", profession: "avocat" });
+      expect(again.status, product).toBe(409);
+      expect(again.json.error).toBe("product_already_owned");
+    }
+  });
+
   it("keeps Portail dossiers out of a staff support session", async () => {
     const staff: Jar = {};
     const r = await signup(staff, `staff-${suffix}@example.com`);

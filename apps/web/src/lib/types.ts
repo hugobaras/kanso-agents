@@ -11,7 +11,7 @@ export type Me = {
     impersonated: boolean;
     mfa_enabled: boolean;
   };
-  workspaces: Array<{ id: string; name: string; role: Role; profession: string | null; onboarded: boolean }>;
+  workspaces: Array<{ id: string; name: string; role: Role; profession: string | null; onboarded: boolean; product: "assistant" | "portail" }>;
 };
 
 export type Entitlements = {

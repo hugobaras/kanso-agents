@@ -15,6 +15,7 @@ import {
   Settings,
   FolderLock,
   FolderPlus,
+  Plus,
   Shield,
   User,
   Users,
@@ -157,6 +158,19 @@ function WorkspaceSwitcher() {
               <span className="truncate">{w.name}</span>
             </Link>
           ))}
+          {(["portail", "assistant"] as const)
+            .filter((p) => !me.workspaces.some((w) => w.role === "owner" && w.product === p))
+            .map((p) => (
+              <Link
+                key={p}
+                href={`/app/nouvel-espace?produit=${p}`}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 rounded border-t border-line px-2.5 py-2 text-sm text-accent hover:bg-sunken"
+              >
+                <Plus className="size-4" />
+                Ouvrir un espace {p === "portail" ? "Kanso Portail" : "Kanso Assistant"}
+              </Link>
+            ))}
         </div>
       )}
     </div>

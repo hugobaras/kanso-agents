@@ -1,3 +1,4 @@
+import { PLANS, isPlanId } from "@kanso/billing";
 import { PROFESSIONS, type Profession } from "@kanso/config";
 import { templates } from "@kanso/mailer";
 import { getPool, withTransaction } from "@kanso/tenancy";
@@ -357,8 +358,32 @@ export function authRoutes(limiter: RateLimiter) {
         role: m.role,
         profession: m.profession,
         onboarded: !!m.onboarding_completed_at,
+        product: isPlanId(m.plan) ? PLANS[m.plan].product : "assistant",
       })),
     });
+  });
+
+  // An existing account opens a space for the other product (one per product: no trial chaining).
+  app.post("/workspaces", requireUser, async (c) => {
+    const user = currentUser(c);
+    if (user.impersonator_user_id) throw new HttpError(403, "support_restricted", "Indisponible en session support.");
+    const body = await parse(
+      z.object({
+        product: z.enum(["assistant", "portail"]),
+        workspace_name: z.string().trim().min(2, "Indiquez le nom de votre cabinet.").max(80),
+        profession: z.enum(professionIds),
+      }),
+      c.req,
+    );
+    const pool = getPool();
+    const owned = (await listMemberships(pool, user.id)).filter((m) => m.role === "owner");
+    if (owned.some((m) => (isPlanId(m.plan) ? PLANS[m.plan].product : "assistant") === body.product)) {
+      throw new HttpError(409, "product_already_owned", body.product === "portail" ? "Vous avez déjà un espace Kanso Portail." : "Vous avez déjà un espace Kanso Assistant.");
+    }
+    const ws = await withTransaction(pool, (db) =>
+      createWorkspace(db, { name: body.workspace_name, profession: body.profession, ownerUserId: user.id, ownerEmail: user.email, product: body.product }),
+    );
+    return c.json({ ok: true, workspace: ws.tenantId }, 201);
   });
 
   app.patch("/me", requireUser, async (c) => {
