@@ -1,0 +1,26 @@
+# Reverse proxy de production : HTTPS automatique (Let's Encrypt) pour les 4 sites et l'API publique.
+# Caddy ignore le X-Forwarded-For envoyé par le client et pose la vraie adresse : l'API
+# (clientIp, limites de débit) peut donc se fier à la première adresse de l'en-tête.
+{
+	email {$ACME_EMAIL}
+}
+
+(common) {
+	encode zstd gzip
+	header -Server
+}
+
+{$DOMAIN_SOLUTIONS}, {$DOMAIN_ASSISTANT}, {$DOMAIN_SITE}, {$DOMAIN_PORTAIL} {
+	import common
+	reverse_proxy web:3001
+}
+
+www.{$DOMAIN_SOLUTIONS}, www.{$DOMAIN_ASSISTANT}, www.{$DOMAIN_SITE}, www.{$DOMAIN_PORTAIL} {
+	redir https://{labels.1}.{labels.0}{uri} permanent
+}
+
+# Widget (script + API publique) et webhook Stripe.
+{$DOMAIN_API} {
+	import common
+	reverse_proxy inbound-api:3000
+}

@@ -31,6 +31,8 @@ fi
 
 for f in "$ROOT"/supabase/migrations/*.sql; do
   name=$(basename "$f")
+  # Sync tools (iCloud, Dropbox) leave copies like "x 2.sql": never apply them.
+  case "$name" in *" "*) echo "Ignoré (copie de synchronisation) : $name"; continue ;; esac
   done_already=$(psql "$DATABASE_URL" -tAc "select 1 from schema_migrations where filename = '$name'")
   if [ "$done_already" = "1" ]; then
     continue
