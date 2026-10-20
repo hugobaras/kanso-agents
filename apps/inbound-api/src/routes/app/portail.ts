@@ -258,6 +258,8 @@ export function portailRoutes(limiter: RateLimiter) {
     contacts: z.array(ContactInput).min(1).max(5),
     message: z.string().trim().max(1000).optional().nullable(),
     lead_id: z.string().uuid().optional().nullable(),
+    // Espace Assistant d'où vient la demande, quand le Portail est un espace séparé du même cabinet.
+    from_workspace: z.string().max(80).optional().nullable(),
     send: z.boolean().default(true),
   });
 
@@ -286,10 +288,18 @@ export function portailRoutes(limiter: RateLimiter) {
     }
     items ??= [];
 
+    const leadWs = b.from_workspace && b.from_workspace !== ws.tenantId ? b.from_workspace : ws.tenantId;
     if (b.lead_id) {
-      const l = await pool.query(`select 1 from leads where id = $1 and tenant_id = $2`, [b.lead_id, ws.tenantId]);
+      // Cross-space: the user must belong to the source space too. Same answer as a missing lead, so no probing.
+      if (leadWs !== ws.tenantId) {
+        const m = await pool.query(`select 1 from memberships where tenant_id = $1 and user_id = $2`, [leadWs, user.id]);
+        if (!m.rows[0]) throw badRequest("lead_not_found");
+      }
+      const l = await pool.query(`select 1 from leads where id = $1 and tenant_id = $2`, [b.lead_id, leadWs]);
       if (!l.rows[0]) throw badRequest("lead_not_found");
     }
+    // The foreign key only links leads of this space; a cross-space origin is kept in both audit logs instead.
+    const localLeadId = b.lead_id && leadWs === ws.tenantId ? b.lead_id : null;
 
     const client = await (pool as unknown as { connect(): Promise<{ query: typeof pool.query; release(): void }> }).connect();
     let dossier: DossierRow;
@@ -304,7 +314,7 @@ export function portailRoutes(limiter: RateLimiter) {
       const d = await client.query<DossierRow>(
         `insert into portal_dossiers (tenant_id, reference, title, client_name, client_kind, cabinet_message, assignee_user_id, lead_id, source, created_by)
          values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$7) returning *`,
-        [ws.tenantId, reference, b.title, b.client_name, b.client_kind, b.message || null, user.id, b.lead_id ?? null, b.lead_id ? "assistant" : "manual"],
+        [ws.tenantId, reference, b.title, b.client_name, b.client_kind, b.message || null, user.id, localLeadId, b.lead_id ? "assistant" : "manual"],
       );
       dossier = d.rows[0]!;
       for (const [idx, it] of items.entries()) {
@@ -328,7 +338,17 @@ export function portailRoutes(limiter: RateLimiter) {
     } finally {
       client.release();
     }
-    await audit(pool, { tenantId: ws.tenantId, actor: actorLabel(c), step: "portail.dossier", decision: "created", summary: { dossier: dossier.id, reference: dossier.reference } });
+    const crossSpace = b.lead_id && leadWs !== ws.tenantId;
+    await audit(pool, {
+      tenantId: ws.tenantId,
+      actor: actorLabel(c),
+      step: "portail.dossier",
+      decision: "created",
+      summary: { dossier: dossier.id, reference: dossier.reference, ...(crossSpace ? { from_workspace: leadWs, lead: b.lead_id } : {}) },
+    });
+    if (crossSpace) {
+      await audit(pool, { tenantId: leadWs, actor: actorLabel(c), step: "leads", decision: "sent_to_portail", summary: { lead: b.lead_id, portail_workspace: ws.tenantId, reference: dossier.reference } });
+    }
     if (b.send) for (const ct of contacts) await sendLinkEmail(dossier, ct, "invite");
     return c.json({ id: dossier.id, reference: dossier.reference }, 201);
   });
