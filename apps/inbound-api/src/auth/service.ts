@@ -73,9 +73,10 @@ export async function resolveSession(db: Db, rawToken: string | undefined): Prom
     locale: "fr" | "en";
     email_verified_at: Date | null;
     is_staff: boolean;
+    mfa_enabled: boolean;
   }>(
     `select s.id as session_id, s.expires_at, s.last_seen_at, s.impersonator_user_id,
-            u.id, u.email, u.name, u.locale, u.email_verified_at, u.is_staff
+            u.id, u.email, u.name, u.locale, u.email_verified_at, u.is_staff, (u.totp_enabled_at is not null) as mfa_enabled
      from auth_sessions s join users u on u.id = s.user_id
      where s.token_hash = $1 and s.revoked_at is null`,
     [hashToken(rawToken)],
@@ -102,6 +103,7 @@ export async function resolveSession(db: Db, rawToken: string | undefined): Prom
     is_staff: row.impersonator_user_id ? false : row.is_staff,
     session_id: row.session_id,
     impersonator_user_id: row.impersonator_user_id,
+    mfa_enabled: row.mfa_enabled,
   };
 }
 
@@ -119,8 +121,8 @@ export async function revokeAllSessions(db: Db, userId: string, exceptSessionId?
   );
 }
 
-export type TokenPurpose = "magic" | "verify" | "reset";
-const TOKEN_TTL_MIN: Record<TokenPurpose, number> = { magic: 20, verify: 24 * 60, reset: 60 };
+export type TokenPurpose = "magic" | "verify" | "reset" | "mfa";
+const TOKEN_TTL_MIN: Record<TokenPurpose, number> = { magic: 20, verify: 24 * 60, reset: 60, mfa: 5 };
 
 export async function issueToken(db: Db, userId: string, purpose: TokenPurpose): Promise<string> {
   const raw = newRawToken();

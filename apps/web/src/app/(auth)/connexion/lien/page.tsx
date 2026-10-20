@@ -4,12 +4,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { MfaStep, type MfaChallenge } from "@/components/auth/mfa-step";
 import { api, errorMessage } from "@/lib/api";
 
 function Consume() {
   const params = useSearchParams();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
   const done = useRef(false);
 
   useEffect(() => {
@@ -20,11 +22,12 @@ function Consume() {
       setError("Lien incomplet.");
       return;
     }
-    api("/api/auth/magic-link/consume", { body: { token } })
-      .then(() => router.replace("/app"))
+    api<MfaChallenge>("/api/auth/magic-link/consume", { body: { token } })
+      .then((r) => (r.mfa_required && r.mfa_token ? setMfaToken(r.mfa_token) : router.replace("/app")))
       .catch((e) => setError(errorMessage(e)));
   }, [params, router]);
 
+  if (mfaToken) return <MfaStep token={mfaToken} onDone={() => router.replace("/app")} />;
   if (error) {
     return (
       <div>

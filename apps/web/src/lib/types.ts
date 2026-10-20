@@ -9,6 +9,7 @@ export type Me = {
     email_verified: boolean;
     is_staff: boolean;
     impersonated: boolean;
+    mfa_enabled: boolean;
   };
   workspaces: Array<{ id: string; name: string; role: Role; profession: string | null; onboarded: boolean }>;
 };

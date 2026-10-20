@@ -3,6 +3,7 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { MfaCard } from "@/components/auth/mfa-card";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardFooter, CardHeader } from "@/components/ui/card";
@@ -92,6 +93,7 @@ export default function AccountPage() {
               </Button>
             </CardFooter>
           </Card>
+          {!data.user.impersonated && <MfaCard onChange={() => void mutate()} />}
         </div>
       </main>
     </div>
