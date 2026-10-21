@@ -35,6 +35,10 @@ export async function portailReminders(): Promise<Record<string, unknown>> {
      join portal_settings s on s.tenant_id = d.tenant_id
      join tenants t on t.tenant_id = d.tenant_id
      where d.stage = 'a_completer' and t.deleted_at is null and (t.modules->>'portail')::boolean is true
+       and t.status <> 'suspended'
+       -- No reminders to end clients once the cabinet's subscription has lapsed.
+       and exists (select 1 from subscriptions sub where sub.tenant_id = t.tenant_id
+                   and (sub.status in ('active', 'past_due') or (sub.status = 'trialing' and sub.trial_ends_at > now())))
        and (s.reminders->>'enabled')::boolean is true
        and d.reminder_count < (s.reminders->>'max')::int
        and coalesce(d.last_reminder_at + make_interval(days => (s.reminders->>'every_days')::int),

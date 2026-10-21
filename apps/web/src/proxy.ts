@@ -39,7 +39,48 @@ function siteForHost(host: string): SiteId | null {
 
 const notFound = () => new NextResponse(null, { status: 404 });
 
+const PROD = process.env.NODE_ENV === "production";
+let csp: string | null = null;
+/** CSP lue au runtime : le widget est servi par l'API publique (KANSO_PUBLIC_URL), autre origine possible. */
+function contentSecurityPolicy(): string {
+  if (csp) return csp;
+  let widget = "";
+  try {
+    widget = new URL(process.env.KANSO_PUBLIC_URL ?? "http://localhost:3000").origin;
+  } catch {
+    // invalid URL: widget not allowed
+  }
+  // shortcut: 'unsafe-inline' scripts (Next inline bootstrap); move to nonces if XSS risk grows.
+  csp = [
+    "default-src 'self'",
+    `script-src 'self' 'unsafe-inline'${PROD ? "" : " 'unsafe-eval'"} ${widget}`,
+    "style-src 'self' 'unsafe-inline'",
+    `img-src 'self' data: blob: ${widget}`,
+    "font-src 'self' data:",
+    `connect-src 'self' ${widget}${PROD ? "" : " ws:"}`,
+    "frame-src 'self' blob:",
+    "frame-ancestors 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    ...(PROD ? ["upgrade-insecure-requests"] : []),
+  ].join("; ");
+  return csp;
+}
+
+function secured(res: NextResponse, pathname: string): NextResponse {
+  if (pathname.startsWith("/api/")) return res;
+  res.headers.set("Content-Security-Policy", contentSecurityPolicy());
+  // Browsers ignore HSTS over plain http, so it is safe to always send in production.
+  if (PROD) res.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  return res;
+}
+
 export function proxy(request: NextRequest) {
+  return secured(route(request), request.nextUrl.pathname);
+}
+
+function route(request: NextRequest): NextResponse {
   const { pathname, search } = request.nextUrl;
   const site = siteForHost(request.headers.get("host") ?? "");
 

@@ -22,6 +22,7 @@ import {
   tenantKek,
   type Stage,
 } from "@kanso/portal";
+import { getEntitlements } from "@kanso/billing";
 import { getPool } from "@kanso/tenancy";
 import { Hono, type Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -95,6 +96,13 @@ async function findAccess(token: string, opts: { allowExpired?: boolean } = {}):
 function maskEmail(e: string): string {
   const [u = "", d = ""] = e.split("@");
   return `${u.slice(0, 1)}${"•".repeat(Math.max(2, Math.min(6, u.length - 1)))}@${d}`;
+}
+
+/** Le cabinet n'a plus d'abonnement actif : le client consulte, mais ne dépose ni n'écrit plus. */
+async function assertCabinetActive(a: Access): Promise<void> {
+  if (!(await getEntitlements(getPool(), a.tenant_id)).active) {
+    throw new HttpError(403, "dossier_paused", "Ce dossier n'accepte plus de dépôts pour le moment. Contactez votre cabinet.");
+  }
 }
 
 async function requireSession(c: Context<AppEnv>, a: Access): Promise<void> {
@@ -264,6 +272,7 @@ export function portailClientRoutes(limiter: RateLimiter) {
     async (c) => {
       const a = access(c);
       if (a.stage === "termine") throw badRequest("dossier_closed", "Ce dossier est terminé.");
+      await assertCabinetActive(a);
       const pool = getPool();
       const it = await pool.query<{ id: string; status: string }>(`select id, status from portal_items where id = $1 and dossier_id = $2`, [c.req.param("itemId"), a.dossier_id]);
       const item = it.rows[0];
@@ -340,6 +349,7 @@ export function portailClientRoutes(limiter: RateLimiter) {
 
   d.post("/messages", rateLimit(limiter, { name: "portail-msg", limit: 20, windowSec: 3600, key: (c) => c.req.param("token") ?? clientIp(c) }), async (c) => {
     const a = access(c);
+    await assertCabinetActive(a);
     const b = await body(c.req, z.object({ body: z.string().trim().min(1).max(1000) }));
     await getPool().query(`insert into portal_messages (dossier_id, tenant_id, author_kind, author_contact_id, body) values ($1,$2,'client',$3,$4)`, [a.dossier_id, a.tenant_id, a.contact_id, b.body]);
     await getPool().query(`update portal_dossiers set updated_at = now() where id = $1`, [a.dossier_id]);

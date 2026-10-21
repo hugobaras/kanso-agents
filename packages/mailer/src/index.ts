@@ -41,7 +41,7 @@ export class ConsoleTransport implements MailTransport {
 /** Platform SMTP (KANSO_SMTP_URL, e.g. smtps://user:pass@ssl0.ovh.net:465). */
 export class SmtpTransport implements MailTransport {
   readonly name = "smtp" as const;
-  private readonly transporter: nodemailer.Transporter;
+  private readonly transporter: ReturnType<typeof nodemailer.createTransport>;
   constructor(
     url: string,
     private readonly from: string,

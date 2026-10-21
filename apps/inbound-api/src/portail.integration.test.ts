@@ -150,6 +150,23 @@ describe.skipIf(!hasDb)("Kanso Portail", () => {
     expect(inf.json.error).toBe("file_infected");
   });
 
+  it("pauses deposits and new dossiers when the subscription lapses, keeps reading", async () => {
+    const pool = getPool();
+    await pool.query(`update subscriptions set trial_ends_at = now() - interval '1 day' where tenant_id = $1`, [ws]);
+    try {
+      const item = itemIds[0]!;
+      const up = await call(clientJar, "POST", `${dossier()}/items/${item}/files`, undefined, upload(item, pdf("late")));
+      expect(up.status).toBe(403);
+      expect(up.json.error).toBe("dossier_paused");
+      expect((await call(clientJar, "GET", dossier())).status).toBe(200);
+      const create = await call(cab, "POST", `/api/app/${ws}/portail/dossiers`, { title: "x" });
+      expect(create.status).toBe(402);
+      expect((await call(cab, "GET", `/api/app/${ws}/portail/dossiers/${dossierId}`)).status).toBe(200);
+    } finally {
+      await pool.query(`update subscriptions set trial_ends_at = now() + interval '14 days' where tenant_id = $1`, [ws]);
+    }
+  });
+
   it("stores files encrypted, advances the stage, notifies the cabinet when complete", async () => {
     const required = (await call(cab, "GET", `/api/app/${ws}/portail/dossiers/${dossierId}`)).json.items.filter((i: any) => i.required);
     let last: any;

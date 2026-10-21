@@ -150,6 +150,30 @@ export function assertActive(c: Context<AppEnv>) {
   }
 }
 
+/**
+ * Sessions support (staff connecté en tant qu'un client) : jamais de contenu de
+ * pièces ni d'export, aucune action au nom du cabinet sur la facturation,
+ * l'équipe, la confidentialité ou les dossiers du Portail. Le Portail n'est
+ * visible que pour ses réglages : les dossiers relèvent du secret professionnel.
+ * path est relatif à /api/app/:workspace.
+ */
+export function supportForbidden(method: string, path: string): boolean {
+  if (/\/(file|export)(\/|$)|\/files\/|\.csv$/.test(path)) return true;
+  if (/^\/portail(\/|$)/.test(path)) return !(method === "GET" && /^\/portail(\/(settings|templates))?\/?$/.test(path));
+  if (method !== "GET" && /^\/(billing|team|settings\/(privacy|delete))(\/|$)/.test(path)) return true;
+  return false;
+}
+
+export const supportGuard: MiddlewareHandler<AppEnv> = async (c, next) => {
+  if (c.get("user")?.impersonator_user_id) {
+    const rest = c.req.path.replace(/^\/api\/app\/[^/]+/, "") || "/";
+    if (supportForbidden(c.req.method, rest)) {
+      throw forbidden("support_restricted", "Action indisponible en session support : elle reste réservée au cabinet.");
+    }
+  }
+  await next();
+};
+
 export function actorLabel(c: Context<AppEnv>): string {
   const u = currentUser(c);
   return u.impersonator_user_id ? `support:${u.impersonator_user_id}→${u.email}` : u.email;
