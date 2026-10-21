@@ -14,6 +14,7 @@ import {
   Plug,
   Settings,
   FolderLock,
+  FolderPlus,
   Shield,
   User,
   Users,
@@ -27,6 +28,7 @@ import { Logo, LogoMark } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { api, useApi, wsPath } from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { themeStyle } from "@/lib/sites";
 import { initials, timeAgo } from "@/lib/format";
 import { useWorkspace } from "./workspace-context";
 
@@ -42,6 +44,20 @@ function useNav(): NavItem[][] {
   const { ws, overview } = useWorkspace();
   const base = `/app/${ws}`;
   const ent = overview.entitlements;
+  if (ent.product === "portail") {
+    return [
+      [
+        { href: `${base}/portail`, label: "Dossiers", icon: FolderLock, exact: true },
+        { href: `${base}/portail/nouveau`, label: "Nouveau dossier", icon: FolderPlus },
+        { href: `${base}/portail/reglages`, label: "Réglages du Portail", icon: Settings },
+      ],
+      [
+        { href: `${base}/equipe`, label: "Équipe", icon: Users },
+        { href: `${base}/facturation`, label: "Facturation", icon: CreditCard },
+        { href: `${base}/parametres`, label: "Paramètres", icon: Building2 },
+      ],
+    ];
+  }
   const main: NavItem[] = [
     { href: base, label: "Tableau de bord", icon: LayoutDashboard, exact: true },
     { href: `${base}/demandes`, label: "Demandes", icon: Inbox, badge: overview.leads_this_month.new || undefined },
@@ -268,8 +284,8 @@ function Banners() {
   if (!ent.active) {
     banners.push(
       <div key="exp" className="bg-danger px-4 py-2 text-center text-sm text-white">
-        {ent.status === "expired" ? "Votre essai est terminé" : "Votre abonnement est inactif"} : l&apos;assistant est en pause sur
-        votre site.{" "}
+        {ent.status === "expired" ? "Votre essai est terminé" : "Votre abonnement est inactif"} :{" "}
+        {ent.product === "portail" ? "le Portail est en lecture seule." : "l'assistant est en pause sur votre site."}{" "}
         <Link href={`/app/${ws}/facturation`} className="font-semibold underline underline-offset-2">
           Choisir une offre
         </Link>
@@ -339,13 +355,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   useEffect(() => setMobileOpen(false), [pathname]);
+  const { overview } = useWorkspace();
+  const site = overview.entitlements.product;
 
   return (
-    <div className="min-h-dvh">
+    <div className="min-h-dvh" style={themeStyle(site)}>
       <Banners />
       <div className="flex">
         <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col gap-6 border-r border-line bg-paper px-4 py-5 lg:flex">
-          <Logo site="assistant" href="/app" className="px-1" />
+          <Logo site={site} href="/app" className="px-1" />
           <WorkspaceSwitcher />
           <div className="flex-1 overflow-y-auto">
             <NavLinks />
@@ -363,7 +381,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="absolute inset-0 bg-ink/30" onClick={() => setMobileOpen(false)} />
             <div className="absolute inset-y-0 left-0 flex w-72 animate-slide-up flex-col gap-6 overflow-y-auto bg-paper px-4 py-5 shadow-pop">
               <div className="flex items-center justify-between">
-                <LogoMark className="size-7" />
+                <LogoMark className="size-7" site={site} />
                 <button onClick={() => setMobileOpen(false)} aria-label="Fermer le menu" className="rounded p-1.5 hover:bg-sunken">
                   <X className="size-5" />
                 </button>

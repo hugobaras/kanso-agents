@@ -9,6 +9,11 @@ export function appUrl(): string {
   return (process.env.KANSO_APP_URL ?? "http://localhost:3001").replace(/\/$/, "");
 }
 
+/** Public URL of the Kanso Portail site (own domain in production). */
+export function portailUrl(): string {
+  return (process.env.KANSO_PORTAIL_URL ?? appUrl()).replace(/\/$/, "");
+}
+
 /** Public URL of this API (widget script + widget API). */
 export function apiPublicUrl(): string {
   return (

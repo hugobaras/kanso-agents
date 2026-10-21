@@ -603,3 +603,11 @@ Spécification complète : `docs/portail-v1.md`.
 | H-049 | Clé maître            | Procédure de sauvegarde et de rotation de `KANSO_MASTER_KEY` (sa perte rend les pièces illisibles) ; `key_version` prévu pour la rotation.    |
 | H-050 | Textes légaux Portail | Relecture juridique de `confidentialite-portail.md` et ajout du Portail au DPA / à la liste des sous-traitants.                                |
 | H-051 | Domaine du Portail    | Réserver le domaine, renseigner `KANSO_HOST_PORTAIL` et `KANSO_PORTAIL_URL` (liens e-mail), l'ajouter à `KANSO_CORS_ORIGINS`.                 |
+
+## Kanso Portail autonome (2026-10-16)
+
+- Le Portail se vend et s'utilise seul : `POST /api/auth/signup {product:"portail"}` crée un espace `portail_trial` (14 jours) avec uniquement le module `portail`.
+- Plans : `portail_essentiel` 29 € HT/mois (3 utilisateurs), `portail_cabinet` 69 € HT/mois (10 utilisateurs) ; annuel = 10 mois. Clés Stripe `kanso_portail_*`. Un espace n'a qu'un abonnement, donc un seul produit ; un cabinet qui veut les deux ouvre deux espaces.
+- Même API, même base, même tenancy : seul le domaine, la coque (`/app/[ws]/portail`) et les e-mails changent. Le proxy sert `/connexion`, `/inscription`, `/app` sur le domaine du Portail ; `x-kanso-product` habille l'authentification.
+- `KANSO_PORTAIL_URL` doit être une origine autorisée de l'API (CORS/CSRF) : c'est le cas par défaut.
+- Le flag manuel `tenants.modules.portail` reste valable pour ouvrir la bêta à un espace Assistant.

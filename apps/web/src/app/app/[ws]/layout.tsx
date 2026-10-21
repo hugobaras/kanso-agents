@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { AppShell } from "@/components/app/shell";
 import { roleAtLeast, WorkspaceProvider } from "@/components/app/workspace-context";
@@ -10,9 +10,13 @@ import { PageSpinner } from "@/components/ui/spinner";
 import { ApiError, useApi, wsPath } from "@/lib/api";
 import type { Me, Overview, Role } from "@/lib/types";
 
+// Pages de l'Assistant : sans objet pour un espace Portail seul.
+const ASSISTANT_AREA = /^\/?$|^\/(bienvenue|demandes|assistant|installation|documents|integrations)(\/|$)/;
+
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const { ws } = useParams<{ ws: string }>();
   const router = useRouter();
+  const pathname = usePathname();
   const me = useApi<Me>("/api/auth/me");
   const overview = useApi<Overview>(wsPath(ws), { refreshInterval: 60_000 });
 
@@ -29,6 +33,12 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     if (unauthorized) router.replace(`/connexion?expire=1&suite=${encodeURIComponent(`/app/${ws}`)}`);
   }, [unauthorized, router, ws]);
+
+  const wrongArea =
+    overview.data?.entitlements.product === "portail" && ASSISTANT_AREA.test(pathname.slice(`/app/${ws}`.length));
+  useEffect(() => {
+    if (wrongArea) router.replace(`/app/${ws}/portail`);
+  }, [wrongArea, router, ws]);
 
   const value = useMemo(() => {
     if (!me.data || !overview.data) return null;
@@ -52,7 +62,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
       />
     );
   }
-  if (!value) return <PageSpinner />;
+  if (!value || wrongArea) return <PageSpinner />;
   return (
     <WorkspaceProvider value={value}>
       <AppShell>{children}</AppShell>

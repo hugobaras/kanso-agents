@@ -74,3 +74,22 @@ describe("helpers", () => {
     expect(parseLookupKey("other")).toBeNull();
   });
 });
+
+describe("plans Portail", () => {
+  it("grants only the portail module, with its own seats", () => {
+    const e = computeEntitlements(sub({ plan: "portail_cabinet", status: "active" }), null, now);
+    expect(e.plan.product).toBe("portail");
+    expect(e.modules).toEqual({ inbound: false, document_to_action: false, portail: true });
+    expect(e.seats).toBe(10);
+  });
+
+  it("round-trips the Portail lookup keys", () => {
+    expect(lookupKey("portail_essentiel", "month")).toBe("kanso_portail_essentiel_month");
+    expect(parseLookupKey("kanso_portail_cabinet_year")).toEqual({ plan: "portail_cabinet", interval: "year" });
+  });
+
+  it("keeps portail closed on Assistant plans unless Kanso opens the beta", () => {
+    expect(computeEntitlements(sub({ plan: "cabinet", status: "active" }), null, now).modules.portail).toBe(false);
+    expect(computeEntitlements(sub({ plan: "cabinet", status: "active" }), { portail: true }, now).modules.portail).toBe(true);
+  });
+});

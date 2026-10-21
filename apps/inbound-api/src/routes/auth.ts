@@ -26,7 +26,7 @@ import {
 import { badRequest, HttpError } from "../http/errors.js";
 import { clientIp, rateLimit, type RateLimiter } from "../http/rate-limit.js";
 import type { AppEnv } from "../http/types.js";
-import { appLink, deliver } from "../services/mail.js";
+import { deliver, userLink } from "../services/mail.js";
 import { createWorkspace } from "../services/workspaces.js";
 
 const email = z.string().trim().toLowerCase().email("Adresse e-mail invalide.").max(200);
@@ -38,6 +38,7 @@ const SignupBody = z.object({
   password: z.string(),
   workspace_name: z.string().trim().min(2, "Indiquez le nom de votre cabinet.").max(80),
   profession: z.enum(professionIds),
+  product: z.enum(["assistant", "portail"]).default("assistant"),
   accept_terms: z.literal(true, { errorMap: () => ({ message: "Vous devez accepter les conditions." }) }),
 });
 
@@ -61,7 +62,7 @@ export function authRoutes(limiter: RateLimiter) {
 
   async function sendVerification(userId: string, to: string, name: string) {
     const token = await issueToken(getPool(), userId, "verify");
-    await deliver(to, templates.verifyEmail({ name, url: appLink(`/verifier-email?token=${encodeURIComponent(token)}`) }));
+    await deliver(to, templates.verifyEmail({ name, url: await userLink(userId, `/verifier-email?token=${encodeURIComponent(token)}`) }));
   }
 
   app.post("/signup", async (c) => {
@@ -84,6 +85,7 @@ export function authRoutes(limiter: RateLimiter) {
         profession: body.profession,
         ownerUserId: userId,
         ownerEmail: body.email,
+        product: body.product,
       });
       return { userId, tenantId: ws.tenantId };
     });
@@ -137,7 +139,7 @@ export function authRoutes(limiter: RateLimiter) {
     const user = await findUserByEmail(pool, body.email);
     if (user) {
       const token = await issueToken(pool, user.id, "magic");
-      await deliver(user.email, templates.magicLink({ url: appLink(`/connexion/lien?token=${encodeURIComponent(token)}`) }));
+      await deliver(user.email, templates.magicLink({ url: await userLink(user.id, `/connexion/lien?token=${encodeURIComponent(token)}`) }));
     }
     return c.json(GENERIC_SENT);
   });
@@ -182,7 +184,7 @@ export function authRoutes(limiter: RateLimiter) {
       const token = await issueToken(pool, user.id, "reset");
       await deliver(
         user.email,
-        templates.passwordReset({ url: appLink(`/mot-de-passe/nouveau?token=${encodeURIComponent(token)}`) }),
+        templates.passwordReset({ url: await userLink(user.id, `/mot-de-passe/nouveau?token=${encodeURIComponent(token)}`) }),
       );
     }
     return c.json(GENERIC_SENT);

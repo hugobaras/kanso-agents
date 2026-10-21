@@ -1,4 +1,4 @@
-import { PAID_PLANS, PLANS, readAllUsage } from "@kanso/billing";
+import { ALL_PAID_PLANS, PAID_PLANS, PLANS, PORTAIL_PLANS, readAllUsage } from "@kanso/billing";
 import { getPool } from "@kanso/tenancy";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -22,7 +22,7 @@ export function billingRoutes() {
     return c.json({
       entitlements: serializeEntitlements(ws.entitlements),
       usage: { ...usage, seats: Number(members.rows[0]?.n ?? 0) },
-      plans: PAID_PLANS.map((id) => PLANS[id]),
+      plans: (ws.entitlements.plan.product === "portail" ? PORTAIL_PLANS : PAID_PLANS).map((id) => PLANS[id]),
       stripe_enabled: stripeConfigured(),
     });
   });
@@ -31,7 +31,10 @@ export function billingRoutes() {
     const ws = currentWorkspace(c);
     assertRole(c, "owner");
     if (!stripeConfigured()) throw new HttpError(503, "billing_unavailable", "Le paiement en ligne n'est pas encore activé.");
-    const b = await body(c.req, z.object({ plan: z.enum(["essentiel", "cabinet", "expert"]), interval: z.enum(["month", "year"]) }));
+    const b = await body(c.req, z.object({ plan: z.enum(ALL_PAID_PLANS as [string, ...string[]]), interval: z.enum(["month", "year"]) }));
+    if (PLANS[b.plan as keyof typeof PLANS].product !== ws.entitlements.plan.product) {
+      throw new HttpError(409, "plan_product_mismatch", "Cette offre ne correspond pas au produit de votre espace.");
+    }
     const sub = ws.entitlements.subscription;
     if (sub?.stripe_subscription_id && ws.entitlements.status === "active") {
       // Plan changes go through the Customer Portal (proration handled by Stripe).
@@ -41,7 +44,7 @@ export function billingRoutes() {
       tenantId: ws.tenantId,
       workspaceName: ws.displayName,
       email: currentUser(c).email,
-      plan: b.plan,
+      plan: b.plan as (typeof ALL_PAID_PLANS)[number],
       interval: b.interval,
     });
     return c.json({ url });

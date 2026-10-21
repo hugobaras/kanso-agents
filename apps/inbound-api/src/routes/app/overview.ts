@@ -10,6 +10,7 @@ import type { AppEnv } from "../../http/types.js";
 export function serializeEntitlements(ent: ReturnType<typeof currentWorkspace>["entitlements"]) {
   return {
     plan: ent.plan.id,
+    product: ent.plan.product,
     plan_name: ent.plan.name,
     status: ent.status,
     active: ent.active,

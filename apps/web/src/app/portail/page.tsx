@@ -1,9 +1,11 @@
-import { FileUp, LockKeyhole, MessagesSquare, ScrollText, ServerCog, Workflow } from "lucide-react";
+import { Check, FileUp, LockKeyhole, MessagesSquare, ScrollText, ServerCog, Workflow } from "lucide-react";
 import { Faq } from "@/components/marketing/faq";
 import { PortalMock } from "@/components/sites/portal-mock";
-import { PublicForm } from "@/components/sites/contact-form";
+import { PLANS, PORTAIL_PLANS, TRIAL_DAYS } from "@kanso/billing";
 import { siteHref } from "@/lib/sites";
 import Link from "next/link";
+
+const SIGNUP = "/inscription?produit=portail";
 
 const FEATURES = [
   { icon: FileUp, title: "Dépôt de pièces", text: "Vos clients déposent leurs documents dans un espace sécurisé, avec la liste de ce qui manque." },
@@ -25,16 +27,16 @@ export default function PortailPage() {
             plutôt que de tout envoyer par e-mail. Pour avocats, experts-comptables et notaires.
           </p>
           <p className="mt-4 max-w-xl text-sm leading-6 text-muted">
-            La bêta est ouverte cabinet par cabinet. Documents chiffrés, analysés par un antivirus et hébergés dans l'Union européenne ; vous choisissez
+            Documents chiffrés, analysés par un antivirus et hébergés dans l'Union européenne ; vous choisissez
             la durée de conservation.
           </p>
           <a
-            href="#liste-attente"
+            href={SIGNUP}
             className="mt-8 inline-flex h-12 items-center rounded-lg bg-accent px-6 text-[15px] font-medium text-white hover:bg-accent-strong"
           >
-            Demander l&apos;accès à la bêta
+            Essayer {TRIAL_DAYS} jours
           </a>
-          <Link href="/connexion?suite=/app" className="ml-3 mt-8 inline-flex h-12 items-center rounded-lg border border-line-strong bg-surface px-6 text-[15px] font-medium text-ink hover:bg-sunken">
+          <Link href="/connexion?produit=portail&suite=/app" className="ml-3 mt-8 inline-flex h-12 items-center rounded-lg border border-line-strong bg-surface px-6 text-[15px] font-medium text-ink hover:bg-sunken">
             Ouvrir mon portail
           </Link>
         </div>
@@ -131,33 +133,50 @@ export default function PortailPage() {
         </div>
       </section>
 
-      <section id="liste-attente" className="mx-auto grid max-w-6xl scroll-mt-20 gap-12 px-5 py-24 lg:grid-cols-[1fr_1.1fr]">
-        <div>
-          <h2 className="font-display text-4xl">Demandez l&apos;accès à la bêta.</h2>
-          <p className="mt-4 text-[15px] leading-7 text-muted">
-            Nous ouvrons Kanso Portail cabinet par cabinet. Décrivez votre usage : nous activons le module sur votre espace Kanso Assistant
-            (ou en créons un) sous deux jours ouvrés. Gratuit pendant la bêta, sans engagement.
-          </p>
-          <p className="mt-4 text-sm text-subtle">Vous avez déjà un espace ? Le bouton « Demander l'accès » est aussi disponible dans l'onglet Portail de votre tableau de bord.</p>
+      <section id="tarifs" className="mx-auto max-w-4xl scroll-mt-20 px-5 py-24">
+        <h2 className="text-center font-display text-4xl">Des offres simples, sans engagement.</h2>
+        <p className="mx-auto mt-4 max-w-xl text-center text-[15px] leading-7 text-muted">
+          {TRIAL_DAYS} jours d&apos;essai complet, sans carte bancaire. Prix HT, résiliable à tout moment.
+        </p>
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
+          {PORTAIL_PLANS.map((id) => {
+            const p = PLANS[id];
+            return (
+              <div key={id} className="flex flex-col rounded-xl border border-line bg-surface p-6">
+                <p className="font-display text-2xl">{p.name}</p>
+                <p className="mt-1 text-sm text-muted">{p.tagline}</p>
+                <p className="mt-5 font-display text-4xl">
+                  {p.monthlyPriceCents / 100} €<span className="text-base font-normal text-muted"> / mois HT</span>
+                </p>
+                <ul className="mt-5 flex-1 space-y-2 text-sm">
+                  {p.highlights.map((h) => (
+                    <li key={h} className="flex gap-2">
+                      <Check className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
+                      {h}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href={SIGNUP}
+                  className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-5 text-[15px] font-medium text-white hover:bg-accent-strong"
+                >
+                  Essayer {TRIAL_DAYS} jours
+                </Link>
+              </div>
+            );
+          })}
         </div>
-        <PublicForm
-          source="portail"
-          mode="waitlist"
-          submitLabel="Demander l'accès"
-          successTitle="Demande reçue"
-          successText="Merci ! Vous recevez un e-mail de confirmation. Nous revenons vers vous sous deux jours ouvrés pour activer votre accès."
-        />
       </section>
 
       <section id="questions" className="mx-auto max-w-3xl scroll-mt-20 px-5 pb-24">
         <h2 className="text-center font-display text-4xl">Questions fréquentes</h2>
         <Faq
           items={[
-            ["Comment obtenir l'accès ?", "Remplissez le formulaire ci-dessus. Nous activons le module sur votre espace sous deux jours ouvrés ; vous n'avez rien à installer."],
+            ["Comment démarrer ?", "Créez votre espace en deux minutes : l'essai de 14 jours est immédiat, sans carte bancaire ni installation."],
             ["Mon client doit-il créer un compte ?", "Non. Il reçoit un lien personnel valable 7 jours et un code à six chiffres par e-mail à chaque connexion."],
             ["Quels fichiers peut-il envoyer ?", "PDF, JPEG, PNG et WebP, jusqu'à 20 Mo par fichier, depuis son téléphone ou son ordinateur. Chaque fichier est analysé par un antivirus."],
             ["Combien de temps les documents sont-ils conservés ?", "Vous choisissez : 90 jours après la clôture du dossier par défaut. Vous et votre client êtes prévenus 7 jours avant la suppression, et vous pouvez tout exporter en ZIP."],
-            ["Combien cela coûte-t-il ?", "La bêta est gratuite, dans la limite de 20 dossiers actifs. Les offres seront communiquées avant tout passage au payant."],
+            ["Combien cela coûte-t-il ?", "Portail Essentiel : 29 € HT par mois (3 utilisateurs). Portail Cabinet : 69 € HT par mois (10 utilisateurs). Deux mois offerts en annuel."],
             ["Faut-il utiliser Kanso Assistant ?", "Non, Kanso Portail fonctionne seul. Avec Kanso Assistant, une demande qualifiée devient un dossier en un clic."],
             ["Mes données sont-elles protégées ?", "Elles sont chiffrées, hébergées dans l'Union européenne, et le cabinet reste responsable du traitement, avec le même cadre RGPD que Kanso Assistant. Les accès du cabinet aux pièces sont tracés."],
           ]}

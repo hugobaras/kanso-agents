@@ -7,6 +7,7 @@ import { Alert } from "@/components/ui/misc";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/form";
 import { api, errorMessage } from "@/lib/api";
+import { useAuthProduct, withProduct } from "@/lib/product";
 
 function safeNext(raw: string | null): string {
   return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/app";
@@ -14,6 +15,7 @@ function safeNext(raw: string | null): string {
 
 function LoginForm() {
   const router = useRouter();
+  const product = useAuthProduct();
   const params = useSearchParams();
   const next = safeNext(params.get("suite"));
   const [mode, setMode] = useState<"password" | "magic">("password");
@@ -63,7 +65,7 @@ function LoginForm() {
       <h1 className="font-display text-3xl">Bon retour</h1>
       <p className="mt-2 text-sm text-muted">
         Pas encore de compte ?{" "}
-        <Link href="/inscription" className="font-medium text-accent hover:underline">
+        <Link href={withProduct(product, "/inscription")} className="font-medium text-accent hover:underline">
           Essayer gratuitement 14 jours
         </Link>
       </p>

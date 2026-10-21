@@ -3,12 +3,13 @@ import {
   isPaidPlanId,
   lookupKey,
   parseLookupKey,
+  PLANS,
   type BillingInterval,
   type PaidPlanId,
 } from "@kanso/billing";
 import { templates } from "@kanso/mailer";
 import { getPool, type PoolClient, withTransaction } from "@kanso/tenancy";
-import { appLink, deliver, workspaceAdminEmails } from "./mail.js";
+import { deliver, productLink, tenantLink, workspaceAdminEmails } from "./mail.js";
 import { createNotification } from "./notifications.js";
 
 let client: Stripe | null = null;
@@ -65,6 +66,8 @@ export async function createCheckoutSession(opts: {
 }): Promise<string> {
   const customer = await ensureCustomer(opts.tenantId, opts.email, opts.workspaceName);
   const price = await priceIdFor(opts.plan, opts.interval);
+  const billing = `/app/${opts.tenantId}/facturation`;
+  const product = PLANS[opts.plan].product;
   const session = await stripe().checkout.sessions.create({
     mode: "subscription",
     customer,
@@ -78,8 +81,8 @@ export async function createCheckoutSession(opts: {
     automatic_tax: { enabled: process.env.STRIPE_AUTOMATIC_TAX === "1" },
     subscription_data: { metadata: { tenant_id: opts.tenantId } },
     metadata: { tenant_id: opts.tenantId },
-    success_url: appLink(`/app/${opts.tenantId}/facturation?checkout=success`),
-    cancel_url: appLink(`/app/${opts.tenantId}/facturation?checkout=cancel`),
+    success_url: productLink(product, `${billing}?checkout=success`),
+    cancel_url: productLink(product, `${billing}?checkout=cancel`),
   });
   if (!session.url) throw new Error("Stripe checkout session without URL");
   return session.url;
@@ -95,7 +98,7 @@ export async function createPortalSession(tenantId: string): Promise<string> {
   const session = await stripe().billingPortal.sessions.create({
     customer,
     locale: "fr",
-    return_url: appLink(`/app/${tenantId}/facturation`),
+    return_url: await tenantLink(tenantId, `/app/${tenantId}/facturation`),
   });
   return session.url;
 }
@@ -222,6 +225,6 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<"processed
 async function notifyPaymentFailed(tenantId: string, name: string) {
   const link = `/app/${tenantId}/facturation`;
   await createNotification({ tenantId, type: "billing:payment_failed", title: "Échec du paiement", link });
-  const email = templates.paymentFailed({ workspace: name, url: appLink(link) });
+  const email = templates.paymentFailed({ workspace: name, url: await tenantLink(tenantId, link) });
   for (const to of await workspaceAdminEmails(tenantId)) await deliver(to, email);
 }
