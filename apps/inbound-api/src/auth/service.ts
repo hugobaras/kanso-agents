@@ -151,12 +151,14 @@ export type MembershipRow = {
   role: Role;
   profession: string | null;
   onboarding_completed_at: Date | null;
+  plan: string | null;
 };
 
 export async function listMemberships(db: Db, userId: string): Promise<MembershipRow[]> {
   const res = await db.query<MembershipRow>(
-    `select m.tenant_id, t.display_name, m.role, t.profession, t.onboarding_completed_at
+    `select m.tenant_id, t.display_name, m.role, t.profession, t.onboarding_completed_at, s.plan
      from memberships m join tenants t on t.tenant_id = m.tenant_id
+     left join subscriptions s on s.tenant_id = m.tenant_id
      where m.user_id = $1 and (t.deleted_at is null or t.deleted_at > now())
      order by m.created_at asc`,
     [userId],
