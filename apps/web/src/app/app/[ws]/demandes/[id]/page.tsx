@@ -47,7 +47,7 @@ const EVENT_LABEL: Record<string, string> = {
 
 export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { ws, overview, refreshOverview } = useWorkspace();
+  const { ws, overview, refreshOverview, me } = useWorkspace();
   const toast = useToast();
   const { data, error, mutate } = useApi<Detail>(wsPath(ws, `/leads/${id}`));
   const team = useApi<Team>(wsPath(ws, "/team"));
@@ -78,6 +78,15 @@ export default function LeadDetailPage() {
     toast.success("Copié");
   };
 
+  // Portail in this space, or the cabinet's separate Portail space (owned first).
+  const otherPortail = [...me.workspaces]
+    .filter((w) => w.product === "portail" && w.id !== ws)
+    .sort((a, b) => Number(b.role === "owner") - Number(a.role === "owner"))[0];
+  const portailHref = overview.entitlements.modules.portail
+    ? `/app/${ws}/portail/nouveau?lead=${lead.id}`
+    : otherPortail
+      ? `/app/${otherPortail.id}/portail/nouveau?lead=${lead.id}&from=${ws}`
+      : null;
   return (
     <>
       <Link href={`/app/${ws}/demandes`} className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
@@ -92,8 +101,8 @@ export default function LeadDetailPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {overview.entitlements.modules.portail && lead.contact.email && (
-            <ButtonLink href={`/app/${ws}/portail/nouveau?lead=${lead.id}`} variant="secondary" size="sm">
+          {portailHref && lead.contact.email && (
+            <ButtonLink href={portailHref} variant="secondary" size="sm">
               <FolderPlus className="size-4" /> Créer un dossier
             </ButtonLink>
           )}

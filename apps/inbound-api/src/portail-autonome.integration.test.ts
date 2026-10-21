@@ -144,6 +144,32 @@ describe.skipIf(!hasDb)("Kanso Portail autonome", () => {
     }
   });
 
+  it("turns an Assistant lead into a dossier of the cabinet's separate Portail space, members only", async () => {
+    const pool = getPool();
+    const session = await pool.query<{ id: string }>(
+      `insert into inbound_sessions (tenant_id, config_version, state) values ($1, 1, 'completed') returning id`,
+      [wsA],
+    );
+    const lead = await pool.query<{ id: string }>(
+      `insert into leads (tenant_id, session_id, contact, tier, event) values ($1, $2, $3, 'hot', 'qualified') returning id`,
+      [wsA, session.rows[0]!.id, JSON.stringify({ name: "Mme Lead", email: `lead-${suffix}@example.com` })],
+    );
+    const portailWs = extra[0]!;
+    const body = { title: "Divorce", client_name: "Mme Lead", contacts: [{ email: `lead-${suffix}@example.com`, name: "Mme Lead" }], lead_id: lead.rows[0]!.id, from_workspace: wsA, send: false };
+
+    // Someone outside the Assistant space cannot pull its leads, even into their own Portail.
+    const stranger = await call(pro, "POST", `/api/app/${wsP}/portail/dossiers`, body);
+    expect(stranger.status).toBe(400);
+    expect(stranger.json.error).toBe("lead_not_found");
+
+    const ok = await call(ass, "POST", `/api/app/${portailWs}/portail/dossiers`, body);
+    expect(ok.status).toBe(201);
+    const d = await pool.query(`select lead_id, source from portal_dossiers where id = $1`, [ok.json.id]);
+    expect(d.rows[0]).toEqual({ lead_id: null, source: "assistant" });
+    const trace = await pool.query(`select summary from audit_events where tenant_id = $1 and decision = 'sent_to_portail'`, [wsA]);
+    expect(trace.rows[0]?.summary).toMatchObject({ lead: lead.rows[0]!.id, portail_workspace: portailWs, reference: ok.json.reference });
+  });
+
   it("keeps Portail dossiers out of a staff support session", async () => {
     const staff: Jar = {};
     const r = await signup(staff, `staff-${suffix}@example.com`);

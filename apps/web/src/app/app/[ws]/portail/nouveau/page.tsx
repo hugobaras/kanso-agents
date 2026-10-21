@@ -20,9 +20,12 @@ function NewDossier() {
   const { ws } = useWorkspace();
   const router = useRouter();
   const toast = useToast();
-  const leadId = useSearchParams().get("lead");
+  const params = useSearchParams();
+  const leadId = params.get("lead");
+  // Lead from the cabinet's separate Assistant space: read there, the API checks membership of both spaces.
+  const fromWs = params.get("from");
   const templates = useApi<PortalTemplates>(wsPath(ws, "/portail/templates"));
-  const lead = useApi<Lead>(leadId ? wsPath(ws, `/leads/${leadId}`) : null);
+  const lead = useApi<Lead>(leadId ? wsPath(fromWs || ws, `/leads/${leadId}`) : null);
 
   const [title, setTitle] = useState("");
   const [clientName, setClientName] = useState("");
@@ -67,6 +70,7 @@ function NewDossier() {
           contacts: contacts.filter((c) => c.email.trim()),
           message: message.trim() || null,
           lead_id: leadId || null,
+          from_workspace: fromWs || null,
           send,
         },
       });
