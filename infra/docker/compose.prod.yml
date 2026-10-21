@@ -1,0 +1,187 @@
+# Production, un seul serveur (OVH). Seul Caddy est exposé (80/443) ; tout le reste reste sur le réseau interne.
+#   cp .env.prod.example .env.prod   # puis remplir chaque valeur
+#   docker compose -f infra/docker/compose.prod.yml --env-file .env.prod up -d --build
+# Base externe (Supabase, PostgreSQL managé) : supprimer le service db et pointer DATABASE_URL dessus.
+name: kanso
+
+x-app-env: &app_env
+  KANSO_ENV: production
+  DATABASE_URL: ${DATABASE_URL}
+  KANSO_MASTER_KEY: ${KANSO_MASTER_KEY:?KANSO_MASTER_KEY requis}
+  KANSO_APP_URL: https://${DOMAIN_ASSISTANT}
+  KANSO_PUBLIC_URL: https://${DOMAIN_API}
+  KANSO_PORTAIL_URL: https://${DOMAIN_PORTAIL}
+  KANSO_CORS_ORIGINS: https://${DOMAIN_SOLUTIONS},https://${DOMAIN_SITE}
+  KANSO_SMTP_URL: ${KANSO_SMTP_URL:?KANSO_SMTP_URL requis (sinon aucun e-mail ne part)}
+  KANSO_MAIL_FROM: ${KANSO_MAIL_FROM}
+  KANSO_SALES_EMAIL: ${KANSO_SALES_EMAIL}
+  STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+  STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+  STRIPE_AUTOMATIC_TAX: ${STRIPE_AUTOMATIC_TAX:-0}
+  MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+  KANSO_PORTAIL_AI_MODE: ${KANSO_PORTAIL_AI_MODE:-}
+  KANSO_S3_BUCKET: ${KANSO_S3_BUCKET:?KANSO_S3_BUCKET requis (pièces du Portail)}
+  KANSO_S3_ENDPOINT: ${KANSO_S3_ENDPOINT}
+  KANSO_S3_REGION: ${KANSO_S3_REGION}
+  KANSO_S3_ACCESS_KEY: ${KANSO_S3_ACCESS_KEY}
+  KANSO_S3_SECRET_KEY: ${KANSO_S3_SECRET_KEY}
+  KANSO_STORAGE_DIR: /data/storage
+  CLAMD_HOST: clamav
+  KANSO_AV_MODE: clamd
+
+services:
+  caddy:
+    image: caddy:2.8.4-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL}
+      DOMAIN_SOLUTIONS: ${DOMAIN_SOLUTIONS}
+      DOMAIN_ASSISTANT: ${DOMAIN_ASSISTANT}
+      DOMAIN_SITE: ${DOMAIN_SITE}
+      DOMAIN_PORTAIL: ${DOMAIN_PORTAIL}
+      DOMAIN_API: ${DOMAIN_API}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+      - inbound-api
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kanso
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requis}
+      POSTGRES_DB: kanso
+    volumes:
+      - kanso_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kanso -d kanso"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  migrate:
+    image: postgres:17-alpine
+    entrypoint: ["sh", "/repo/scripts/apply-migrations.sh"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    volumes:
+      - ../../supabase:/repo/supabase:ro
+      - ../../scripts:/repo/scripts:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  clamav:
+    image: clamav/clamav:stable
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 180s
+
+  inbound-api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+      target: api
+    restart: unless-stopped
+    environment:
+      <<: *app_env
+      PORT: "3000"
+    volumes:
+      - kanso_storage:/data/storage
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health | grep -q '\"ok\":true'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      clamav:
+        condition: service_healthy
+
+  document-worker:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+      target: worker
+    restart: unless-stopped
+    environment:
+      <<: *app_env
+      KANSO_SCHEDULER: "1"
+    volumes:
+      - kanso_storage:/data/storage
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+      target: web
+      args:
+        NEXT_PUBLIC_APP_URL: https://${DOMAIN_ASSISTANT}
+        NEXT_PUBLIC_SITES_MODE: host
+        NEXT_PUBLIC_URL_SOLUTIONS: https://${DOMAIN_SOLUTIONS}
+        NEXT_PUBLIC_URL_ASSISTANT: https://${DOMAIN_ASSISTANT}
+        NEXT_PUBLIC_URL_SITE: https://${DOMAIN_SITE}
+        NEXT_PUBLIC_URL_PORTAIL: https://${DOMAIN_PORTAIL}
+    restart: unless-stopped
+    environment:
+      INTERNAL_API_URL: http://inbound-api:3000
+      KANSO_PUBLIC_URL: https://${DOMAIN_API}
+      KANSO_HOST_SOLUTIONS: ${DOMAIN_SOLUTIONS}
+      KANSO_HOST_ASSISTANT: ${DOMAIN_ASSISTANT}
+      KANSO_HOST_SITE: ${DOMAIN_SITE}
+      KANSO_HOST_PORTAIL: ${DOMAIN_PORTAIL}
+    depends_on:
+      - inbound-api
+
+  # Sauvegarde chiffrée chaque nuit (voir docs/runbooks/sauvegardes.md).
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      KANSO_BACKUP_KEY: ${KANSO_BACKUP_KEY:?KANSO_BACKUP_KEY requis}
+      KANSO_BACKUP_DIR: /backups
+      KANSO_BACKUP_KEEP_DAYS: ${KANSO_BACKUP_KEEP_DAYS:-30}
+      KANSO_BACKUP_S3_URI: ${KANSO_BACKUP_S3_URI:-}
+      KANSO_S3_ENDPOINT: ${KANSO_S3_ENDPOINT}
+      AWS_ACCESS_KEY_ID: ${KANSO_S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${KANSO_S3_SECRET_KEY}
+      AWS_DEFAULT_REGION: ${KANSO_S3_REGION}
+    entrypoint:
+      - sh
+      - -c
+      - |
+        apk add --no-cache -q openssl aws-cli >/dev/null
+        while true; do
+          sh /repo/scripts/backup-db.sh || echo '{"level":"error","event":"backup_failed"}'
+          sleep 86400
+        done
+    volumes:
+      - ../../scripts:/repo/scripts:ro
+      - kanso_backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  kanso_pg:
+  kanso_storage:
+  kanso_backups:
+  caddy_data:
+  caddy_config:
