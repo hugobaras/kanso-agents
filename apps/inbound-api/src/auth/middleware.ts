@@ -47,7 +47,12 @@ export const requireUser: MiddlewareHandler<AppEnv> = async (c, next) => {
 };
 
 export const requireStaff: MiddlewareHandler<AppEnv> = async (c, next) => {
-  if (!currentUser(c).is_staff) throw forbidden("staff_only");
+  const u = currentUser(c);
+  if (!u.is_staff) throw forbidden("staff_only");
+  // Staff can open any cabinet's space: a stolen password alone must never be enough.
+  if (isProd() && !u.mfa_enabled) {
+    throw forbidden("mfa_required", "Activez la double authentification (Mon compte) pour accéder au back-office.");
+  }
   await next();
 };
 

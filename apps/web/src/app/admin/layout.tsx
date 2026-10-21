@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { LogoMark } from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
+import { ButtonLink } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/misc";
 import { PageSpinner } from "@/components/ui/spinner";
 import { ApiError, useApi } from "@/lib/api";
 import { cn } from "@/lib/cn";
@@ -26,6 +28,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (me.data && !me.data.user.is_staff) router.replace("/app");
   }, [me.data, me.error, router]);
   if (!me.data?.user.is_staff) return <PageSpinner />;
+  // Mirrors the API rule (staff need two-factor in production) so staff get a way forward, not empty pages.
+  if (process.env.NODE_ENV === "production" && !me.data.user.mfa_enabled) {
+    return (
+      <EmptyState
+        className="min-h-dvh justify-center"
+        title="Double authentification requise"
+        description="Le back-office donne accès à tous les cabinets : activez la double authentification sur votre compte pour y entrer."
+        action={<ButtonLink href="/compte">Activer dans Mon compte</ButtonLink>}
+      />
+    );
+  }
   return (
     <div className="min-h-dvh">
       <header className="sticky top-0 z-20 border-b border-line bg-ink text-paper">

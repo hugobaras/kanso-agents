@@ -5,6 +5,7 @@ import { Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/form";
 import { Alert } from "@/components/ui/misc";
+import { MfaStep, type MfaChallenge } from "@/components/auth/mfa-step";
 import { api, errorMessage } from "@/lib/api";
 
 function ResetForm() {
@@ -14,6 +15,7 @@ function ResetForm() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,14 +26,17 @@ function ResetForm() {
     setLoading(true);
     setError(null);
     try {
-      await api("/api/auth/password/reset", { body: { token: params.get("token") ?? "", password } });
-      router.replace("/app");
+      const r = await api<MfaChallenge>("/api/auth/password/reset", { body: { token: params.get("token") ?? "", password } });
+      if (r.mfa_required && r.mfa_token) setMfaToken(r.mfa_token);
+      else router.replace("/app");
     } catch (err) {
       setError(errorMessage(err));
     } finally {
       setLoading(false);
     }
   }
+
+  if (mfaToken) return <MfaStep token={mfaToken} onDone={() => router.replace("/app")} />;
 
   return (
     <div>

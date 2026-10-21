@@ -11,6 +11,7 @@ export type SessionUser = {
   is_staff: boolean;
   session_id: string;
   impersonator_user_id: string | null;
+  mfa_enabled: boolean;
 };
 
 export type WorkspaceContext = {

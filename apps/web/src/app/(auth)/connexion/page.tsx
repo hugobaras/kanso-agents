@@ -6,6 +6,7 @@ import { Suspense, useState } from "react";
 import { Alert } from "@/components/ui/misc";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/form";
+import { MfaStep, type MfaChallenge } from "@/components/auth/mfa-step";
 import { api, errorMessage } from "@/lib/api";
 import { useAuthProduct, withProduct } from "@/lib/product";
 
@@ -24,6 +25,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -31,7 +33,11 @@ function LoginForm() {
     setError(null);
     try {
       if (mode === "password") {
-        await api("/api/auth/login", { body: { email, password } });
+        const r = await api<MfaChallenge>("/api/auth/login", { body: { email, password } });
+        if (r.mfa_required && r.mfa_token) {
+          setMfaToken(r.mfa_token);
+          return;
+        }
         router.replace(next);
         router.refresh();
       } else {
@@ -43,6 +49,18 @@ function LoginForm() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (mfaToken) {
+    return (
+      <MfaStep
+        token={mfaToken}
+        onDone={() => {
+          router.replace(next);
+          router.refresh();
+        }}
+      />
+    );
   }
 
   if (sent) {

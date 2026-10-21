@@ -1,7 +1,7 @@
 import { PROFESSIONS, type Profession } from "@kanso/config";
 import { templates } from "@kanso/mailer";
 import { getPool, withTransaction } from "@kanso/tenancy";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { z } from "zod";
 import {
   clearSessionCookie,
@@ -28,6 +28,16 @@ import { clientIp, rateLimit, type RateLimiter } from "../http/rate-limit.js";
 import type { AppEnv } from "../http/types.js";
 import { deliver, userLink } from "../services/mail.js";
 import { createWorkspace } from "../services/workspaces.js";
+import { masterKey } from "../env.js";
+import {
+  decryptSecret,
+  encryptSecret,
+  hashRecoveryCode,
+  newRecoveryCodes,
+  newTotpSecret,
+  otpauthUrl,
+  verifyTotp,
+} from "../auth/totp.js";
 
 const email = z.string().trim().toLowerCase().email("Adresse e-mail invalide.").max(200);
 const professionIds = PROFESSIONS.map((p) => p.id) as [Profession, ...Profession[]];
@@ -48,8 +58,53 @@ async function parse<T extends z.ZodTypeAny>(schema: T, req: { json: () => Promi
 
 const GENERIC_SENT = { ok: true, message: "Si un compte existe pour cette adresse, un e-mail vient d'être envoyé." };
 
+type MfaRow = { totp_secret_enc: string | null; totp_enabled_at: Date | null; totp_last_step: string | null; totp_recovery_hashes: string[] };
+
+async function loadMfa(userId: string): Promise<MfaRow | undefined> {
+  const r = await getPool().query<MfaRow>(
+    `select totp_secret_enc, totp_enabled_at, totp_last_step, totp_recovery_hashes from users where id = $1`,
+    [userId],
+  );
+  return r.rows[0];
+}
+
+/**
+ * Checks a 6-digit code (with replay protection) or a single-use recovery code.
+ * Consumes what it matched; returns false on any mismatch.
+ */
+async function checkSecondFactor(userId: string, mfa: MfaRow, rawCode: string): Promise<boolean> {
+  const code = rawCode.trim().replace(/\s+/g, "");
+  if (!mfa.totp_secret_enc) return false;
+  if (/^\d{6}$/.test(code)) {
+    const step = verifyTotp(decryptSecret(masterKey(), mfa.totp_secret_enc, userId), code, mfa.totp_last_step === null ? null : Number(mfa.totp_last_step));
+    if (step === null) return false;
+    // Conditional update: two concurrent submissions of the same code cannot both pass.
+    const r = await getPool().query(
+      `update users set totp_last_step = $2 where id = $1 and (totp_last_step is null or totp_last_step < $2)`,
+      [userId, step],
+    );
+    return (r.rowCount ?? 0) === 1;
+  }
+  const h = hashRecoveryCode(code);
+  const r = await getPool().query(
+    `update users set totp_recovery_hashes = array_remove(totp_recovery_hashes, $2) where id = $1 and $2 = any(totp_recovery_hashes)`,
+    [userId, h],
+  );
+  return (r.rowCount ?? 0) === 1;
+}
+
 export function authRoutes(limiter: RateLimiter) {
   const app = new Hono<AppEnv>();
+
+  /** Opens a session, or asks for the second factor first when the account has one. */
+  async function signIn(c: Context<AppEnv>, userId: string): Promise<{ mfa_required?: true; mfa_token?: string }> {
+    const pool = getPool();
+    const mfa = await loadMfa(userId);
+    if (mfa?.totp_enabled_at) return { mfa_required: true, mfa_token: await issueToken(pool, userId, "mfa") };
+    const session = await createSession(pool, { userId, ip: clientIp(c), userAgent: c.req.header("user-agent") });
+    setSessionCookie(c, session.rawToken, session.expiresAt);
+    return {};
+  }
   app.use("*", csrfGuard);
   app.use(
     "*",
@@ -117,8 +172,8 @@ export function authRoutes(limiter: RateLimiter) {
       if (!user || !user.password_hash || !valid) {
         throw new HttpError(401, "invalid_credentials", "E-mail ou mot de passe incorrect.");
       }
-      const session = await createSession(pool, { userId: user.id, ip: clientIp(c), userAgent: c.req.header("user-agent") });
-      setSessionCookie(c, session.rawToken, session.expiresAt);
+      const step = await signIn(c, user.id);
+      if (step.mfa_required) return c.json({ ok: true, ...step });
       const memberships = await listMemberships(pool, user.id);
       return c.json({ ok: true, workspaces: memberships.map((m) => m.tenant_id) });
     },
@@ -151,8 +206,84 @@ export function authRoutes(limiter: RateLimiter) {
     if (!userId) throw new HttpError(401, "invalid_or_expired_token", "Ce lien a expiré ou a déjà été utilisé.");
     // Clicking a magic link proves inbox ownership.
     await pool.query(`update users set email_verified_at = coalesce(email_verified_at, now()) where id = $1`, [userId]);
-    const session = await createSession(pool, { userId, ip: clientIp(c), userAgent: c.req.header("user-agent") });
-    setSessionCookie(c, session.rawToken, session.expiresAt);
+    return c.json({ ok: true, ...(await signIn(c, userId)) });
+  });
+
+  // Second step of any sign-in on an account with two-factor authentication.
+  app.post(
+    "/login/mfa",
+    rateLimit(limiter, { name: "auth_mfa", limit: 10, windowSec: 300, key: (c) => clientIp(c) }),
+    async (c) => {
+      const body = await parse(z.object({ mfa_token: z.string().min(10).max(200), code: z.string().trim().min(6).max(20) }), c.req);
+      const pool = getPool();
+      const t = await pool.query<{ user_id: string }>(
+        `select user_id from auth_tokens where token_hash = $1 and purpose = 'mfa' and consumed_at is null and expires_at > now()`,
+        [hashToken(body.mfa_token)],
+      );
+      const userId = t.rows[0]?.user_id;
+      if (!userId) throw new HttpError(401, "mfa_expired", "Délai dépassé : reconnectez-vous.");
+      // Five tries per challenge, then the whole sign-in starts over.
+      const tries = await limiter.hit(`auth_mfa_token:${hashToken(body.mfa_token)}`, 5, 300);
+      if (!tries.ok) {
+        await consumeToken(pool, body.mfa_token, "mfa");
+        throw new HttpError(429, "rate_limited", "Trop d'essais : reconnectez-vous.");
+      }
+      const mfa = await loadMfa(userId);
+      if (!mfa?.totp_enabled_at || !(await checkSecondFactor(userId, mfa, body.code))) {
+        throw new HttpError(401, "mfa_invalid", "Code incorrect.");
+      }
+      if (!(await consumeToken(pool, body.mfa_token, "mfa"))) throw new HttpError(401, "mfa_expired", "Délai dépassé : reconnectez-vous.");
+      const session = await createSession(pool, { userId, ip: clientIp(c), userAgent: c.req.header("user-agent") });
+      setSessionCookie(c, session.rawToken, session.expiresAt);
+      const memberships = await listMemberships(pool, userId);
+      return c.json({ ok: true, workspaces: memberships.map((m) => m.tenant_id) });
+    },
+  );
+
+  // ---- Gestion de la double authentification (compte connecté, jamais en session support) ----
+  const mfaGuard = (c: Context<AppEnv>) => {
+    if (currentUser(c).impersonator_user_id) throw new HttpError(403, "support_restricted", "Indisponible en session support.");
+  };
+
+  app.get("/mfa", requireUser, async (c) => {
+    const mfa = await loadMfa(currentUser(c).id);
+    return c.json({ enabled: !!mfa?.totp_enabled_at, recovery_codes_left: mfa?.totp_recovery_hashes.length ?? 0 });
+  });
+
+  app.post("/mfa/setup", requireUser, async (c) => {
+    mfaGuard(c);
+    const user = currentUser(c);
+    const mfa = await loadMfa(user.id);
+    if (mfa?.totp_enabled_at) throw new HttpError(409, "mfa_already_enabled", "La double authentification est déjà active.");
+    const secret = newTotpSecret();
+    await getPool().query(`update users set totp_secret_enc = $2, totp_last_step = null where id = $1`, [user.id, encryptSecret(masterKey(), secret, user.id)]);
+    return c.json({ secret, otpauth_url: otpauthUrl(secret, user.email) });
+  });
+
+  app.post("/mfa/enable", requireUser, async (c) => {
+    mfaGuard(c);
+    const user = currentUser(c);
+    const body = await parse(z.object({ code: z.string().trim().regex(/^\d{6}$/, "Code à 6 chiffres") }), c.req);
+    const mfa = await loadMfa(user.id);
+    if (!mfa?.totp_secret_enc || mfa.totp_enabled_at) throw new HttpError(409, "mfa_setup_required", "Recommencez l'activation.");
+    if (!(await checkSecondFactor(user.id, mfa, body.code))) throw new HttpError(400, "mfa_invalid", "Code incorrect : vérifiez l'heure de votre téléphone.");
+    const codes = newRecoveryCodes();
+    await getPool().query(`update users set totp_enabled_at = now(), totp_recovery_hashes = $2 where id = $1`, [user.id, codes.map(hashRecoveryCode)]);
+    await revokeAllSessions(getPool(), user.id, user.session_id);
+    return c.json({ ok: true, recovery_codes: codes });
+  });
+
+  app.post("/mfa/disable", requireUser, async (c) => {
+    mfaGuard(c);
+    const user = currentUser(c);
+    const body = await parse(z.object({ code: z.string().trim().min(6).max(20) }), c.req);
+    const mfa = await loadMfa(user.id);
+    if (!mfa?.totp_enabled_at) return c.json({ ok: true });
+    if (!(await checkSecondFactor(user.id, mfa, body.code))) throw new HttpError(400, "mfa_invalid", "Code incorrect.");
+    await getPool().query(
+      `update users set totp_secret_enc = null, totp_enabled_at = null, totp_last_step = null, totp_recovery_hashes = '{}' where id = $1`,
+      [user.id],
+    );
     return c.json({ ok: true });
   });
 
@@ -202,9 +333,8 @@ export function authRoutes(limiter: RateLimiter) {
       [userId, await hashPassword(body.password)],
     );
     await revokeAllSessions(pool, userId);
-    const session = await createSession(pool, { userId, ip: clientIp(c), userAgent: c.req.header("user-agent") });
-    setSessionCookie(c, session.rawToken, session.expiresAt);
-    return c.json({ ok: true });
+    // A reset proves inbox access only: an account with two-factor still asks for the code.
+    return c.json({ ok: true, ...(await signIn(c, userId)) });
   });
 
   app.get("/me", requireUser, async (c) => {
@@ -219,6 +349,7 @@ export function authRoutes(limiter: RateLimiter) {
         email_verified: !!user.email_verified_at,
         is_staff: user.is_staff,
         impersonated: !!user.impersonator_user_id,
+        mfa_enabled: user.mfa_enabled,
       },
       workspaces: memberships.map((m) => ({
         id: m.tenant_id,
