@@ -17,7 +17,7 @@ export async function createNotification(opts: {
   );
 }
 
-const METRIC_LABEL: Record<Metric, string> = { conversations: "conversations", documents: "documents" };
+const METRIC_LABEL: Record<Metric, string> = { conversations: "conversations", documents: "documents", ai_pages: "pages analysées par l'IA" };
 
 /** Notify owners once per period when usage crosses 80 % and 100 %. */
 export async function notifyQuota(tenantId: string, metric: Metric, used: number, limit: number): Promise<void> {

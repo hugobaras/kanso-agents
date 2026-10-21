@@ -66,9 +66,10 @@ export type PortalDossierDetail = {
     created_at: string;
     closed_at: string | null;
     purge_at: string | null;
+    ai_excluded: boolean;
   };
   stage_labels: Record<Stage, string>;
-  items: Array<{ id: string; label: string; hint: string | null; required: boolean; status: ItemStatus; refusal_reason: string | null; files: PortalFile[] }>;
+  items: Array<{ id: string; label: string; hint: string | null; required: boolean; status: ItemStatus; refusal_reason: string | null; ai_excluded: boolean; files: PortalFile[] }>;
   progress: { provided: number; total: number; required: number; requiredProvided: number };
   contacts: Array<{ id: string; email: string; name: string; last_access_at: string | null }>;
   messages: Array<{ id: string; author_kind: "cabinet" | "client"; body: string; created_at: string }>;
@@ -85,3 +86,22 @@ export type PortalSettings = {
   has_logo: boolean;
   workspace_name: string;
 };
+
+// ---- Analyse IA ----------------------------------------------------------------------------
+export type AiStatus = {
+  entitled: boolean;
+  enabled: boolean;
+  terms_version: string;
+  accepted_version: string | null;
+  accepted_at: string | null;
+  usage: { used: number; limit: number };
+};
+export type AiCitation = { file_id: string; page: number; quote?: string };
+export type AiCoverage = { received: number; analyzed: number; pending: number; excluded: number; quota: number; failed: number };
+export type AiEnvelope<T> = { simulated: boolean; coverage: AiCoverage; notice: string; result: T };
+export type AiSummary = {
+  overview: string;
+  pieces: Array<{ file_id: string; item_label: string; type: string; parties: string[]; dates: string[]; amounts: string[]; citations: AiCitation[] }>;
+};
+export type AiCheck = { findings: Array<{ item_label: string; severity: "info" | "warning"; message: string; citations: AiCitation[] }> };
+export type AiAnswer = { found: boolean; answer: string; citations: AiCitation[] };

@@ -12,6 +12,7 @@
     "eval:inbound:live": "tsx eval/inbound/run-live.mts",
     "eval:documents": "tsx eval/documents/run.mts",
     "eval:corpus": "tsx eval/documents/run-corpus.mts",
+    "eval:portail": "tsx eval/portail/run.mts",
     "demo:reset": "bash scripts/demo-reset.sh",
     "smoke:partner": "bash scripts/smoke-partner-template.sh",
     "onboard:partner": "bash scripts/onboard-partner.sh",

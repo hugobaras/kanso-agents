@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useWorkspace } from "@/components/app/workspace-context";
+import { AiPanel } from "@/components/portail/ai-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -157,6 +158,14 @@ export default function DossierPage() {
               ))}
             </ul>
           </Card>
+
+          <AiPanel
+            dossierId={d.id}
+            excluded={d.ai_excluded}
+            files={Object.fromEntries(data.items.flatMap((i) => i.files.map((f) => [f.id, f.filename])))}
+            items={data.items}
+            onChanged={() => void mutate()}
+          />
 
           <Card>
             <CardHeader title="Messages" description="Court échange rattaché au dossier. Le client est prévenu par e-mail." />

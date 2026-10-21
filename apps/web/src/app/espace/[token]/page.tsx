@@ -33,6 +33,7 @@ type View = {
   }>;
   messages: Array<{ id: string; author_kind: "cabinet" | "client"; body: string; created_at: string }>;
   max_file_mb: number;
+  ai_analysis: boolean;
 };
 
 const STEPS: Stage[] = ["a_completer", "en_verification", "complet", "termine"];
@@ -285,6 +286,16 @@ function Dossier({ view, dbase, reload }: { view: View; dbase: string; reload: (
         </ol>
         {d.cabinet_message && <p className="mt-4 rounded-md bg-accent-soft px-3.5 py-3 text-sm whitespace-pre-wrap">{d.cabinet_message}</p>}
       </Card>
+
+      {view.ai_analysis && (
+        <p className="rounded-md bg-sunken px-3.5 py-3 text-sm text-muted">
+          Votre cabinet utilise une analyse automatique (IA) pour vérifier les documents reçus. Elle reste sous son contrôle et ne prend aucune
+          décision à sa place.{" "}
+          <a href={siteHref("portail", "/legal/confidentialite-portail")} className="underline underline-offset-2" target="_blank" rel="noreferrer">
+            En savoir plus
+          </a>
+        </p>
+      )}
 
       {view.locked && <p className="rounded-md bg-sunken px-3.5 py-3 text-sm text-muted">Ce dossier est terminé : il n&apos;est plus possible de déposer de documents.</p>}
 

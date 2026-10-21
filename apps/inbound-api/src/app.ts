@@ -107,7 +107,7 @@ export function createApp(deps: AppDeps = {}) {
   ws.route("/leads", leadsRoutes());
   ws.route("/assistant", assistantRoutes(limiter));
   ws.route("/documents", documentsRoutes());
-  ws.route("/portail", portailRoutes());
+  ws.route("/portail", portailRoutes(limiter));
   ws.route("/team", teamRoutes());
   ws.route("/integrations", integrationsRoutes());
   ws.route("/billing", billingRoutes());

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { LegalArticle, loadLegal } from "@/lib/legal";
 import { siteHref } from "@/lib/sites";
 
-const SLUGS = ["confidentialite-portail"] as const;
+const SLUGS = ["confidentialite-portail", "avenant-ia", "dpa", "cgu", "sous-traitants"] as const;
 
 export function generateStaticParams() {
   return SLUGS.map((slug) => ({ slug }));

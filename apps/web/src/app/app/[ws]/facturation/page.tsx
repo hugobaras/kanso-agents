@@ -17,7 +17,7 @@ import type { Entitlements, Plan } from "@/lib/types";
 
 type Billing = {
   entitlements: Entitlements;
-  usage: { conversations: number; documents: number; seats: number };
+  usage: { conversations: number; documents: number; ai_pages: number; seats: number };
   plans: Plan[];
   stripe_enabled: boolean;
 };
@@ -71,6 +71,7 @@ function BillingInner() {
       ? [{ label: "Conversations ce mois", used: data.usage.conversations, max: ent.quotas.conversations }]
       : []),
     ...(ent.quotas.documents > 0 ? [{ label: "Documents ce mois", used: data.usage.documents, max: ent.quotas.documents }] : []),
+    ...(ent.quotas.ai_pages > 0 ? [{ label: "Pages analysées par l'IA", used: data.usage.ai_pages, max: ent.quotas.ai_pages }] : []),
     { label: "Utilisateurs", used: data.usage.seats, max: ent.seats },
   ];
 

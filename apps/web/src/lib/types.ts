@@ -22,7 +22,7 @@ export type Entitlements = {
   trial_ends_at: string | null;
   trial_days_left: number | null;
   modules: { inbound: boolean; document_to_action: boolean; portail: boolean };
-  quotas: { conversations: number; documents: number };
+  quotas: { conversations: number; documents: number; ai_pages: number };
   seats: number;
   cancel_at_period_end: boolean;
   current_period_end: string | null;
@@ -40,7 +40,7 @@ export type Overview = {
     onboarded: boolean;
   };
   entitlements: Entitlements;
-  usage: { conversations: number; documents: number };
+  usage: { conversations: number; documents: number; ai_pages: number };
   assistant: {
     published: boolean;
     version: number | null;
@@ -75,7 +75,7 @@ export type Plan = {
   monthlyPriceCents: number;
   yearlyPriceCents: number;
   modules: { inbound: boolean; document_to_action: boolean; portail: boolean };
-  quotas: { conversations: number; documents: number };
+  quotas: { conversations: number; documents: number; ai_pages: number };
   seats: number;
   highlights: string[];
 };
